@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- ThunderTrack App Info -->
+  <title>⚡ ThunderTrack - 去中心化交易日记</title>
+  <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
+  
+  <!-- Farcaster Mini App Embed (for sharing) -->
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://your-domain.com/og-image.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://your-domain.com","splashImageUrl":"https://your-domain.com/logo.png","splashBackgroundColor":"#667eea"}}}' />
+  <!-- Backward compatibility -->
+  <meta name="fc:frame" content='{"version":"1","imageUrl":"https://your-domain.com/og-image.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_frame","name":"ThunderTrack","url":"https://your-domain.com","splashImageUrl":"https://your-domain.com/logo.png","splashBackgroundColor":"#667eea"}}}' />
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
+  <meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />
+  <meta property="og:image" content="https://your-domain.com/og-image.png" />
+  <meta property="og:url" content="https://your-domain.com" />
+  <meta property="og:type" content="website" />
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="⚡ ThunderTrack - 去中心化交易日记" />
+  <meta name="twitter:description" content="基于 Farcaster 的去中心化交易日记应用" />
+  <meta name="twitter:image" content="https://your-domain.com/og-image.png" />
+  
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ThunderTrack">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Farcaster Mini App SDK -->
+  <script type="module">
+    // 检测是否在 Mini App 环境中
+    const currentUrl = window.location.href;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    console.log('Current URL:', currentUrl);
+    console.log('Search params:', searchParams.toString());
+    console.log('Has miniApp param:', searchParams.has('miniApp'));
+    console.log('miniApp value:', searchParams.get('miniApp'));
+    
+    const isMiniApp = searchParams.has('miniApp') && searchParams.get('miniApp') === 'true' ||
+                     currentUrl.includes('/mini') ||
+                     window.parent !== window;
+    
+    console.log('Detected Mini App environment:', isMiniApp);
+    
+    if (isMiniApp) {
+      console.log('Loading Farcaster Mini App SDK...');
+      // 动态导入 Farcaster Mini App SDK
+      import('https://esm.sh/@farcaster/miniapp-sdkminiapp-sdk').then(({ sdk }) => {
+        console.log('✅ Farcaster Mini App SDK loaded successfully');
+        
+        // 存储 SDK 实例到全局，供 Flutter 使用
+        window.farcasterSdk = sdk;
+        
+        // Flutter 准备就绪后会调用这个函数
+        window.markMiniAppReady = async function() {
+          try {
+            await sdk.actions.ready();
+            console.log('✅ Mini App ready signal sent successfully');
+          } catch (error) {
+            console.error('❌ Failed to send ready signal:', error);
+          }
+        };
+        
+        // 获取用户信息的函数
+        window.getFarcasterUser = async function() {
+          try {
+            if (sdk.user) {
+              const profile = await sdk.user.getProfile();
+              console.log('✅ Got Farcaster user profile:', profile);
+              return profile;
+            }
+            console.log('ℹ️ No user available in SDK');
+            return null;
+          } catch (error) {
+            console.error('❌ Failed to get user profile:', error);
+            return null;
+          }
+        };
+        
+        // 获取钱包提供者的函数
+        window.getEthereumProvider = function() {
+          try {
+            const provider = sdk.wallet.getEthereumProvider();
+            console.log('✅ Got Ethereum provider:', provider);
+            return provider;
+          } catch (error) {
+            console.error('❌ Failed to get Ethereum provider:', error);
+            return null;
+          }
+        };
+        
+      }).catch(error => {
+        console.error('❌ Failed to load Farcaster Mini App SDK:', error);
+        // 如果 SDK 加载失败，提供一个空的实现避免错误
+        window.markMiniAppReady = function() { console.log('⚠️ Mini App SDK not available'); };
+        window.getFarcasterUser = function() { return Promise.resolve(null); };
+        window.getEthereumProvider = function() { return null; };
+      });
+    } else {
+      // 不在 Mini App 环境中，提供空实现
+      console.log('ℹ️ Not running in Mini App environment');
+      window.markMiniAppReady = function() { console.log('ℹ️ Not in Mini App environment'); };
+      window.getFarcasterUser = function() { return Promise.resolve(null); };
+      window.getEthereumProvider = function() { return null; };
+    }
+  </script>
+  
+  <!-- Loading Styles -->
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+    
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+      flex-direction: column;
+    }
+    
+    #loading .logo {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+    
+    #loading .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 2rem;
+    }
+    
+    #loading .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mini App Loading Screen -->
+  <div id="loading">
+    <div class="logo">⚡</div>
+    <div class="title">ThunderTrack</div>
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Flutter App Bootstrap -->
+  <script src="flutter_bootstrap.js" async></script>
+  
+  <!-- Hide loading screen when Flutter is ready -->
+  <script>
+    window.addEventListener('flutter-first-frame', function() {
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.opacity = '0';
+          setTimeout(() => {
+            loading.style.display = 'none';
+            // 通知 Farcaster Mini App 已准备就绪
+            if (window.markMiniAppReady) {
+              window.markMiniAppReady();
+            }
+          }, 300);
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>

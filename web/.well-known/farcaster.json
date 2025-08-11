@@ -1,0 +1,38 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "ThunderTrack",
+    "iconUrl": "https://your-domain.com/icons/Icon-512.png",
+    "homeUrl": "https://your-domain.com",
+    "splashImageUrl": "https://your-domain.com/icons/Icon-512.png",
+    "splashBackgroundColor": "#667eea",
+    "subtitle": "去中心化交易日记",
+    "description": "基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成。记录交易心得，分享投资经验。",
+    "screenshotUrls": [
+      "https://your-domain.com/screenshots/trading-page.png",
+      "https://your-domain.com/screenshots/diary-page.png",
+      "https://your-domain.com/screenshots/profile-page.png"
+    ],
+    "primaryCategory": "finance",
+    "tags": [
+      "trading",
+      "diary",
+      "defi",
+      "hyperliquid",
+      "ipfs"
+    ],
+    "heroImageUrl": "https://your-domain.com/og-image.png",
+    "tagline": "记录每一笔交易的智慧",
+    "ogTitle": "ThunderTrack - 去中心化交易日记",
+    "ogDescription": "基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成",
+    "ogImageUrl": "https://your-domain.com/og-image.png",
+    "requiredChains": [
+      "eip155:8453"
+    ],
+    "requiredCapabilities": [
+      "actions.signIn",
+      "wallet.getEthereumProvider"
+    ],
+    "noindex": false
+  }
+}
