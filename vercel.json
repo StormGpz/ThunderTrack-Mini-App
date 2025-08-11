@@ -1,11 +1,10 @@
 {
-  "github": {
-    "silent": true
-  },
-  "rewrites": [
+  "version": 2,
+  "name": "thundertrack-miniapp",
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/build/web/$1"
+      "src": "**/*",
+      "use": "@vercel/static"
     }
   ],
   "headers": [
