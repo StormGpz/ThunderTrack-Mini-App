@@ -7,14 +7,14 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/.well-known/farcaster.json",
-      "dest": "/build/web/.well-known/farcaster.json"
+      "source": "/.well-known/farcaster.json",
+      "destination": "/build/web/.well-known/farcaster.json"
     },
     {
-      "src": "/(.*)",
-      "dest": "/build/web/$1"
+      "source": "/(.*)",
+      "destination": "/build/web/$1"
     }
   ],
   "headers": [
