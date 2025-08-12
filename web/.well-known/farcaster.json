@@ -12,7 +12,7 @@
     "description": "去中心化交易日记 - 记录交易心得，分享策略思考，基于IPFS存储的Web3交易管理工具"
   },
   "frame": {
-    "version": "1",
+    "version": "0.0.1",
     "name": "ThunderTrack",
     "iconUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
     "homeUrl": "https://thundertrack-miniapp.vercel.app",
