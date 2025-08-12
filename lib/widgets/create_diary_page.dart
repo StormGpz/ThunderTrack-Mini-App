@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:provider/provider.dart';
 import '../models/trading_diary.dart';
 import '../services/diary_template_service.dart';
 import '../services/farcaster_share_service.dart';
+import '../providers/settings_provider.dart';
 
 /// 创建日记页面
 class CreateDiaryPage extends StatefulWidget {
@@ -34,6 +36,13 @@ class _CreateDiaryPageState extends State<CreateDiaryPage> {
   void initState() {
     super.initState();
     _initializeTemplate();
+    _initializeSettings();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeSettings();
   }
 
   @override
@@ -42,6 +51,15 @@ class _CreateDiaryPageState extends State<CreateDiaryPage> {
     _contentController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 初始化设置
+  void _initializeSettings() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    setState(() {
+      _isPublic = settings.defaultDiaryIsPublic;
+      _shareToFarcaster = settings.autoShareEnabled && settings.defaultDiaryIsPublic;
+    });
   }
 
   /// 初始化模板内容

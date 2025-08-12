@@ -8,6 +8,7 @@ import 'pages/profile_page.dart';
 import 'providers/user_provider.dart';
 import 'providers/trading_provider.dart';
 import 'providers/diary_provider.dart';
+import 'providers/settings_provider.dart';
 import 'utils/api_client.dart';
 
 void main() async {
@@ -16,52 +17,115 @@ void main() async {
   // 初始化HTTP客户端
   ApiClient().initialize();
   
-  runApp(const ThunderTrackApp());
+  // 初始化设置Provider
+  final settingsProvider = SettingsProvider();
+  await settingsProvider.initialize();
+  
+  runApp(ThunderTrackApp(settingsProvider: settingsProvider));
 }
 
 /// ThunderTrack应用的根组件，配置应用主题和路由
 class ThunderTrackApp extends StatelessWidget {
-  const ThunderTrackApp({super.key});
+  final SettingsProvider settingsProvider;
+  
+  const ThunderTrackApp({
+    super.key,
+    required this.settingsProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => TradingProvider()),
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
       ],
-      child: MaterialApp(
-        title: 'ThunderTrack - 交易日记',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.indigo,
-            brightness: Brightness.dark,
-          ),
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-            elevation: 4,
-            centerTitle: true,
-            iconTheme: IconThemeData(color: Colors.white),
-            titleTextStyle: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          cardTheme: CardThemeData(
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            clipBehavior: Clip.antiAlias,
-          ),
-          bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            selectedItemColor: Colors.indigo,
-            unselectedItemColor: Colors.grey,
-          ),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: settings.isChineseLocale ? 'ThunderTrack - 交易日记' : 'ThunderTrack - Trading Diary',
+            debugShowCheckedModeBanner: false,
+            themeMode: settings.themeMode,
+            theme: _buildLightTheme(),
+            darkTheme: _buildDarkTheme(),
+            locale: settings.locale,
+            home: const HomePage(),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 构建浅色主题
+  ThemeData _buildLightTheme() {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.indigo,
+        brightness: Brightness.light,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: Colors.white,
         ),
-        home: const HomePage(),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: Colors.indigo,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+      ),
+    );
+  }
+
+  /// 构建深色主题
+  ThemeData _buildDarkTheme() {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.indigo,
+        brightness: Brightness.dark,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.grey[900],
+        foregroundColor: Colors.white,
+        elevation: 2,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: Colors.white,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        color: Colors.grey[850],
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        selectedItemColor: Colors.indigo[300],
+        unselectedItemColor: Colors.grey[400],
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.grey[900],
       ),
     );
   }
