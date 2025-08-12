@@ -37,21 +37,6 @@ jobs:
       run: |
         npm install -g vercel
         cd build/web
-        cat > vercel.json << 'EOF'
-        {
-          "headers": [
-            {
-              "source": "/.well-known/farcaster.json",
-              "headers": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ]
-            }
-          ]
-        }
-        EOF
         vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
       env:
         VERCEL_ORG_ID: ${{ secrets.ORG_ID }}
