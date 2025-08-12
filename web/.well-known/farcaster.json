@@ -5,7 +5,7 @@
     "signature": "MHg3ZmNiYThhMDJlNmQzMjM0YTAzZTczNDRmZTY4OGVmZjA5NTI4MDBlMTM5OWRiNjczMjVmYjMzOTE4YjE4MjMzMTczZTFiMDIyYTQ0MGU5MTMyZTJmYWM2YWQ0OTQzMTZiMzllYzEzM2U3ZjJmN2JiYzUwNGNjNGEyZDFiMWU1YjFj"
   },
   "miniapp": {
-    "version": "1.0.0",
+    "version": "0.0.1",
     "name": "ThunderTrack",
     "iconUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
     "homeUrl": "https://thundertrack-miniapp.vercel.app",
