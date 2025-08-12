@@ -1,7 +1,18 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'trade.dart';
 
 part 'trading_diary.g.dart';
+
+/// 日记类型枚举
+enum DiaryType {
+  @JsonValue('single_trade')
+  singleTrade,
+  
+  @JsonValue('strategy_summary')
+  strategySummary,
+  
+  @JsonValue('free_form')
+  freeForm,
+}
 
 /// 交易日记数据模型
 @JsonSerializable()
@@ -18,17 +29,26 @@ class TradingDiary {
   /// 日记内容
   final String content;
   
-  /// 日记分类
-  final String category;
+  /// 日记类型
+  final DiaryType type;
+  
+  /// 关联的交易ID列表
+  final List<String> tradeIds;
+  
+  /// 主要交易币种
+  final String? symbol;
+  
+  /// 时间范围开始
+  final DateTime? periodStart;
+  
+  /// 时间范围结束
+  final DateTime? periodEnd;
   
   /// 相关标签
   final List<String> tags;
   
   /// 图片URL列表
   final List<String> imageUrls;
-  
-  /// 关联的交易列表
-  final List<Trade> trades;
   
   /// 创建时间
   final DateTime createdAt;
@@ -56,16 +76,22 @@ class TradingDiary {
   
   /// 交易表现评分 (1-5)
   final double? rating;
+  
+  /// Farcaster发布数据
+  final Map<String, dynamic>? farcasterPost;
 
   const TradingDiary({
     required this.id,
     required this.authorFid,
     required this.title,
     required this.content,
-    required this.category,
+    required this.type,
+    this.tradeIds = const [],
+    this.symbol,
+    this.periodStart,
+    this.periodEnd,
     this.tags = const [],
     this.imageUrls = const [],
-    this.trades = const [],
     required this.createdAt,
     this.updatedAt,
     this.likes = 0,
@@ -75,6 +101,7 @@ class TradingDiary {
     this.ipfsHash,
     this.summary,
     this.rating,
+    this.farcasterPost,
   });
 
   factory TradingDiary.fromJson(Map<String, dynamic> json) => _$TradingDiaryFromJson(json);
@@ -87,10 +114,13 @@ class TradingDiary {
     String? authorFid,
     String? title,
     String? content,
-    String? category,
+    DiaryType? type,
+    List<String>? tradeIds,
+    String? symbol,
+    DateTime? periodStart,
+    DateTime? periodEnd,
     List<String>? tags,
     List<String>? imageUrls,
-    List<Trade>? trades,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? likes,
@@ -100,16 +130,20 @@ class TradingDiary {
     String? ipfsHash,
     String? summary,
     double? rating,
+    Map<String, dynamic>? farcasterPost,
   }) {
     return TradingDiary(
       id: id ?? this.id,
       authorFid: authorFid ?? this.authorFid,
       title: title ?? this.title,
       content: content ?? this.content,
-      category: category ?? this.category,
+      type: type ?? this.type,
+      tradeIds: tradeIds ?? this.tradeIds,
+      symbol: symbol ?? this.symbol,
+      periodStart: periodStart ?? this.periodStart,
+      periodEnd: periodEnd ?? this.periodEnd,
       tags: tags ?? this.tags,
       imageUrls: imageUrls ?? this.imageUrls,
-      trades: trades ?? this.trades,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       likes: likes ?? this.likes,
@@ -119,32 +153,37 @@ class TradingDiary {
       ipfsHash: ipfsHash ?? this.ipfsHash,
       summary: summary ?? this.summary,
       rating: rating ?? this.rating,
+      farcasterPost: farcasterPost ?? this.farcasterPost,
     );
   }
 
-  /// 获取总交易价值
-  double get totalTradeValue {
-    return trades.fold(0.0, (sum, trade) => sum + trade.notionalValue);
-  }
-
-  /// 获取总盈亏
-  double get totalPnl {
-    return trades.fold(0.0, (sum, trade) => sum + (trade.pnl ?? 0.0));
-  }
-
-  /// 是否包含交易
-  bool get hasTrades => trades.isNotEmpty;
-
-  /// 获取主要交易对
-  String? get primarySymbol {
-    if (trades.isEmpty) return null;
-    // 返回交易量最大的交易对
-    final symbolGroups = <String, double>{};
-    for (final trade in trades) {
-      symbolGroups[trade.symbol] = (symbolGroups[trade.symbol] ?? 0) + trade.notionalValue;
+  /// 获取日记类型显示名称
+  String get typeDisplayName {
+    switch (type) {
+      case DiaryType.singleTrade:
+        return '单笔复盘';
+      case DiaryType.strategySummary:
+        return '策略总结';
+      case DiaryType.freeForm:
+        return '自由记录';
     }
-    return symbolGroups.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
+
+  /// 获取时间范围描述
+  String? get periodDescription {
+    if (periodStart == null) return null;
+    if (periodEnd == null) return periodStart!.toString().split(' ')[0];
+    
+    final start = periodStart!.toString().split(' ')[0];
+    final end = periodEnd!.toString().split(' ')[0];
+    return '$start 至 $end';
+  }
+
+  /// 是否有关联交易
+  bool get hasAssociatedTrades => tradeIds.isNotEmpty;
+
+  /// 是否有交易数据
+  bool get hasTrades => tradeIds.isNotEmpty;
 
   @override
   bool operator ==(Object other) =>

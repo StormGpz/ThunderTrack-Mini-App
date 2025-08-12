@@ -217,9 +217,9 @@ class DiaryProvider extends ChangeNotifier {
     }).toList();
   }
 
-  /// 按分类筛选日记
-  List<TradingDiary> filterDiariesByCategory(String category) {
-    return _publicDiaries.where((diary) => diary.category == category).toList();
+  /// 按类型筛选日记
+  List<TradingDiary> filterDiariesByType(DiaryType type) {
+    return _publicDiaries.where((diary) => diary.type == type).toList();
   }
 
   /// 刷新所有数据

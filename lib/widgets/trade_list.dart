@@ -13,6 +13,14 @@ class TradeList extends StatelessWidget {
     this.onRefresh,
   });
 
+  /// 创建Sliver版本的交易列表
+  static Widget sliver({
+    required List<Trade> trades,
+    VoidCallback? onRefresh,
+  }) {
+    return _TradeListSliver(trades: trades, onRefresh: onRefresh);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (trades.isEmpty) {
@@ -60,6 +68,76 @@ class TradeList extends StatelessWidget {
             onTap: () => _showTradeDetails(context, trade),
           );
         },
+      ),
+    );
+  }
+
+  void _showTradeDetails(BuildContext context, Trade trade) {
+    showDialog(
+      context: context,
+      builder: (context) => TradeDetailsDialog(trade: trade),
+    );
+  }
+}
+
+/// Sliver版本的交易列表
+class _TradeListSliver extends StatelessWidget {
+  final List<Trade> trades;
+  final VoidCallback? onRefresh;
+
+  const _TradeListSliver({
+    required this.trades,
+    this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (trades.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.trending_flat,
+                size: 64,
+                color: Colors.grey.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '暂无交易记录',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '点击上方按钮记录您的第一笔交易',
+                style: TextStyle(
+                  color: Colors.grey.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final trade = trades[index];
+            return TradeListItem(
+              trade: trade,
+              onTap: () => _showTradeDetails(context, trade),
+            );
+          },
+          childCount: trades.length,
+        ),
       ),
     );
   }

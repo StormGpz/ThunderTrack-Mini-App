@@ -173,32 +173,34 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
 
   /// 构建我的交易标签页
   Widget _buildMyTradesTab() {
-    return Column(
-      children: [
+    return CustomScrollView(
+      slivers: [
         // 添加交易按钮
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _showAddTradeDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('记录新交易'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showAddTradeDialog,
+                icon: const Icon(Icons.add),
+                label: const Text('记录新交易'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ),
         ),
         
         // 交易列表
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : TradeList(trades: _userTrades),
-        ),
+        _isLoading
+            ? const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : TradeList.sliver(trades: _userTrades),
       ],
     );
   }

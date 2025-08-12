@@ -237,17 +237,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      floatingActionButton: _currentIndex == 1 
-          ? FloatingActionButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('跳转到写日记页面'))
-                );
-              },
-              tooltip: '写交易日记',
-              child: const Icon(Icons.edit),
-            )
-          : null,
     );
   }
 

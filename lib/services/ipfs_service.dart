@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/trading_diary.dart';
-import '../models/trade.dart';
 import '../config/app_config.dart';
 import '../config/api_endpoints.dart';
 import '../utils/api_client.dart';
@@ -23,15 +22,22 @@ class IpfsService {
         'authorFid': diary.authorFid,
         'title': diary.title,
         'content': diary.content,
-        'category': diary.category,
+        'type': diary.type.toString(),
+        'tradeIds': diary.tradeIds,
+        'symbol': diary.symbol,
+        'periodStart': diary.periodStart?.toIso8601String(),
+        'periodEnd': diary.periodEnd?.toIso8601String(),
         'tags': diary.tags,
         'imageUrls': diary.imageUrls,
-        'trades': diary.trades.map((trade) => trade.toJson()).toList(),
         'createdAt': diary.createdAt.toIso8601String(),
         'updatedAt': diary.updatedAt?.toIso8601String(),
+        'likes': diary.likes,
+        'comments': diary.comments,
+        'reposts': diary.reposts,
         'isPublic': diary.isPublic,
         'summary': diary.summary,
         'rating': diary.rating,
+        'farcasterPost': diary.farcasterPost,
         'metadata': {
           'version': '1.0',
           'type': 'trading_diary',
@@ -48,7 +54,7 @@ class IpfsService {
             'name': 'TradingDiary_${diary.id}',
             'keyvalues': {
               'author': diary.authorFid,
-              'category': diary.category,
+              'type': diary.type.toString(),
               'created': diary.createdAt.toIso8601String(),
             }
           },
@@ -171,27 +177,37 @@ class IpfsService {
 
   /// 从IPFS数据解析日记对象
   TradingDiary _parseDiaryFromIpfs(Map<String, dynamic> data) {
-    final trades = (data['trades'] as List? ?? [])
-        .map((tradeData) => Trade.fromJson(tradeData))
-        .toList();
-
     return TradingDiary(
       id: data['id'],
       authorFid: data['authorFid'],
       title: data['title'],
       content: data['content'],
-      category: data['category'],
+      type: DiaryType.values.firstWhere(
+        (e) => e.toString() == data['type'],
+        orElse: () => DiaryType.freeForm,
+      ),
+      tradeIds: List<String>.from(data['tradeIds'] ?? []),
+      symbol: data['symbol'],
+      periodStart: data['periodStart'] != null 
+          ? DateTime.parse(data['periodStart']) 
+          : null,
+      periodEnd: data['periodEnd'] != null 
+          ? DateTime.parse(data['periodEnd']) 
+          : null,
       tags: List<String>.from(data['tags'] ?? []),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
-      trades: trades,
       createdAt: DateTime.parse(data['createdAt']),
       updatedAt: data['updatedAt'] != null 
           ? DateTime.parse(data['updatedAt']) 
           : null,
+      likes: data['likes'] ?? 0,
+      comments: data['comments'] ?? 0,
+      reposts: data['reposts'] ?? 0,
       isPublic: data['isPublic'] ?? true,
       ipfsHash: null, // 会在外部设置
       summary: data['summary'],
       rating: data['rating']?.toDouble(),
+      farcasterPost: data['farcasterPost'],
     );
   }
 }
