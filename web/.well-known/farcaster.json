@@ -1,38 +1,31 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjI0NzQ3MCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDUzRDA1ODM0NkEwRTcyREU3MzNlQzI0MzllMzYwZkMzNzBlOTAxNzQifQ",
+    "payload": "eyJkb21haW4iOiJ0aHVuZGVydHJhY2stbWluaWFwcC52ZXJjZWwuYXBwIn0",
+    "signature": "MHg3ZmNiYThhMDJlNmQzMjM0YTAzZTczNDRmZTY4OGVmZjA5NTI4MDBlMTM5OWRiNjczMjVmYjMzOTE4YjE4MjMzMTczZTFiMDIyYTQ0MGU5MTMyZTJmYWM2YWQ0OTQzMTZiMzllYzEzM2U3ZjJmN2JiYzUwNGNjNGEyZDFiMWU1YjFj"
+  },
   "miniapp": {
+    "version": "1.0.0",
+    "name": "ThunderTrack",
+    "iconUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
+    "homeUrl": "https://thundertrack-miniapp.vercel.app",
+    "description": "去中心化交易日记 - 记录交易心得，分享策略思考，基于IPFS存储的Web3交易管理工具"
+  },
+  "frame": {
     "version": "1",
     "name": "ThunderTrack",
-    "iconUrl": "https://thundertrack-mini-app.vercel.app/icons/Icon-512.png",
-    "homeUrl": "https://thundertrack-mini-app.vercel.app",
-    "splashImageUrl": "https://thundertrack-mini-app.vercel.app/icons/Icon-512.png",
-    "splashBackgroundColor": "#667eea",
-    "subtitle": "去中心化交易日记",
-    "description": "基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成。记录交易心得，分享投资经验。",
-    "screenshotUrls": [
-      "https://thundertrack-mini-app.vercel.app/screenshots/trading-page.png",
-      "https://thundertrack-mini-app.vercel.app/screenshots/diary-page.png",
-      "https://thundertrack-mini-app.vercel.app/screenshots/profile-page.png"
-    ],
-    "primaryCategory": "finance",
-    "tags": [
-      "trading",
-      "diary",
-      "defi",
-      "hyperliquid",
-      "ipfs"
-    ],
-    "heroImageUrl": "https://thundertrack-mini-app.vercel.app/og-image.svg",
-    "tagline": "记录每一笔交易的智慧",
-    "ogTitle": "ThunderTrack - 去中心化交易日记",
-    "ogDescription": "基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成",
-    "ogImageUrl": "https://thundertrack-mini-app.vercel.app/og-image.svg",
-    "requiredChains": [
-      "eip155:8453"
-    ],
-    "requiredCapabilities": [
-      "actions.signIn",
-      "wallet.getEthereumProvider"
-    ],
-    "noindex": false
+    "iconUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
+    "homeUrl": "https://thundertrack-miniapp.vercel.app",
+    "imageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
+    "buttonTitle": "打开 ThunderTrack",
+    "splashImageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
+    "splashBackgroundColor": "#6366f1",
+    "webhookUrl": "https://thundertrack-miniapp.vercel.app/api/webhook"
+  },
+  "metadata": {
+    "name": "ThunderTrack",
+    "description": "去中心化交易日记 - 记录交易心得，分享策略思考",
+    "image": "https://thundertrack-miniapp.vercel.app/icons/Icon-512.png",
+    "url": "https://thundertrack-miniapp.vercel.app"
   }
 }
