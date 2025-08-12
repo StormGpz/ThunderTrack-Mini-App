@@ -23,14 +23,14 @@ class TradeList extends StatelessWidget {
             Icon(
               Icons.trending_flat,
               size: 64,
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
               '暂无交易记录',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey.withOpacity(0.7),
+                color: Colors.grey.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -38,7 +38,7 @@ class TradeList extends StatelessWidget {
             Text(
               '点击上方按钮记录您的第一笔交易',
               style: TextStyle(
-                color: Colors.grey.withOpacity(0.6),
+                color: Colors.grey.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -85,8 +85,7 @@ class TradeListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isProfit = trade.type == TradeType.sell;
-    final color = trade.type == TradeType.buy ? Colors.green : Colors.red;
+    final color = trade.isBuy ? Colors.green : Colors.red;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -105,11 +104,11 @@ class TradeListItem extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      trade.type == TradeType.buy ? Icons.trending_up : Icons.trending_down,
+                      trade.isBuy ? Icons.trending_up : Icons.trending_down,
                       color: color,
                       size: 20,
                     ),
@@ -135,7 +134,7 @@ class TradeListItem extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(trade.status).withOpacity(0.1),
+                                color: _getStatusColor(trade.status).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -149,10 +148,10 @@ class TradeListItem extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              trade.platform,
+                              trade.orderType,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey.withOpacity(0.8),
+                                color: Colors.grey.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -173,7 +172,7 @@ class TradeListItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '\$${trade.totalValue.toStringAsFixed(2)}',
+                        '\$${trade.notionalValue.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -199,11 +198,11 @@ class TradeListItem extends StatelessWidget {
                           '数量',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.withOpacity(0.8),
+                            color: Colors.grey.withValues(alpha: 0.8),
                           ),
                         ),
                         Text(
-                          trade.amount.toString(),
+                          trade.size.toString(),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -222,11 +221,11 @@ class TradeListItem extends StatelessWidget {
                           '手续费',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.withOpacity(0.8),
+                            color: Colors.grey.withValues(alpha: 0.8),
                           ),
                         ),
                         Text(
-                          '\$${trade.fees.toStringAsFixed(2)}',
+                          '\$${(trade.fee ?? 0).toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -245,7 +244,7 @@ class TradeListItem extends StatelessWidget {
                           '时间',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.withOpacity(0.8),
+                            color: Colors.grey.withValues(alpha: 0.8),
                           ),
                         ),
                         Text(
@@ -261,13 +260,13 @@ class TradeListItem extends StatelessWidget {
                 ],
               ),
               
-              // 备注（如果有）
-              if (trade.notes != null && trade.notes!.isNotEmpty) ...[
+              // 备注（如果有diaryId）
+              if (trade.diaryId != null) ...[
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -275,15 +274,15 @@ class TradeListItem extends StatelessWidget {
                       Icon(
                         Icons.note_alt_outlined,
                         size: 16,
-                        color: Colors.grey.withOpacity(0.8),
+                        color: Colors.grey.withValues(alpha: 0.8),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          trade.notes!,
+                          '关联交易日记',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.withOpacity(0.8),
+                            color: Colors.grey.withValues(alpha: 0.8),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -300,29 +299,33 @@ class TradeListItem extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(TradeStatus status) {
-    switch (status) {
-      case TradeStatus.pending:
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
         return Colors.orange;
-      case TradeStatus.completed:
+      case 'filled':
         return Colors.green;
-      case TradeStatus.cancelled:
+      case 'cancelled':
         return Colors.red;
-      case TradeStatus.failed:
+      case 'failed':
         return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
-  String _getStatusText(TradeStatus status) {
-    switch (status) {
-      case TradeStatus.pending:
+  String _getStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
         return '处理中';
-      case TradeStatus.completed:
+      case 'filled':
         return '已完成';
-      case TradeStatus.cancelled:
+      case 'cancelled':
         return '已取消';
-      case TradeStatus.failed:
+      case 'failed':
         return '失败';
+      default:
+        return status;
     }
   }
 }
@@ -335,7 +338,7 @@ class TradeDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = trade.type == TradeType.buy ? Colors.green : Colors.red;
+    final color = trade.isBuy ? Colors.green : Colors.red;
     
     return Dialog(
       child: Container(
@@ -351,11 +354,11 @@ class TradeDetailsDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    trade.type == TradeType.buy ? Icons.trending_up : Icons.trending_down,
+                    trade.isBuy ? Icons.trending_up : Icons.trending_down,
                     color: color,
                     size: 24,
                   ),
@@ -373,7 +376,7 @@ class TradeDetailsDialog extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        trade.type == TradeType.buy ? '买入交易' : '卖出交易',
+                        trade.isBuy ? '买入交易' : '卖出交易',
                         style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.w500,
@@ -393,18 +396,18 @@ class TradeDetailsDialog extends StatelessWidget {
             
             // 交易详情
             _buildDetailRow('交易ID', trade.id),
-            _buildDetailRow('数量', trade.amount.toString()),
+            _buildDetailRow('数量', trade.size.toString()),
             _buildDetailRow('价格', '\$${trade.price.toStringAsFixed(2)}'),
-            _buildDetailRow('总价值', '\$${trade.totalValue.toStringAsFixed(2)}'),
-            _buildDetailRow('手续费', '\$${trade.fees.toStringAsFixed(2)}'),
-            _buildDetailRow('交易平台', trade.platform),
+            _buildDetailRow('总价值', '\$${trade.notionalValue.toStringAsFixed(2)}'),
+            _buildDetailRow('手续费', '\$${(trade.fee ?? 0).toStringAsFixed(2)}'),
+            _buildDetailRow('订单类型', trade.orderType),
             _buildDetailRow('状态', _getStatusText(trade.status)),
             _buildDetailRow('时间', DateFormat('yyyy-MM-dd HH:mm:ss').format(trade.timestamp)),
             
-            if (trade.notes != null && trade.notes!.isNotEmpty) ...[
+            if (trade.diaryId != null) ...[
               const SizedBox(height: 16),
               const Text(
-                '备注',
+                '关联日记',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -412,10 +415,10 @@ class TradeDetailsDialog extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(trade.notes!),
+                child: Text('日记ID: ${trade.diaryId}'),
               ),
             ],
           ],
@@ -435,7 +438,7 @@ class TradeDetailsDialog extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey.withOpacity(0.8),
+                color: Colors.grey.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -451,16 +454,18 @@ class TradeDetailsDialog extends StatelessWidget {
     );
   }
 
-  String _getStatusText(TradeStatus status) {
-    switch (status) {
-      case TradeStatus.pending:
+  String _getStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
         return '处理中';
-      case TradeStatus.completed:
+      case 'filled':
         return '已完成';
-      case TradeStatus.cancelled:
+      case 'cancelled':
         return '已取消';
-      case TradeStatus.failed:
+      case 'failed':
         return '失败';
+      default:
+        return status;
     }
   }
 }
