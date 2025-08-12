@@ -91,8 +91,12 @@ class FarcasterShareService {
       final shareText = generateShareText(diary);
       final encodedText = Uri.encodeComponent(shareText);
       
-      // 使用Warpcast的分享URL
-      final shareUrl = 'https://warpcast.com/~/compose?text=$encodedText';
+      // 生成包含Mini App信息的分享链接
+      final appUrl = 'https://thunder-track-mini-app.vercel.app?miniApp=true&diary=${diary.id}';
+      final encodedUrl = Uri.encodeComponent(appUrl);
+      
+      // 使用Warpcast的分享URL，包含embed信息
+      final shareUrl = 'https://warpcast.com/~/compose?text=$encodedText&embeds%5B%5D=$encodedUrl';
       
       // 在新窗口中打开分享页面
       js.context.callMethod('open', [shareUrl, '_blank']);
@@ -141,9 +145,9 @@ class FarcasterShareService {
   /// 生成分享URL（供IPFS存储使用）
   String generateShareUrl(TradingDiary diary) {
     if (diary.ipfsHash != null) {
-      return 'https://your-app-domain.com/diary/${diary.ipfsHash}';
+      return 'https://thunder-track-mini-app.vercel.app/diary/${diary.ipfsHash}';
     }
-    return 'https://your-app-domain.com/diary/${diary.id}';
+    return 'https://thunder-track-mini-app.vercel.app/diary/${diary.id}';
   }
 
   /// 检查分享权限

@@ -1,0 +1,23 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0",
+    "payload": "eyJkb21haW4iOiJ0aHVuZGVydHJhY2suY29tIn0",
+    "signature": "MHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA"
+  },
+  "frame": {
+    "name": "ThunderTrack",
+    "iconUrl": "https://thunder-track-mini-app.vercel.app/icons/Icon-512.png",
+    "homeUrl": "https://thunder-track-mini-app.vercel.app",
+    "imageUrl": "https://thunder-track-mini-app.vercel.app/icons/Icon-512.png",
+    "buttonTitle": "打开 ThunderTrack",
+    "splashImageUrl": "https://thunder-track-mini-app.vercel.app/icons/Icon-512.png",
+    "splashBackgroundColor": "#6366f1",
+    "webhookUrl": "https://thunder-track-mini-app.vercel.app/api/webhook"
+  },
+  "metadata": {
+    "name": "ThunderTrack",
+    "description": "去中心化交易日记 - 记录交易心得，分享策略思考",
+    "image": "https://thunder-track-mini-app.vercel.app/icons/Icon-512.png",
+    "url": "https://thunder-track-mini-app.vercel.app"
+  }
+}
