@@ -38,6 +38,3 @@ flutter analyze
 
 - **生产环境**: https://thundertrack-mini-app.vercel.app
 - **Farcaster Mini App**: 在 Farcaster 客户端中搜索 ThunderTrack
-
-## Getting Started
-
