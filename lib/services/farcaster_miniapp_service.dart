@@ -1,5 +1,4 @@
 import 'dart:js' as js;
-import 'dart:js_util' as js_util;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
@@ -32,7 +31,7 @@ class FarcasterMiniAppService {
     try {
       final markReadyFunction = js.context['markMiniAppReady'];
       if (markReadyFunction != null) {
-        await js_util.promiseToFuture(js_util.callMethod(markReadyFunction, 'call', [js.context]));
+        markReadyFunction.apply([]);
         debugPrint('Mini App ready signal sent successfully');
       } else {
         debugPrint('markMiniAppReady function not found');
@@ -49,12 +48,10 @@ class FarcasterMiniAppService {
     try {
       final getUserFunction = js.context['getFarcasterUser'];
       if (getUserFunction != null) {
-        final result = await js_util.promiseToFuture(
-          js_util.callMethod(getUserFunction, 'call', [js.context])
-        );
+        final result = getUserFunction.apply([]);
         
         if (result != null) {
-          // 将 JavaScript 对象转换为 Dart Map
+          // 简化的对象转换
           return _jsObjectToMap(result);
         }
       } else {
@@ -74,7 +71,7 @@ class FarcasterMiniAppService {
     try {
       final getProviderFunction = js.context['getEthereumProvider'];
       if (getProviderFunction != null) {
-        return js_util.callMethod(getProviderFunction, 'call', [js.context]);
+        return getProviderFunction.apply([]);
       } else {
         debugPrint('getEthereumProvider function not found');
       }
@@ -144,41 +141,27 @@ class FarcasterMiniAppService {
     } catch (e) {
       debugPrint('Error converting JS object to map: $e');
       
-      // 回退到手动转换常见属性
+      // 简化的回退方案
       try {
-        final Map<String, dynamic> result = {};
-        
-        // 尝试获取常见的用户属性
-        if (js_util.hasProperty(jsObject, 'fid')) {
-          result['fid'] = js_util.getProperty(jsObject, 'fid');
-        }
-        if (js_util.hasProperty(jsObject, 'username')) {
-          result['username'] = js_util.getProperty(jsObject, 'username');
-        }
-        if (js_util.hasProperty(jsObject, 'displayName')) {
-          result['displayName'] = js_util.getProperty(jsObject, 'displayName');
-        }
-        if (js_util.hasProperty(jsObject, 'pfpUrl')) {
-          result['pfpUrl'] = js_util.getProperty(jsObject, 'pfpUrl');
-        }
-        if (js_util.hasProperty(jsObject, 'bio')) {
-          result['bio'] = js_util.getProperty(jsObject, 'bio');
-        }
-        if (js_util.hasProperty(jsObject, 'followers')) {
-          result['followers'] = js_util.getProperty(jsObject, 'followers');
-        }
-        if (js_util.hasProperty(jsObject, 'following')) {
-          result['following'] = js_util.getProperty(jsObject, 'following');
-        }
-        if (js_util.hasProperty(jsObject, 'verified')) {
-          result['verified'] = js_util.getProperty(jsObject, 'verified');
-        }
-        
-        return result;
+        return {
+          'fid': _getProperty(jsObject, 'fid'),
+          'username': _getProperty(jsObject, 'username'),
+          'displayName': _getProperty(jsObject, 'displayName'),
+          'pfpUrl': _getProperty(jsObject, 'pfpUrl'),
+        };
       } catch (e2) {
         debugPrint('Error in fallback conversion: $e2');
         return {};
       }
+    }
+  }
+
+  /// 安全获取 JS 对象属性
+  dynamic _getProperty(dynamic jsObject, String property) {
+    try {
+      return jsObject[property];
+    } catch (e) {
+      return null;
     }
   }
 
