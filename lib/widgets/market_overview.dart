@@ -47,13 +47,13 @@ class _MarketOverviewState extends State<MarketOverview> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue.withOpacity(0.1),
-            Colors.purple.withOpacity(0.1),
+            Colors.blue.withValues(alpha: 0.1),
+            Colors.purple.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
+          color: Colors.grey.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -76,7 +76,7 @@ class _MarketOverviewState extends State<MarketOverview> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -160,10 +160,10 @@ class _MarketOverviewState extends State<MarketOverview> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
+          color: Colors.grey.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -225,7 +225,7 @@ class _MarketOverviewState extends State<MarketOverview> {
       icon: Icon(icon, size: 16),
       label: Text(text, style: const TextStyle(fontSize: 12)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         foregroundColor: color,
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/user.dart';
 import '../config/app_config.dart';

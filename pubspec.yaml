@@ -21,7 +21,7 @@ dependencies:
   web_socket_channel: ^2.4.0
   
   # JSON序列化
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
   
   # 本地存储
   shared_preferences: ^2.2.2

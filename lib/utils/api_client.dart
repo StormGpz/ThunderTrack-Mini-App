@@ -136,8 +136,6 @@ class ApiClient {
           return ApiException('请求已取消');
         case DioErrorType.other:
           return ApiException('网络连接失败');
-        default:
-          return ApiException('未知网络错误');
       }
     }
     return ApiException('请求失败: $error');

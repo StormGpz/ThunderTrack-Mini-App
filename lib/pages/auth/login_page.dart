@@ -35,6 +35,8 @@ class _LoginPageState extends State<LoginPage> {
       // 模拟网络延迟
       await Future.delayed(const Duration(seconds: 1));
 
+      if (!mounted) return;
+      
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       
       // 调用模拟登录方法
@@ -44,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
         _showMessage('登录成功！');
         // 返回到主页面
         Navigator.of(context).pop();
-      } else {
+      } else if (mounted) {
         _showMessage('登录失败，请重试');
       }
     } catch (e) {

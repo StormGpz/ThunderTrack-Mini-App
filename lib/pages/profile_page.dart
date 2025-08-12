@@ -51,7 +51,7 @@ class ProfilePage extends StatelessWidget {
                 // 用户头像
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.indigo.withOpacity(0.2),
+                  backgroundColor: Colors.indigo.withValues(alpha: 0.2),
                   child: user.isVerified
                       ? const Icon(
                           Icons.verified_user,
@@ -89,9 +89,9 @@ class ProfilePage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.1),
+                      color: Colors.indigo.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.indigo.withOpacity(0.3)),
+                      border: Border.all(color: Colors.indigo.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -139,7 +139,7 @@ class ProfilePage extends StatelessWidget {
                   children: [
                     _buildStatItem('关注', user.following.length.toString()),
                     _buildStatItem('粉丝', user.followers.length.toString()),
-                    _buildStatItem('FID', user.fid.substring(0, 8) + '...'),
+                    _buildStatItem('FID', '${user.fid.substring(0, 8)}...'),
                   ],
                 ),
 
@@ -150,9 +150,9 @@ class ProfilePage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/trade.dart';
-import '../models/market_data.dart';
 import '../widgets/trade_form.dart';
 import '../widgets/trade_list.dart';
 import '../widgets/market_overview.dart';
@@ -135,7 +134,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 color: Theme.of(context).cardColor,
                 border: Border(
                   bottom: BorderSide(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),

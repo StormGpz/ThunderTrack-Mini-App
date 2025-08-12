@@ -1,5 +1,3 @@
-import 'dart:convert';
-import '../models/trade.dart';
 import '../models/market_data.dart';
 import '../config/app_config.dart';
 import '../config/api_endpoints.dart';
