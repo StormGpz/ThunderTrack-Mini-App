@@ -280,6 +280,30 @@
       // Service workers not supported. Just drop the <script> tag.
       loadMainDartJs();
     }
+    
+    // 添加全局超时机制 - 如果Flutter在8秒内没有启动，强制处理
+    setTimeout(() => {
+      const loading = document.getElementById('loading');
+      if (loading && loading.style.display !== 'none') {
+        console.warn('⚠️ Flutter loading timeout detected');
+        loading.innerHTML = `
+          <div style="color: white; text-align: center; padding: 20px;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
+            <div style="font-size: 1.2rem; margin-bottom: 20px;">ThunderTrack</div>
+            <div style="font-size: 0.9rem; opacity: 0.8;">正在启动应用...</div>
+            <div style="font-size: 0.8rem; margin-top: 10px;">
+              <button onclick="location.reload()" style="background: #fff; color: #6366f1; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">重新加载</button>
+            </div>
+          </div>
+        `;
+        
+        // 仍然尝试调用ready()避免Farcaster卡住  
+        if (window.autoCallReady) {
+          console.log('📞 Timeout: Calling ready() to unblock Farcaster');
+          window.autoCallReady();
+        }
+      }
+    }, 8000);
   </script>
 </body>
 </html>
