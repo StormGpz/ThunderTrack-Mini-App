@@ -38,42 +38,69 @@ class UserProvider extends ChangeNotifier {
       // 记录环境信息用于调试
       _miniAppService.logEnvironmentInfo();
       
-      // 首先尝试从 Farcaster Mini App 获取用户信息
-      if (_miniAppService.isMiniAppEnvironment && _miniAppService.isSdkAvailable) {
-        debugPrint('Attempting to get user from Farcaster Mini App...');
-        final farcasterUser = await _miniAppService.getFarcasterUser();
-        if (farcasterUser != null && farcasterUser.isNotEmpty) {
-          debugPrint('Got Farcaster user: ${farcasterUser.toString()}');
-          await _processFarcasterUser(farcasterUser);
-          _setError(null);
-          _setLoading(false);
-          return;
-        }
+      // 在Mini App环境中，先快速恢复本地状态，然后异步获取Farcaster用户
+      if (_miniAppService.isMiniAppEnvironment) {
+        debugPrint('Mini App environment detected, restoring local state first...');
+        // 先恢复本地状态，不阻塞应用启动
+        await _restoreLocalUser();
+        _setLoading(false);
+        
+        // 异步获取Farcaster用户信息，不阻塞UI
+        _tryGetFarcasterUserAsync();
+        return;
       }
       
-      // 回退到本地存储恢复
-      final prefs = await SharedPreferences.getInstance();
-      final userToken = prefs.getString(AppConstants.userTokenKey);
-      final userJson = prefs.getString(AppConstants.userProfileKey);
-      
-      if (userToken != null && userJson != null) {
-        debugPrint('Restoring user from local storage...');
-        try {
-          final userData = jsonDecode(userJson) as Map<String, dynamic>;
-          _currentUser = User.fromJson(userData);
-          _isAuthenticated = true;
-          _setError(null);
-        } catch (e) {
-          debugPrint('Error parsing stored user data: $e');
-          // 清理损坏的数据
-          await prefs.remove(AppConstants.userTokenKey);
-          await prefs.remove(AppConstants.userProfileKey);
-        }
-      }
+      // 在普通浏览器环境中，只恢复本地存储
+      await _restoreLocalUser();
     } catch (e) {
       _setError('初始化用户状态失败: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// 异步尝试获取Farcaster用户信息（不阻塞UI）
+  Future<void> _tryGetFarcasterUserAsync() async {
+    try {
+      if (_miniAppService.isSdkAvailable) {
+        debugPrint('Attempting to get user from Farcaster Mini App...');
+        
+        // 添加超时机制，避免无限等待
+        final farcasterUser = await _miniAppService.getFarcasterUser()
+            .timeout(const Duration(seconds: 5));
+            
+        if (farcasterUser != null && farcasterUser.isNotEmpty) {
+          debugPrint('Got Farcaster user: ${farcasterUser.toString()}');
+          await _processFarcasterUser(farcasterUser);
+          _setError(null);
+          notifyListeners(); // 更新UI显示登录状态
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to get Farcaster user (non-blocking): $e');
+      // 这里不设置错误，因为这是非阻塞的尝试
+    }
+  }
+
+  /// 恢复本地用户状态
+  Future<void> _restoreLocalUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userToken = prefs.getString(AppConstants.userTokenKey);
+    final userJson = prefs.getString(AppConstants.userProfileKey);
+    
+    if (userToken != null && userJson != null) {
+      debugPrint('Restoring user from local storage...');
+      try {
+        final userData = jsonDecode(userJson) as Map<String, dynamic>;
+        _currentUser = User.fromJson(userData);
+        _isAuthenticated = true;
+        _setError(null);
+      } catch (e) {
+        debugPrint('Error parsing stored user data: $e');
+        // 清理损坏的数据
+        await prefs.remove(AppConstants.userTokenKey);
+        await prefs.remove(AppConstants.userProfileKey);
+      }
     }
   }
 
