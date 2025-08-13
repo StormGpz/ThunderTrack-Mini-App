@@ -41,9 +41,15 @@
   
   <!-- Farcaster Mini App SDK -->
   <script type="module">
+    // 检查是否访问原生JS测试页面
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('test') === 'native') {
+      window.location.href = './test_native.html' + window.location.search;
+      return;
+    }
+    
     // 检测是否在 Mini App 环境中
     const currentUrl = window.location.href;
-    const searchParams = new URLSearchParams(window.location.search);
     
     console.log('Current URL:', currentUrl);
     console.log('Search params:', searchParams.toString());
