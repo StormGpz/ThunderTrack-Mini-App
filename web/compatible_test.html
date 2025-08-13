@@ -123,6 +123,46 @@
     <script>
         console.log('🚀 Starting compatible test page');
         
+        // 立即尝试发送ready信号，不等待SDK
+        function forceReady() {
+            // 方法1: 尝试postMessage到parent
+            if (window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'miniapp_ready' }, '*');
+                    console.log('✅ Sent ready via postMessage');
+                } catch (e) {
+                    console.log('❌ postMessage failed:', e);
+                }
+            }
+            
+            // 方法2: 尝试全局ready函数
+            if (typeof window.ready === 'function') {
+                try {
+                    window.ready();
+                    console.log('✅ Called global ready()');
+                } catch (e) {
+                    console.log('❌ Global ready() failed:', e);
+                }
+            }
+            
+            // 方法3: 尝试设置ready状态
+            window.miniAppReady = true;
+            
+            // 更新状态显示
+            document.getElementById('status').textContent = '✅ 强制Ready信号已发送';
+        }
+        
+        // 页面加载后立即发送ready信号
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM loaded, sending force ready');
+            forceReady();
+        });
+        
+        // 也在脚本执行时立即尝试
+        setTimeout(forceReady, 100);
+        setTimeout(forceReady, 500);
+        setTimeout(forceReady, 1000);
+        
         // 填充调试信息
         document.getElementById('url').textContent = window.location.href;
         document.getElementById('parent').textContent = window.parent !== window ? '嵌入式(Mini App)' : '独立浏览器';
