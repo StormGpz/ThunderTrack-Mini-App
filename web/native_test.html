@@ -144,6 +144,25 @@
         .container * {
             opacity: 1 !important;
         }
+        
+        /* 强制移除任何loading覆盖层 */
+        #loading, 
+        .loading,
+        [id*="loading"],
+        [class*="loading"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            z-index: -1 !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
+        
+        /* 确保内容在最上层 */
+        .container {
+            position: relative !important;
+            z-index: 10000 !important;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +197,19 @@
     </div>
 
     <script>
+        // 强制隐藏任何可能的loading screen
+        document.addEventListener('DOMContentLoaded', function() {
+            // 隐藏所有可能的loading元素
+            const loadingElements = document.querySelectorAll('#loading, .loading, [id*="loading"], [class*="loading"]');
+            loadingElements.forEach(el => {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.remove();
+            });
+            
+            console.log('✅ Forced loading screen removal');
+        });
+        
         // 填充调试信息
         document.getElementById('url').textContent = window.location.href;
         document.getElementById('parent').textContent = window.parent !== window ? '嵌入式(Mini App)' : '独立浏览器';
