@@ -191,6 +191,11 @@
   
   <!-- Flutter App Scripts -->
   <script>
+    // 强制Flutter使用HTML渲染器以提高webview兼容性
+    window.flutterConfiguration = {
+      renderer: "html"
+    };
+    
     var serviceWorkerVersion = null;
     var scriptLoaded = false;
     function loadMainDartJs() {
