@@ -45,11 +45,11 @@
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.get('test') === 'native') {
       window.location.href = './test_native.html' + window.location.search;
-      return;
-    }
-    
-    // 检测是否在 Mini App 环境中
-    const currentUrl = window.location.href;
+    } else {
+      // 只有非测试模式才继续执行Flutter相关代码
+      
+      // 检测是否在 Mini App 环境中
+      const currentUrl = window.location.href;
     
     console.log('Current URL:', currentUrl);
     console.log('Search params:', searchParams.toString());
@@ -130,6 +130,8 @@
       window.getFarcasterUser = function() { return Promise.resolve(null); };
       window.getEthereumProvider = function() { return null; };
     }
+    
+    } // 结束外层的else块 (非测试模式)
   </script>
   
   <!-- Loading Styles -->
