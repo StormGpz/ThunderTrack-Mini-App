@@ -92,7 +92,7 @@ class FarcasterShareService {
       final encodedText = Uri.encodeComponent(shareText);
       
       // 生成包含Mini App信息的分享链接
-      final appUrl = 'https://thunder-track-mini-app.vercel.app?miniApp=true&diary=${diary.id}';
+      final appUrl = 'https://thundertrack-miniapp.vercel.app?miniApp=true&diary=${diary.id}';
       final encodedUrl = Uri.encodeComponent(appUrl);
       
       // 使用Warpcast的分享URL，包含embed信息
@@ -145,9 +145,9 @@ class FarcasterShareService {
   /// 生成分享URL（供IPFS存储使用）
   String generateShareUrl(TradingDiary diary) {
     if (diary.ipfsHash != null) {
-      return 'https://thunder-track-mini-app.vercel.app/diary/${diary.ipfsHash}';
+      return 'https://thundertrack-miniapp.vercel.app/diary/${diary.ipfsHash}';
     }
-    return 'https://thunder-track-mini-app.vercel.app/diary/${diary.id}';
+    return 'https://thundertrack-miniapp.vercel.app/diary/${diary.id}';
   }
 
   /// 检查分享权限

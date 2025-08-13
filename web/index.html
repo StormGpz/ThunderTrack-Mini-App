@@ -12,22 +12,22 @@
   <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
   
   <!-- Farcaster Mini App Embed (for sharing) -->
-  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thunder-track-mini-app.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thunder-track-mini-app.vercel.app","splashImageUrl":"https://thunder-track-mini-app.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
   <!-- Backward compatibility -->
-  <meta name="fc:frame" content='{"version":"1","imageUrl":"https://thunder-track-mini-app.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_frame","name":"ThunderTrack","url":"https://thunder-track-mini-app.vercel.app","splashImageUrl":"https://thunder-track-mini-app.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+  <meta name="fc:frame" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_frame","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
   
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
   <meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />
-  <meta property="og:image" content="https://thunder-track-mini-app.vercel.app/icons/Icon-512.png" />
-  <meta property="og:url" content="https://thunder-track-mini-app.vercel.app" />
+  <meta property="og:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
+  <meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />
   <meta property="og:type" content="website" />
   
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="⚡ ThunderTrack - 去中心化交易日记" />
   <meta name="twitter:description" content="基于 Farcaster 的去中心化交易日记应用" />
-  <meta name="twitter:image" content="https://thunder-track-mini-app.vercel.app/icons/Icon-512.png" />
+  <meta name="twitter:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
   
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -182,26 +182,86 @@
     <div class="spinner"></div>
   </div>
   
-  <!-- Flutter App Bootstrap -->
-  <script src="flutter_bootstrap.js" async></script>
-  
-  <!-- Hide loading screen when Flutter is ready -->
+  <!-- Flutter App Scripts -->
   <script>
-    window.addEventListener('flutter-first-frame', function() {
-      setTimeout(() => {
-        const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.opacity = '0';
-          setTimeout(() => {
-            loading.style.display = 'none';
-            // 通知 Farcaster Mini App 已准备就绪
-            if (window.markMiniAppReady) {
-              window.markMiniAppReady();
+    var serviceWorkerVersion = null;
+    var scriptLoaded = false;
+    function loadMainDartJs() {
+      if (scriptLoaded) {
+        return;
+      }
+      scriptLoaded = true;
+      var scriptTag = document.createElement('script');
+      scriptTag.src = 'main.dart.js';
+      scriptTag.type = 'application/javascript';
+      scriptTag.onload = function() {
+        // Hide loading screen when Flutter is ready
+        setTimeout(() => {
+          const loading = document.getElementById('loading');
+          if (loading) {
+            loading.style.opacity = '0';
+            setTimeout(() => {
+              loading.style.display = 'none';
+              // 通知 Farcaster Mini App 已准备就绪
+              if (window.markMiniAppReady) {
+                window.markMiniAppReady();
+              }
+            }, 300);
+          }
+        }, 500);
+      };
+      document.body.append(scriptTag);
+    }
+
+    if ('serviceWorker' in navigator) {
+      // Service workers are supported. Use them.
+      window.addEventListener('load', function () {
+        // Wait for registration to finish before dropping the <script> tag.
+        // Otherwise, the browser will load the script multiple times,
+        // potentially different versions.
+        var serviceWorkerUrl = 'flutter_service_worker.js?v=' + serviceWorkerVersion;
+        navigator.serviceWorker.register(serviceWorkerUrl)
+          .then((reg) => {
+            function waitForActivation(serviceWorker) {
+              serviceWorker.addEventListener('statechange', () => {
+                if (serviceWorker.state == 'activated') {
+                  console.log('Installed new service worker.');
+                  loadMainDartJs();
+                }
+              });
             }
-          }, 300);
-        }
-      }, 500);
-    });
+            if (!reg.active && (reg.installing || reg.waiting)) {
+              // No active web worker and we have installed or are installing
+              // one for the first time. Simply wait for it to activate.
+              waitForActivation(reg.installing || reg.waiting);
+            } else if (!reg.active.scriptURL.endsWith(serviceWorkerVersion)) {
+              // When the app updates the serviceWorkerVersion changes, so we
+              // need to ask the service worker to update.
+              console.log('New service worker available.');
+              reg.update();
+              waitForActivation(reg.installing);
+            } else {
+              // Existing service worker is still good.
+              console.log('Loading app from service worker.');
+              loadMainDartJs();
+            }
+          });
+
+        // If service worker doesn't succeed in a reasonable amount of time,
+        // fallback to plaint <script> tag.
+        setTimeout(() => {
+          if (!scriptLoaded) {
+            console.warn(
+              'Failed to load app from service worker. Falling back to plain <script> tag.',
+            );
+            loadMainDartJs();
+          }
+        }, 4000);
+      });
+    } else {
+      // Service workers not supported. Just drop the <script> tag.
+      loadMainDartJs();
+    }
   </script>
 </body>
 </html>
