@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThunderTrack Compatible Test</title>
+    
+    <!-- Farcaster Mini App Embed -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 兼容测试","action":{"type":"launch_miniapp","name":"ThunderTrack Compatible","url":"https://thundertrack-miniapp.vercel.app/compatible_test.html","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        
+        .logo {
+            font-size: 60px;
+            margin-bottom: 16px;
+        }
+        
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .success {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 8px;
+        }
+        
+        .button {
+            background: white;
+            color: #6366f1;
+            border: 2px solid #6366f1;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px auto;
+            width: 90%;
+            display: block;
+        }
+        
+        .debug {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status {
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <div class="title">ThunderTrack</div>
+        <div class="subtitle">兼容性测试页面</div>
+        
+        <div class="card">
+            <div class="success">🎉 兼容版本加载成功！</div>
+            <div>使用传统JavaScript</div>
+        </div>
+        
+        <div class="card">
+            <div>SDK状态: <span class="status" id="status">初始化中...</span></div>
+        </div>
+        
+        <button class="button" onclick="testBasic()">
+            🔧 基础功能测试
+        </button>
+        
+        <button class="button" onclick="testAdvanced()">
+            🚀 高级功能测试
+        </button>
+        
+        <div class="debug">
+            <div><strong>🔍 环境信息:</strong></div>
+            <div>URL: <span id="url"></span></div>
+            <div>父窗口: <span id="parent"></span></div>
+            <div>User Agent: <span id="userAgent"></span></div>
+            <div>时间: <span id="timestamp"></span></div>
+        </div>
+    </div>
+
+    <!-- 使用传统JavaScript，不用ES6 modules -->
+    <script>
+        console.log('🚀 Starting compatible test page');
+        
+        // 填充调试信息
+        document.getElementById('url').textContent = window.location.href;
+        document.getElementById('parent').textContent = window.parent !== window ? '嵌入式(Mini App)' : '独立浏览器';
+        document.getElementById('userAgent').textContent = navigator.userAgent.substring(0, 60) + '...';
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // 尝试动态加载SDK (不用ES6 import)
+        var sdkLoaded = false;
+        var sdkInstance = null;
+        
+        function loadSDK() {
+            console.log('📦 Attempting to load SDK via script tag');
+            
+            // 创建script标签加载SDK
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/@farcaster/miniapp-sdk@latest/dist/index.umd.js';
+            script.onload = function() {
+                console.log('✅ SDK loaded via script tag');
+                if (window.FarcasterMiniAppSDK) {
+                    sdkInstance = window.FarcasterMiniAppSDK;
+                    sdkLoaded = true;
+                    document.getElementById('status').textContent = '✅ SDK加载成功';
+                    
+                    // 调用ready
+                    if (sdkInstance && sdkInstance.actions && sdkInstance.actions.ready) {
+                        sdkInstance.actions.ready()
+                            .then(function() {
+                                console.log('✅ Mini App ready signal sent');
+                                document.getElementById('status').textContent = '✅ Ready信号已发送';
+                            })
+                            .catch(function(error) {
+                                console.error('❌ Failed to send ready:', error);
+                                document.getElementById('status').textContent = '❌ Ready失败';
+                            });
+                    }
+                } else {
+                    document.getElementById('status').textContent = '❌ SDK对象不存在';
+                }
+            };
+            script.onerror = function() {
+                console.error('❌ Failed to load SDK script');
+                document.getElementById('status').textContent = '❌ SDK脚本加载失败';
+            };
+            document.head.appendChild(script);
+        }
+        
+        // 基础测试
+        function testBasic() {
+            var info = {
+                url: window.location.href,
+                userAgent: navigator.userAgent.substring(0, 80),
+                isMiniApp: window.parent !== window,
+                timestamp: new Date().toISOString(),
+                sdkLoaded: sdkLoaded
+            };
+            
+            alert('✅ 基础测试成功！\n\n' + JSON.stringify(info, null, 2));
+        }
+        
+        // 高级测试
+        function testAdvanced() {
+            if (!sdkLoaded) {
+                alert('❌ SDK未加载，无法执行高级测试');
+                return;
+            }
+            
+            alert('🚀 高级测试：SDK已加载，功能正常！');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(loadSDK, 1000);
+            });
+        } else {
+            setTimeout(loadSDK, 1000);
+        }
+        
+        console.log('✅ Compatible test page script loaded');
+    </script>
+</body>
+</html>
