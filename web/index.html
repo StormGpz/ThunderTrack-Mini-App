@@ -75,6 +75,12 @@
           }
         };
         
+        // 当Flutter加载完成后自动调用ready()
+        window.autoCallReady = function() {
+          console.log('🚀 Auto-calling Mini App ready...');
+          window.markMiniAppReady();
+        };
+        
         // 获取用户信息的函数
         window.getFarcasterUser = async function() {
           try {
@@ -114,6 +120,7 @@
       // 不在 Mini App 环境中，提供空实现
       console.log('ℹ️ Not running in Mini App environment');
       window.markMiniAppReady = function() { console.log('ℹ️ Not in Mini App environment'); };
+      window.autoCallReady = function() { console.log('ℹ️ Not in Mini App environment'); };
       window.getFarcasterUser = function() { return Promise.resolve(null); };
       window.getEthereumProvider = function() { return null; };
     }
@@ -195,20 +202,31 @@
       scriptTag.src = 'main.dart.js';
       scriptTag.type = 'application/javascript';
       scriptTag.onload = function() {
+        console.log('✅ Flutter main.dart.js loaded successfully');
         // Hide loading screen when Flutter is ready
         setTimeout(() => {
           const loading = document.getElementById('loading');
           if (loading) {
+            console.log('🎯 Hiding loading screen');
             loading.style.opacity = '0';
             setTimeout(() => {
               loading.style.display = 'none';
-              // 通知 Farcaster Mini App 已准备就绪
+              console.log('✅ Loading screen hidden');
+              
+              // 自动调用Mini App ready信号
+              if (window.autoCallReady) {
+                console.log('📞 Auto-calling Mini App ready');
+                window.autoCallReady();
+              }
+              
+              // 备用方案：手动调用
               if (window.markMiniAppReady) {
+                console.log('📞 Calling markMiniAppReady as backup');
                 window.markMiniAppReady();
               }
             }, 300);
           }
-        }, 500);
+        }, 1000); // 给Flutter足够时间完全初始化
       };
       document.body.append(scriptTag);
     }
