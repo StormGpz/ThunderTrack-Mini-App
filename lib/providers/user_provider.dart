@@ -95,17 +95,31 @@ class UserProvider extends ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 500));
         
         if (_miniAppService.isSdkAvailable) {
-          debugPrint('📦 SDK可用，获取用户信息...');
+          debugPrint('📦 SDK可用，启动Quick Auth自动登录...');
           
-          // 直接从context获取用户信息（无感登录）
+          // 🎯 优先使用 Quick Auth 自动登录
+          final quickAuthResult = await _miniAppService.quickAuthLogin()
+              .timeout(const Duration(seconds: 8));
+              
+          if (quickAuthResult != null && quickAuthResult['fid'] != null) {
+            debugPrint('✅ Quick Auth自动登录成功: FID ${quickAuthResult['fid']}');
+            await _processQuickAuthResult(quickAuthResult);
+            _setError(null);
+            notifyListeners(); // 立即更新UI显示登录状态
+            return;
+          } 
+          
+          debugPrint('⚠️ Quick Auth自动登录失败，尝试context方案...');
+          
+          // 🔄 备用方案：直接从context获取用户信息（无感登录）
           final farcasterUser = await _miniAppService.getFarcasterUser()
               .timeout(const Duration(seconds: 8));
               
           if (farcasterUser != null && farcasterUser.isNotEmpty) {
-            debugPrint('✅ 自动登录成功: ${farcasterUser.toString()}');
+            debugPrint('✅ Context自动登录成功: ${farcasterUser.toString()}');
             await _processFarcasterUser(farcasterUser);
             _setError(null);
-            notifyListeners(); // 立即更新UI显示登录状态
+            notifyListeners();
             return;
           } else {
             debugPrint('⚠️ 从context获取用户信息为空');
@@ -116,11 +130,11 @@ class UserProvider extends ChangeNotifier {
           // 如果SDK还没加载完成，再等待一段时间重试
           await Future.delayed(const Duration(seconds: 2));
           if (_miniAppService.isSdkAvailable) {
-            debugPrint('🔄 SDK延迟加载完成，重试获取用户信息...');
-            final farcasterUser = await _miniAppService.getFarcasterUser();
-            if (farcasterUser != null && farcasterUser.isNotEmpty) {
-              debugPrint('✅ 延迟自动登录成功');
-              await _processFarcasterUser(farcasterUser);
+            debugPrint('🔄 SDK延迟加载完成，重试Quick Auth...');
+            final quickAuthResult = await _miniAppService.quickAuthLogin();
+            if (quickAuthResult != null && quickAuthResult['fid'] != null) {
+              debugPrint('✅ 延迟Quick Auth登录成功');
+              await _processQuickAuthResult(quickAuthResult);
               _setError(null);
               notifyListeners();
               return;
@@ -410,7 +424,7 @@ class UserProvider extends ChangeNotifier {
     return [];
   }
 
-  /// 真实的 Farcaster 登录（使用 Quick Auth）
+  /// 真实的 Farcaster 登录（优先使用 Quick Auth）
   Future<bool> loginFromFarcaster() async {
     if (!_miniAppService.isMiniAppEnvironment) {
       _setError('不在 Farcaster Mini App 环境中');
@@ -421,40 +435,25 @@ class UserProvider extends ChangeNotifier {
     _setError(null);
 
     try {
-      debugPrint('开始 Quick Auth 登录流程...');
+      debugPrint('🚀 开始 Farcaster 登录流程...');
       
-      // 方法1: 尝试使用 Quick Auth（推荐）
-      final token = await _miniAppService.getQuickAuthToken();
-      if (token != null) {
-        debugPrint('Quick Auth 成功，解析token信息...');
-        
-        // 从JWT token中解析用户信息
-        final userInfo = _parseJwtToken(token);
-        if (userInfo != null) {
-          // 同时获取SDK context中的额外用户信息
-          final contextUser = await _miniAppService.getFarcasterUser();
-          
-          // 合并信息创建用户对象
-          final combinedUserInfo = {
-            ...userInfo,
-            if (contextUser != null) ...contextUser,
-            'authToken': token,
-          };
-          
-          await _processFarcasterUser(combinedUserInfo);
-          debugPrint('Quick Auth 登录成功');
-          return true;
-        }
+      // 🎯 优先使用 Quick Auth（推荐方案）
+      final quickAuthResult = await _miniAppService.quickAuthLogin();
+      
+      if (quickAuthResult != null && quickAuthResult['fid'] != null) {
+        debugPrint('✅ Quick Auth 登录成功');
+        await _processQuickAuthResult(quickAuthResult);
+        return true;
       }
       
-      debugPrint('Quick Auth 不可用，尝试传统方法...');
+      debugPrint('⚠️ Quick Auth 不可用，尝试备用方案...');
       
-      // 方法2: 备用方案 - 直接从context获取用户信息
+      // 🔄 备用方案：直接从context获取用户信息
       final farcasterUser = await _miniAppService.getFarcasterUser();
       
       if (farcasterUser != null && farcasterUser.isNotEmpty) {
+        debugPrint('✅ Context方案登录成功');
         await _processFarcasterUser(farcasterUser);
-        debugPrint('Context登录成功');
         return true;
       }
       
@@ -462,12 +461,60 @@ class UserProvider extends ChangeNotifier {
       return false;
       
     } catch (e) {
-      debugPrint('Farcaster登录出错: $e');
+      debugPrint('❌ Farcaster登录出错: $e');
       _setError('Farcaster 登录失败: $e');
       return false;
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// 处理 Quick Auth 登录结果
+  Future<void> _processQuickAuthResult(Map<String, dynamic> authResult) async {
+    try {
+      // 从 JWT token 和 context 信息创建用户对象
+      final user = User(
+        fid: authResult['fid']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        username: authResult['username']?.toString() ?? 'farcaster_user_${authResult['fid']}',
+        displayName: authResult['displayName']?.toString() ?? authResult['username']?.toString() ?? 'Farcaster User',
+        avatarUrl: authResult['pfpUrl']?.toString(),
+        bio: authResult['bio']?.toString() ?? '来自 Farcaster 的用户',
+        walletAddress: authResult['primaryAddress']?.toString(), // 可能从Quick Auth或context获取
+        followers: _parseFollowers(authResult['followers']),
+        following: _parseFollowing(authResult['following']),
+        isVerified: authResult['verified'] == true,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)), // 默认值
+        lastActiveAt: DateTime.now(),
+      );
+
+      // 保存认证token（重要！）
+      await _saveAuthToken(authResult['token']);
+      await _saveUserToLocal(user);
+      
+      _currentUser = user;
+      _isAuthenticated = true;
+      notifyListeners();
+      
+      debugPrint('✅ Quick Auth 用户处理成功: ${user.username}');
+    } catch (e) {
+      debugPrint('❌ 处理 Quick Auth 结果失败: $e');
+      throw Exception('处理认证结果失败: $e');
+    }
+  }
+
+  /// 保存认证token
+  Future<void> _saveAuthToken(String? token) async {
+    if (token != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('${AppConstants.userTokenKey}_auth', token);
+      debugPrint('💾 认证token已保存');
+    }
+  }
+
+  /// 获取保存的认证token
+  Future<String?> getAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${AppConstants.userTokenKey}_auth');
   }
 
   /// 使用完整的 Sign In with Farcaster 流程

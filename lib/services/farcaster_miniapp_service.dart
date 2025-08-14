@@ -128,45 +128,84 @@ class FarcasterMiniAppService {
     }
   }
 
-  /// 使用 Quick Auth 获取认证token
-  Future<String?> getQuickAuthToken() async {
+  /// 使用 Quick Auth 获取认证token和用户信息
+  Future<Map<String, dynamic>?> quickAuthLogin() async {
     if (!kIsWeb) return null;
     
     try {
       final farcasterSDK = js.context['farcasterSDK'];
       if (farcasterSDK == null) {
-        debugPrint('Farcaster SDK not found');
+        debugPrint('❌ Farcaster SDK not found');
         return null;
       }
       
       final quickAuth = farcasterSDK['quickAuth'];
       if (quickAuth == null) {
-        debugPrint('Quick Auth not found in SDK');
+        debugPrint('❌ Quick Auth not available');
         return null;
       }
       
-      final getToken = quickAuth['getToken'];
-      if (getToken == null) {
-        debugPrint('getToken method not found');
-        return null;
+      debugPrint('🚀 开始 Quick Auth 登录流程...');
+      
+      // 获取认证token
+      final tokenResult = await _callAsyncFunction(quickAuth['getToken'], []);
+      
+      if (tokenResult != null && tokenResult['token'] != null) {
+        final token = tokenResult['token'] as String;
+        debugPrint('✅ Quick Auth token获取成功: ${token.substring(0, 20)}...');
+        
+        // 解析JWT获取用户FID
+        final userInfo = _parseJwtToken(token);
+        if (userInfo != null) {
+          debugPrint('✅ JWT解析成功，用户FID: ${userInfo['fid']}');
+          
+          // 同时尝试从context获取额外用户信息
+          final contextUser = await _getContextUserInfo();
+          
+          // 合并信息
+          final result = {
+            'token': token,
+            'fid': userInfo['fid'],
+            'authMethod': 'quickAuth',
+            'tokenExpiry': userInfo['expiry'],
+            ...?contextUser, // 如果有context用户信息，合并进来
+          };
+          
+          debugPrint('🎉 Quick Auth 登录成功');
+          return result;
+        }
       }
       
-      // 调用 sdk.quickAuth.getToken()
-      final result = await _callAsyncFunction(getToken, []);
-      
-      if (result != null && result['token'] != null) {
-        final token = result['token'] as String;
-        debugPrint('Quick Auth token obtained: ${token.substring(0, 20)}...');
-        return token;
-      }
-      
-      debugPrint('No token returned from Quick Auth');
+      debugPrint('❌ Quick Auth token获取失败');
       return null;
       
     } catch (e) {
-      debugPrint('Error getting Quick Auth token: $e');
+      debugPrint('❌ Quick Auth 登录出错: $e');
       return null;
     }
+  }
+
+  /// 从 SDK context 获取用户详细信息（作为补充）
+  Future<Map<String, dynamic>?> _getContextUserInfo() async {
+    try {
+      final farcasterSDK = js.context['farcasterSDK'];
+      final user = farcasterSDK?['context']?['user'];
+      
+      if (user != null) {
+        final userMap = _jsObjectToMap(user);
+        debugPrint('📋 Context用户信息: ${userMap.keys}');
+        return userMap;
+      }
+    } catch (e) {
+      debugPrint('⚠️ 获取context用户信息失败: $e');
+    }
+    return null;
+  }
+
+  /// 使用 Quick Auth 获取认证token（保留原方法兼容性）
+  Future<String?> getQuickAuthToken() async {
+    final result = await quickAuthLogin();
+    return result?['token'];
   }
 
   /// 使用 Sign In with Farcaster
