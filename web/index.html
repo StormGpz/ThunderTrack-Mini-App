@@ -1,256 +1,147 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!--
+    The value below is injected by flutter build, do not touch.
+  -->
   <base href="$FLUTTER_BASE_HREF">
-  
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- 预连接Farcaster服务 -->
   <link rel="preconnect" href="https://auth.farcaster.xyz" />
-  
+
   <!-- ThunderTrack App Info -->
   <title>⚡ ThunderTrack - 去中心化交易日记</title>
   <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
-  
-  <!-- Farcaster Mini App Embed (for sharing) -->
-  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
-  
+
+  <!-- Farcaster Mini App Embed -->
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"⚡ ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
   <meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />
   <meta property="og:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
   <meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />
   <meta property="og:type" content="website" />
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-  <link rel="manifest" href="manifest.json">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ThunderTrack">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      min-height: 100vh;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      text-align: center;
-      max-width: 500px;
-    }
-    .logo {
-      font-size: 60px;
-      margin-bottom: 20px;
-    }
-    .title {
-      font-size: 36px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      font-size: 18px;
-      opacity: 0.9;
-      margin-bottom: 30px;
-    }
-    .card {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 15px;
-      padding: 25px;
-      margin-bottom: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-    .option {
-      background: white;
-      color: #6366f1;
-      border: none;
-      padding: 15px 25px;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 10px;
-      width: 280px;
-      display: block;
-      text-decoration: none;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    .option:hover {
-      background: #f0f0f0;
-      transform: translateY(-2px);
-    }
-    .info {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-top: 20px;
-    }
-    /* Flutter加载时隐藏路由选择器 */
-    .flutter-loading .container {
-      display: none;
-    }
-  </style>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    // The value below is injected by flutter build, do not touch.
+    const serviceWorkerVersion = null;
+  </script>
+  
+  <!-- This script adds the flutter initialization JS inline -->
+  <script src="flutter.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">⚡</div>
-    <div class="title">ThunderTrack</div>
-    <div class="subtitle">去中心化交易日记</div>
-    
-    <div class="card">
-      <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">🚀 选择应用版本</div>
-      
-      <a href="quick_auth_test.html?miniApp=true" class="option">
-        🔐 Quick Auth测试版本
-      </a>
-      
-      <a href="minimal_sdk_test.html?miniApp=true" class="option">
-        🧪 最小SDK测试版本
-      </a>
-      
-      <a href="flutter_app.html?miniApp=true" class="option">
-        🦋 Flutter完整应用
-      </a>
-    </div>
-    
-    <div class="info">
-      当前环境: <span id="env">检测中...</span>
-      <br>时间: <span id="time"></span>
-    </div>
-  </div>
-
-  <!-- 如果要加载Flutter，先加载SDK -->
+  <!-- Farcaster SDK Integration -->
   <script type="module">
-    let sdkReady = false;
-    let flutterReady = false;
+    let sdkLoaded = false;
+    let flutterLoaded = false;
     
     async function loadFarcasterSDK() {
       try {
-        console.log('📦 开始加载Farcaster SDK...');
+        console.log('📦 加载Farcaster SDK...');
         const { sdk } = await import('https://esm.sh/@farcaster/miniapp-sdk');
         window.farcasterSDK = sdk;
+        sdkLoaded = true;
         console.log('✅ Farcaster SDK加载成功');
+        
+        // 打印context信息用于调试
+        if (sdk.context) {
+          console.log('📋 SDK Context:', {
+            hasUser: !!sdk.context.user,
+            hasClient: !!sdk.context.client,
+            userFid: sdk.context.user?.fid,
+            platform: sdk.context.client?.platformType
+          });
+        }
+        
         return sdk;
       } catch (error) {
-        console.error('❌ SDK加载失败:', error);
+        console.error('❌ Farcaster SDK加载失败:', error);
         return null;
       }
     }
     
     async function callFarcasterReady() {
       if (!window.farcasterSDK) {
-        console.log('⚠️ SDK未加载，无法调用ready');
+        console.log('⚠️ SDK未加载，跳过ready调用');
         return;
       }
       
       try {
         console.log('🚀 调用Farcaster ready...');
         await window.farcasterSDK.actions.ready();
-        console.log('✅ Farcaster ready调用成功');
-        sdkReady = true;
+        console.log('✅ Farcaster ready调用成功，splash screen应该已隐藏');
       } catch (error) {
         console.error('❌ Farcaster ready调用失败:', error);
       }
     }
-    
-    // 监听Flutter应用加载完成
-    window.addEventListener('flutter-initialized', async () => {
-      console.log('🦋 Flutter应用初始化完成');
-      flutterReady = true;
-      
-      // 延迟一点确保Flutter完全渲染
-      setTimeout(async () => {
-        await callFarcasterReady();
-      }, 500);
-    });
     
     // 检查是否在Farcaster环境中
     const isFarcaster = navigator.userAgent.includes('warpcast') || 
                        window.location.search.includes('miniApp=true') ||
                        window.parent !== window;
     
+    console.log(`🔍 环境检测: ${isFarcaster ? 'Farcaster Mini App' : '普通浏览器'}`);
+    
+    // 如果在Farcaster环境中，预加载SDK
     if (isFarcaster) {
-      console.log('🔍 检测到Farcaster环境，预加载SDK...');
       loadFarcasterSDK();
     }
     
-    // 全局函数供按钮调用
-    window.loadFlutter = async function() {
-      console.log('🦋 开始加载Flutter应用...');
+    // 监听Flutter应用加载完成
+    window.addEventListener('flutter-first-frame', () => {
+      console.log('🎨 Flutter首帧渲染完成');
+      flutterLoaded = true;
       
-      if (isFarcaster && !window.farcasterSDK) {
-        console.log('📦 在Farcaster环境中，先加载SDK...');
-        await loadFarcasterSDK();
+      // 如果在Farcaster环境中，等待一段时间确保Flutter完全渲染后调用ready
+      if (isFarcaster && sdkLoaded) {
+        setTimeout(() => {
+          callFarcasterReady();
+        }, 1000);
       }
-      
-      // 隐藏路由选择器
-      document.body.classList.add('flutter-loading');
-      
-      // 创建Flutter应用脚本
-      const serviceWorkerScript = document.createElement('script');
-      serviceWorkerScript.src = 'flutter_service_worker.js?v=' + Date.now();
-      serviceWorkerScript.onload = () => {
-        console.log('📋 Flutter Service Worker加载完成');
-        
-        // 加载Flutter引擎
-        const flutterScript = document.createElement('script');
-        flutterScript.src = 'flutter.js';
-        flutterScript.onload = () => {
-          console.log('🔧 Flutter引擎加载完成，开始初始化...');
-          
-          // 初始化Flutter
-          _flutter.loader.loadEntrypoint({
-            serviceWorker: {
-              serviceWorkerVersion: null,
-            },
-            onEntrypointLoaded: function(engineInitializer) {
-              console.log('⚙️ Flutter入口点加载完成');
-              
-              engineInitializer.initializeEngine().then(function(appRunner) {
-                console.log('🚀 Flutter引擎初始化完成');
-                
-                appRunner.runApp().then(() => {
-                  console.log('🎉 Flutter应用启动完成');
-                  
-                  // 触发Flutter初始化完成事件
-                  setTimeout(() => {
-                    window.dispatchEvent(new Event('flutter-initialized'));
-                  }, 1000);
-                });
-              });
-            }
-          });
-        };
-        document.head.appendChild(flutterScript);
-      };
-      document.head.appendChild(serviceWorkerScript);
-    };
+    });
+    
+    // 备用方案：如果没有收到first-frame事件，使用定时器
+    if (isFarcaster) {
+      setTimeout(() => {
+        if (!flutterLoaded) {
+          console.log('⏰ 备用方案：延迟调用ready');
+          callFarcasterReady();
+        }
+      }, 5000);
+    }
   </script>
 
   <script>
-    // 填充环境信息
-    document.getElementById('env').textContent = navigator.userAgent.includes('warpcast') ? 'Farcaster' : '浏览器';
-    document.getElementById('time').textContent = new Date().toLocaleString();
-    
-    // 检查URL参数进行自动路由
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get('page') || params.get('test');
-    
-    if (page === 'compatible') {
-      window.location.href = 'compatible_test.html' + window.location.search;
-    } else if (page === 'native' || page === 'test') {
-      window.location.href = 'test_native.html' + window.location.search;
-    } else if (page === 'flutter' || params.get('autoFlutter') === 'true') {
-      // 自动加载Flutter
-      setTimeout(loadFlutter, 100);
-    }
-    
-    console.log('✅ ThunderTrack路由选择器加载完成');
+    window.addEventListener('load', function(ev) {
+      // Download main.dart.js
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
   </script>
 </body>
 </html>
