@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThunderTrack Quick Auth</title>
+    
+    <!-- 性能优化: 预连接Quick Auth服务器 -->
+    <link rel="preconnect" href="https://auth.farcaster.xyz" />
+    
+    <!-- Farcaster Mini App Embed -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"⚡ 快速认证","action":{"type":"launch_miniapp","name":"ThunderTrack Quick Auth","url":"https://thundertrack-miniapp.vercel.app/quick_auth_test.html","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        .logo { font-size: 60px; margin-bottom: 20px; }
+        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+        .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 30px; }
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .status { font-weight: bold; font-size: 16px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: left;
+        }
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 12px;
+        }
+        .logs {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: left;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <div class="title">ThunderTrack</div>
+        <div class="subtitle">Quick Auth 集成测试</div>
+        
+        <div class="card">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">🔐 认证状态</div>
+            <div>SDK状态: <span class="status" id="sdk-status">初始化中...</span></div>
+            <div>认证状态: <span class="status" id="auth-status">未开始</span></div>
+            <div>Ready状态: <span class="status" id="ready-status">等待中</span></div>
+            
+            <div id="user-container" style="display: none;">
+                <div class="user-info" id="user-info">
+                    <!-- 用户信息将在这里显示 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <strong>🔍 调试日志:</strong>
+            <div class="logs" id="logs"></div>
+        </div>
+    </div>
+
+    <!-- 使用ESM方式加载SDK -->
+    <script type="module">
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+        
+        let logs = [];
+        let authComplete = false;
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icons = {
+                success: '✅',
+                error: '❌', 
+                warning: '⚠️',
+                info: '📝'
+            };
+            const logMessage = `${icons[type]} [${timestamp}] ${message}`;
+            
+            logs.push(logMessage);
+            const logElement = document.getElementById('logs');
+            logElement.innerHTML = logs.slice(-20).join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+        
+        function updateStatus(elementId, text, type = 'info') {
+            const element = document.getElementById(elementId);
+            const classes = {
+                success: 'success',
+                error: 'error', 
+                warning: 'warning',
+                info: 'info'
+            };
+            element.innerHTML = `<span class="${classes[type]}">${text}</span>`;
+        }
+        
+        function displayUserInfo(context) {
+            const userContainer = document.getElementById('user-container');
+            const userInfo = document.getElementById('user-info');
+            
+            if (context && context.user) {
+                const user = context.user;
+                userInfo.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        ${user.pfpUrl ? `<img src="${user.pfpUrl}" class="avatar" />` : '👤'}
+                        <div>
+                            <div style="font-weight: bold;">${user.displayName || user.username || 'Unknown'}</div>
+                            <div style="opacity: 0.8; font-size: 14px;">FID: ${user.fid}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 14px;">
+                        <div>平台: ${context.client?.platformType || 'unknown'}</div>
+                        <div>客户端: ${context.client?.clientFid || 'unknown'}</div>
+                        <div>已添加: ${context.client?.added ? '是' : '否'}</div>
+                        ${context.location ? `<div>启动来源: ${context.location.type}</div>` : ''}
+                    </div>
+                `;
+                userContainer.style.display = 'block';
+            }
+        }
+        
+        async function initializeApp() {
+            try {
+                addLog('🚀 开始初始化ThunderTrack应用');
+                updateStatus('sdk-status', '检测SDK...', 'warning');
+                
+                // 检查SDK是否可用
+                if (!sdk) {
+                    throw new Error('SDK未加载');
+                }
+                
+                addLog('✅ SDK加载成功', 'success');
+                updateStatus('sdk-status', '✅ 已加载', 'success');
+                
+                // 获取context信息
+                if (sdk.context) {
+                    addLog('📋 获取到context信息', 'success');
+                    displayUserInfo(sdk.context);
+                } else {
+                    addLog('⚠️ 未获取到context信息', 'warning');
+                }
+                
+                // 开始Quick Auth流程
+                updateStatus('auth-status', '正在认证...', 'warning');
+                addLog('🔐 开始Quick Auth认证流程');
+                
+                try {
+                    // 方法1: 尝试获取token
+                    addLog('📝 尝试获取Quick Auth token...');
+                    const { token } = await sdk.quickAuth.getToken();
+                    
+                    if (token) {
+                        addLog('🎉 成功获取认证token', 'success');
+                        updateStatus('auth-status', '✅ 认证成功', 'success');
+                        
+                        // 解析token payload (仅用于展示，生产环境应在服务器验证)
+                        try {
+                            const payload = JSON.parse(atob(token.split('.')[1]));
+                            addLog(`👤 用户FID: ${payload.sub}`, 'info');
+                            addLog(`🏠 域名: ${payload.aud}`, 'info');
+                        } catch (e) {
+                            addLog('⚠️ 无法解析token payload', 'warning');
+                        }
+                        
+                        // 认证成功，调用ready
+                        await callReady();
+                        
+                    } else {
+                        addLog('❌ 未获取到token', 'error');
+                        updateStatus('auth-status', '❌ 认证失败', 'error');
+                    }
+                    
+                } catch (authError) {
+                    addLog(`❌ Quick Auth失败: ${authError.message}`, 'error');
+                    updateStatus('auth-status', '❌ 认证错误', 'error');
+                    
+                    // 认证失败也尝试调用ready
+                    addLog('🔄 认证失败，尝试直接调用ready...', 'warning');
+                    await callReady();
+                }
+                
+            } catch (error) {
+                addLog(`❌ 初始化失败: ${error.message}`, 'error');
+                updateStatus('sdk-status', '❌ 加载失败', 'error');
+                updateStatus('auth-status', '❌ 未开始', 'error');
+            }
+        }
+        
+        async function callReady() {
+            try {
+                addLog('🚀 准备调用sdk.actions.ready()...');
+                updateStatus('ready-status', '正在调用...', 'warning');
+                
+                if (sdk.actions && typeof sdk.actions.ready === 'function') {
+                    await sdk.actions.ready();
+                    addLog('🎉 ready()调用成功，启动屏应该已隐藏', 'success');
+                    updateStatus('ready-status', '✅ 已调用', 'success');
+                    authComplete = true;
+                    return true;
+                } else {
+                    addLog('❌ ready方法不存在', 'error');
+                    updateStatus('ready-status', '❌ 方法不存在', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addLog(`❌ ready()调用失败: ${error.message}`, 'error');
+                updateStatus('ready-status', '❌ 调用失败', 'error');
+                return false;
+            }
+        }
+        
+        // 全局错误处理
+        window.addEventListener('error', (event) => {
+            addLog(`💥 全局错误: ${event.error?.message || event.message}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            addLog(`💥 未处理的Promise错误: ${event.reason?.message || event.reason}`, 'error');
+        });
+        
+        // 页面加载完成后开始初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('📄 DOM加载完成，开始初始化...');
+            initializeApp();
+        });
+        
+        // 如果DOM已经加载完成，立即执行
+        if (document.readyState === 'loading') {
+            addLog('⏳ 等待DOM加载完成...');
+        } else {
+            addLog('📄 DOM已就绪，立即开始初始化...');
+            initializeApp();
+        }
+        
+        // 暴露给全局以便调试
+        window.debugSDK = {
+            sdk,
+            logs,
+            callReady,
+            initializeApp
+        };
+        
+    </script>
+</body>
+</html>

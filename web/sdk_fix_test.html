@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThunderTrack SDK Fix Test</title>
+    
+    <!-- Farcaster Mini App Embed -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 SDK修复测试","action":{"type":"launch_miniapp","name":"ThunderTrack SDK Fix","url":"https://thundertrack-miniapp.vercel.app/sdk_fix_test.html","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        .logo { font-size: 60px; margin-bottom: 20px; }
+        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+        .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 30px; }
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .status { color: #fbbf24; font-weight: bold; font-size: 16px; }
+        .button {
+            background: white;
+            color: #6366f1;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px auto;
+            width: 90%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <div class="title">ThunderTrack</div>
+        <div class="subtitle">SDK修复测试</div>
+        
+        <div class="card">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">🔧 SDK状态检测</div>
+            <div>加载方式: <span id="method">检测中...</span></div>
+            <div>SDK状态: <span class="status" id="status">初始化中...</span></div>
+            <div>Ready状态: <span class="status" id="ready-status">未调用</span></div>
+        </div>
+        
+        <button class="button" onclick="testReady()">
+            🚀 手动调用Ready
+        </button>
+        
+        <button class="button" onclick="testSDK()">
+            🔍 测试SDK功能
+        </button>
+        
+        <div class="card" style="font-size: 14px; text-align: left;">
+            <strong>🔍 调试日志:</strong>
+            <div id="logs" style="max-height: 150px; overflow-y: auto; margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;"></div>
+        </div>
+    </div>
+
+    <!-- 尝试多种SDK加载方式 -->
+    <script>
+        let sdk = null;
+        let logs = [];
+        
+        function addLog(message) {
+            logs.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            const logElement = document.getElementById('logs');
+            logElement.innerHTML = logs.slice(-10).join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        addLog('🚀 开始SDK加载测试');
+        
+        // 方法1: 尝试UNPKG CDN
+        function tryUnpkgSDK() {
+            return new Promise((resolve, reject) => {
+                addLog('📦 尝试UNPKG CDN加载...');
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@farcaster/miniapp-sdk@latest/dist/index.umd.js';
+                script.onload = () => {
+                    if (window.FarcasterMiniAppSDK) {
+                        addLog('✅ UNPKG加载成功');
+                        resolve(window.FarcasterMiniAppSDK);
+                    } else {
+                        addLog('❌ UNPKG加载失败：对象不存在');
+                        reject(new Error('SDK object not found'));
+                    }
+                };
+                script.onerror = () => {
+                    addLog('❌ UNPKG加载失败：网络错误');
+                    reject(new Error('Failed to load script'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 方法2: 尝试JSPM CDN
+        function tryJspmSDK() {
+            return new Promise((resolve, reject) => {
+                addLog('📦 尝试JSPM CDN加载...');
+                import('https://ga.jspm.io/@farcaster/miniapp-sdk')
+                    .then(module => {
+                        addLog('✅ JSPM加载成功');
+                        resolve(module.sdk);
+                    })
+                    .catch(error => {
+                        addLog('❌ JSPM加载失败: ' + error.message);
+                        reject(error);
+                    });
+            });
+        }
+        
+        // 方法3: 尝试原始ESM.SH
+        function tryEsmSDK() {
+            return new Promise((resolve, reject) => {
+                addLog('📦 尝试ESM.SH加载...');
+                import('https://esm.sh/@farcaster/miniapp-sdk')
+                    .then(module => {
+                        addLog('✅ ESM.SH加载成功');
+                        resolve(module.sdk);
+                    })
+                    .catch(error => {
+                        addLog('❌ ESM.SH加载失败: ' + error.message);
+                        reject(error);
+                    });
+            });
+        }
+        
+        // 按顺序尝试所有方法
+        async function loadSDK() {
+            const methods = [
+                { name: 'UNPKG', fn: tryUnpkgSDK },
+                { name: 'JSPM', fn: tryJspmSDK },
+                { name: 'ESM.SH', fn: tryEsmSDK }
+            ];
+            
+            for (const method of methods) {
+                try {
+                    document.getElementById('method').textContent = method.name;
+                    sdk = await method.fn();
+                    addLog(`🎉 ${method.name}方式成功加载SDK`);
+                    document.getElementById('status').textContent = '✅ 加载成功';
+                    
+                    // 立即尝试调用ready
+                    await callReady();
+                    return;
+                } catch (error) {
+                    addLog(`❌ ${method.name}方式失败: ${error.message}`);
+                }
+            }
+            
+            // 所有方法都失败
+            addLog('❌ 所有SDK加载方法都失败');
+            document.getElementById('status').textContent = '❌ 加载失败';
+            document.getElementById('method').textContent = '无';
+        }
+        
+        // 调用Ready函数
+        async function callReady() {
+            if (!sdk) {
+                addLog('❌ SDK未加载，无法调用ready');
+                return false;
+            }
+            
+            try {
+                if (sdk.actions && sdk.actions.ready) {
+                    await sdk.actions.ready();
+                    addLog('✅ sdk.actions.ready() 调用成功');
+                    document.getElementById('ready-status').textContent = '✅ 已调用';
+                    return true;
+                } else {
+                    addLog('❌ SDK中没有actions.ready方法');
+                    return false;
+                }
+            } catch (error) {
+                addLog('❌ 调用ready失败: ' + error.message);
+                return false;
+            }
+        }
+        
+        // 手动测试Ready
+        function testReady() {
+            addLog('🔄 手动调用ready...');
+            callReady();
+        }
+        
+        // 测试SDK功能
+        function testSDK() {
+            if (!sdk) {
+                alert('❌ SDK未加载');
+                return;
+            }
+            
+            const info = {
+                sdk: !!sdk,
+                actions: !!sdk.actions,
+                ready: !!sdk.actions?.ready,
+                context: !!sdk.context,
+                location: sdk.context?.location?.type || 'unknown'
+            };
+            
+            alert('SDK信息:\n' + JSON.stringify(info, null, 2));
+        }
+        
+        // 页面加载完成后开始测试
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📄 DOM加载完成，开始SDK测试');
+            loadSDK();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThunderTrack SDK Direct Test</title>
+    
+    <!-- Farcaster Mini App Embed -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🔧 SDK直接测试","action":{"type":"launch_miniapp","name":"ThunderTrack SDK Direct","url":"https://thundertrack-miniapp.vercel.app/sdk_direct_test.html","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        .logo { font-size: 60px; margin-bottom: 20px; }
+        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+        .subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 30px; }
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .status { color: #fbbf24; font-weight: bold; font-size: 16px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .button {
+            background: white;
+            color: #6366f1;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px auto;
+            width: 90%;
+            display: block;
+        }
+        .button:hover { background: #f3f4f6; }
+        .logs {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <div class="title">ThunderTrack</div>
+        <div class="subtitle">SDK直接加载测试</div>
+        
+        <div class="card">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">🔧 SDK直接加载状态</div>
+            <div>SDK状态: <span class="status" id="sdk-status">检测中...</span></div>
+            <div>Ready状态: <span class="status" id="ready-status">未调用</span></div>
+            <div>Context: <span class="status" id="context-status">未检测</span></div>
+        </div>
+        
+        <button class="button" onclick="testReady()">
+            🚀 调用Ready函数
+        </button>
+        
+        <button class="button" onclick="testSDKFeatures()">
+            🔍 测试SDK功能
+        </button>
+        
+        <button class="button" onclick="forceReady()">
+            ⚡ 强制Ready (忽略错误)
+        </button>
+        
+        <div class="card">
+            <strong>🔍 实时日志:</strong>
+            <div class="logs" id="logs"></div>
+        </div>
+    </div>
+
+    <!-- 直接使用script标签加载SDK -->
+    <script src="https://unpkg.com/@farcaster/miniapp-sdk@latest/dist/index.umd.js"></script>
+    
+    <script>
+        let logs = [];
+        let sdkReady = false;
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '📝';
+            const logMessage = `${icon} [${timestamp}] ${message}`;
+            
+            logs.push(logMessage);
+            const logElement = document.getElementById('logs');
+            logElement.innerHTML = logs.slice(-15).join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+        
+        // 检测SDK加载状态
+        function checkSDKStatus() {
+            addLog('🔄 开始检测SDK状态...');
+            
+            if (typeof window.FarcasterMiniAppSDK !== 'undefined') {
+                addLog('✅ SDK全局对象已加载', 'success');
+                document.getElementById('sdk-status').innerHTML = '<span class="success">✅ 已加载</span>';
+                
+                // 检测SDK结构
+                const sdk = window.FarcasterMiniAppSDK;
+                if (sdk.actions) {
+                    addLog('✅ SDK.actions 对象存在', 'success');
+                    if (sdk.actions.ready) {
+                        addLog('✅ SDK.actions.ready 方法存在', 'success');
+                        // 立即尝试调用ready
+                        callReady();
+                    } else {
+                        addLog('❌ SDK.actions.ready 方法不存在', 'error');
+                    }
+                } else {
+                    addLog('❌ SDK.actions 对象不存在', 'error');
+                }
+                
+                if (sdk.context) {
+                    addLog('✅ SDK.context 对象存在', 'success');
+                    document.getElementById('context-status').innerHTML = '<span class="success">✅ 已加载</span>';
+                    if (sdk.context.location) {
+                        addLog(`📍 Context location: ${sdk.context.location.type}`, 'info');
+                    }
+                } else {
+                    addLog('❌ SDK.context 对象不存在', 'error');
+                }
+                
+            } else {
+                addLog('❌ SDK未找到，可能加载失败', 'error');
+                document.getElementById('sdk-status').innerHTML = '<span class="error">❌ 未加载</span>';
+                
+                // 检测可能的其他全局变量
+                addLog('🔍 检测可能的全局变量...');
+                if (window.farcaster) addLog('🔍 发现 window.farcaster');
+                if (window.miniapp) addLog('🔍 发现 window.miniapp');
+                if (window.sdk) addLog('🔍 发现 window.sdk');
+            }
+        }
+        
+        // 调用Ready函数
+        async function callReady() {
+            if (typeof window.FarcasterMiniAppSDK === 'undefined') {
+                addLog('❌ SDK未加载，无法调用ready', 'error');
+                return false;
+            }
+            
+            try {
+                const sdk = window.FarcasterMiniAppSDK;
+                addLog('🔄 准备调用 sdk.actions.ready()...');
+                
+                if (sdk.actions && typeof sdk.actions.ready === 'function') {
+                    await sdk.actions.ready();
+                    addLog('🎉 sdk.actions.ready() 调用成功！', 'success');
+                    document.getElementById('ready-status').innerHTML = '<span class="success">✅ 成功调用</span>';
+                    sdkReady = true;
+                    return true;
+                } else {
+                    addLog('❌ ready函数不存在或不是函数', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addLog(`❌ 调用ready失败: ${error.message}`, 'error');
+                console.error('Ready call error:', error);
+                return false;
+            }
+        }
+        
+        // 手动测试Ready
+        function testReady() {
+            addLog('👆 用户手动调用ready测试...');
+            callReady();
+        }
+        
+        // 强制Ready（忽略错误）
+        function forceReady() {
+            addLog('⚡ 强制调用ready（忽略所有错误）...');
+            try {
+                if (window.FarcasterMiniAppSDK && window.FarcasterMiniAppSDK.actions) {
+                    window.FarcasterMiniAppSDK.actions.ready().catch(e => {
+                        addLog(`⚠️ 强制ready有错误但继续: ${e.message}`, 'error');
+                    });
+                    addLog('⚡ 强制ready已发送', 'success');
+                    document.getElementById('ready-status').innerHTML = '<span class="success">⚡ 强制调用</span>';
+                } else {
+                    addLog('❌ 无法强制调用：SDK结构不正确', 'error');
+                }
+            } catch (error) {
+                addLog(`❌ 强制调用也失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试SDK功能
+        function testSDKFeatures() {
+            if (typeof window.FarcasterMiniAppSDK === 'undefined') {
+                alert('❌ SDK未加载');
+                return;
+            }
+            
+            const sdk = window.FarcasterMiniAppSDK;
+            const features = {
+                'SDK对象': !!sdk,
+                'actions对象': !!sdk.actions,
+                'ready方法': !!(sdk.actions && sdk.actions.ready),
+                'ready类型': sdk.actions ? typeof sdk.actions.ready : 'N/A',
+                'context对象': !!sdk.context,
+                'location信息': sdk.context ? sdk.context.location?.type : 'N/A'
+            };
+            
+            let info = 'SDK功能检测结果:\n\n';
+            for (const [key, value] of Object.entries(features)) {
+                info += `${key}: ${value}\n`;
+            }
+            
+            alert(info);
+            addLog('🔍 用户查看了SDK功能检测结果');
+        }
+        
+        // 页面加载后立即检测
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('📄 DOM已加载完成');
+            checkSDKStatus();
+        });
+        
+        // 如果DOM已经加载完成，立即执行
+        if (document.readyState === 'loading') {
+            // DOM还在加载中，等待DOMContentLoaded事件
+            addLog('⏳ DOM正在加载中...');
+        } else {
+            // DOM已经加载完成
+            addLog('📄 DOM已就绪，立即检测SDK');
+            checkSDKStatus();
+        }
+        
+        // 设置定时器持续监控SDK状态
+        let checkInterval = setInterval(() => {
+            if (!sdkReady && typeof window.FarcasterMiniAppSDK !== 'undefined') {
+                addLog('🔄 定时检测到SDK可用，尝试调用ready...');
+                if (callReady()) {
+                    clearInterval(checkInterval);
+                }
+            }
+        }, 1000);
+        
+        // 5分钟后停止定时检测
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            addLog('⏰ 停止定时检测');
+        }, 300000);
+    </script>
+</body>
+</html>
