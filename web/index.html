@@ -100,7 +100,8 @@
     }
     
     // 检查是否在Farcaster环境中
-    const isFarcaster = navigator.userAgent.includes('warpcast') || 
+    const isFarcaster = navigator.userAgent.toLowerCase().includes('warpcast') || 
+                       navigator.userAgent.toLowerCase().includes('farcaster') ||
                        window.location.search.includes('miniApp=true') ||
                        window.parent !== window;
     

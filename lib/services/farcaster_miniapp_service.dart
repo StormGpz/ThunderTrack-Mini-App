@@ -28,9 +28,9 @@ class FarcasterMiniAppService {
         isIframe,
         
         // User Agent检测
-        userAgent?.contains('Warpcast') == true,
-        userAgent?.contains('Farcaster') == true,
-        userAgent?.contains('Supercast') == true,
+        userAgent?.toLowerCase().contains('warpcast') == true,
+        userAgent?.toLowerCase().contains('farcaster') == true,  
+        userAgent?.toLowerCase().contains('supercast') == true,
         
         // 检查是否有Farcaster SDK
         js.context['farcasterSDK'] != null,
@@ -93,31 +93,37 @@ class FarcasterMiniAppService {
       // 首先检查 Farcaster SDK 是否已加载
       final farcasterSDK = js.context['farcasterSDK'];
       if (farcasterSDK == null) {
-        debugPrint('Farcaster SDK not found in global context');
+        debugPrint('❌ Farcaster SDK not found in global context');
         return null;
       }
+      
+      debugPrint('✅ Found Farcaster SDK in global context');
       
       // 获取 SDK context
       final sdkContext = farcasterSDK['context'];
       if (sdkContext == null) {
-        debugPrint('SDK context not found');
+        debugPrint('❌ SDK context not found');
         return null;
       }
+      
+      debugPrint('✅ Found SDK context');
       
       // 获取用户信息
       final user = sdkContext['user'];
       if (user == null) {
-        debugPrint('User not found in SDK context');
+        debugPrint('❌ User not found in SDK context');
         return null;
       }
       
+      debugPrint('✅ Found user in SDK context');
+      
       // 转换为 Dart Map
       final userMap = _jsObjectToMap(user);
-      debugPrint('Farcaster user data: $userMap');
+      debugPrint('🎯 Farcaster user data: $userMap');
       return userMap;
       
     } catch (e) {
-      debugPrint('Error getting Farcaster user: $e');
+      debugPrint('❌ Error getting Farcaster user: $e');
       return null;
     }
   }
@@ -329,15 +335,15 @@ class FarcasterMiniAppService {
         'currentUrl': currentUrl ?? 'unknown',
         'isIframe': isIframe,
         'hasSDK': hasSDK,
-        'isWarpcast': userAgent?.contains('Warpcast') == true,
+        'isWarpcast': userAgent?.toLowerCase().contains('warpcast') == true,
         'isFarcasterClient': _isFarcasterClient(userAgent),
         'detectionMethods': {
           'urlMiniApp': currentUrl?.contains('miniApp=true') == true,
           'urlMini': currentUrl?.contains('/mini') == true,
           'iframe': isIframe,
-          'warpcastUA': userAgent?.contains('Warpcast') == true,
-          'farcasterUA': userAgent?.contains('Farcaster') == true,
-          'supercastUA': userAgent?.contains('Supercast') == true,
+          'warpcastUA': userAgent?.toLowerCase().contains('warpcast') == true,
+          'farcasterUA': userAgent?.toLowerCase().contains('farcaster') == true,
+          'supercastUA': userAgent?.toLowerCase().contains('supercast') == true,
           'hasSDK': hasSDK,
         }
       };
@@ -392,16 +398,17 @@ class FarcasterMiniAppService {
   bool _isFarcasterClient(String? userAgent) {
     if (userAgent == null) return false;
     
+    final lowerUA = userAgent.toLowerCase();
     final farcasterClientIndicators = [
-      'Warpcast',
-      'Farcaster',
-      'Supercast',
-      'Rainbow',
-      'FarQuest',
+      'warpcast',
+      'farcaster', 
+      'supercast',
+      'rainbow',
+      'farquest',
     ];
     
     return farcasterClientIndicators.any(
-      (indicator) => userAgent.contains(indicator),
+      (indicator) => lowerUA.contains(indicator),
     );
   }
 
