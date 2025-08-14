@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- 预连接Farcaster服务 -->
+  <link rel="preconnect" href="https://auth.farcaster.xyz" />
+  
+  <!-- ThunderTrack App Info -->
+  <title>⚡ ThunderTrack - Flutter应用</title>
+  <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
+  
+  <!-- Farcaster Mini App Embed (for sharing) -->
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🦋 ThunderTrack Flutter","action":{"type":"launch_miniapp","name":"ThunderTrack Flutter","url":"https://thundertrack-miniapp.vercel.app/flutter_app.html","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
+  <meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />
+  <meta property="og:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
+  <meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />
+  <meta property="og:type" content="website" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #6366f1;
+    }
+    
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      font-family: Arial, sans-serif;
+      z-index: 9999;
+    }
+    
+    #loading .logo {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    #loading .title {
+      font-size: 24px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    #loading .status {
+      font-size: 14px;
+      opacity: 0.8;
+      margin: 5px 0;
+    }
+    
+    .logs {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      display: none;
+    }
+    
+    .debug-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="logo">⚡</div>
+    <div class="title">ThunderTrack</div>
+    <div class="status" id="status">正在加载Flutter应用...</div>
+  </div>
+  
+  <button class="debug-toggle" onclick="toggleDebug()">调试日志</button>
+  <div class="logs" id="logs"></div>
+
+  <!-- 先加载SDK -->
+  <script type="module">
+    let logs = [];
+    let sdkLoaded = false;
+    let flutterLoaded = false;
+    
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logMessage = `[${timestamp}] ${message}`;
+      logs.push(logMessage);
+      console.log(logMessage);
+      
+      // 更新日志显示
+      const logElement = document.getElementById('logs');
+      if (logElement) {
+        logElement.innerHTML = logs.slice(-10).join('<br>');
+        logElement.scrollTop = logElement.scrollHeight;
+      }
+    }
+    
+    function updateStatus(message) {
+      const statusElement = document.getElementById('status');
+      if (statusElement) {
+        statusElement.textContent = message;
+      }
+      log(message);
+    }
+    
+    window.toggleDebug = function() {
+      const logElement = document.getElementById('logs');
+      logElement.style.display = logElement.style.display === 'none' ? 'block' : 'none';
+    };
+    
+    async function loadFarcasterSDK() {
+      try {
+        updateStatus('🔄 加载Farcaster SDK...');
+        const { sdk } = await import('https://esm.sh/@farcaster/miniapp-sdk');
+        window.farcasterSDK = sdk;
+        sdkLoaded = true;
+        updateStatus('✅ Farcaster SDK加载完成');
+        log('SDK context: ' + JSON.stringify({
+          hasUser: !!sdk.context?.user,
+          hasClient: !!sdk.context?.client,
+          hasActions: !!sdk.actions
+        }));
+        return sdk;
+      } catch (error) {
+        updateStatus('❌ SDK加载失败: ' + error.message);
+        log('SDK加载错误: ' + error.stack);
+        return null;
+      }
+    }
+    
+    async function callFarcasterReady() {
+      if (!window.farcasterSDK) {
+        log('⚠️ SDK未加载，无法调用ready');
+        return;
+      }
+      
+      try {
+        updateStatus('🚀 调用Farcaster ready...');
+        await window.farcasterSDK.actions.ready();
+        updateStatus('🎉 Flutter应用已准备就绪');
+        log('✅ ready()调用成功，应该可以看到应用了');
+        
+        // 隐藏加载屏幕
+        setTimeout(() => {
+          const loadingElement = document.getElementById('loading');
+          if (loadingElement) {
+            loadingElement.style.display = 'none';
+          }
+        }, 1000);
+        
+      } catch (error) {
+        updateStatus('❌ ready()调用失败: ' + error.message);
+        log('ready()调用错误: ' + error.stack);
+      }
+    }
+    
+    // 检查是否在Farcaster环境中
+    const isFarcaster = navigator.userAgent.includes('warpcast') || 
+                       window.location.search.includes('miniApp=true') ||
+                       window.parent !== window;
+    
+    log(`环境检测: ${isFarcaster ? 'Farcaster' : '普通浏览器'}`);
+    
+    // 加载Flutter应用
+    async function loadFlutterApp() {
+      try {
+        updateStatus('🔄 加载Flutter引擎...');
+        
+        // 如果在Farcaster环境中，先加载SDK
+        if (isFarcaster) {
+          await loadFarcasterSDK();
+        }
+        
+        // 加载service worker
+        updateStatus('📋 加载Service Worker...');
+        const serviceWorkerScript = document.createElement('script');
+        serviceWorkerScript.src = 'flutter_service_worker.js?v=' + Date.now();
+        
+        serviceWorkerScript.onload = () => {
+          log('Service Worker加载完成');
+          
+          // 加载Flutter.js
+          updateStatus('🔧 加载Flutter引擎...');
+          const flutterScript = document.createElement('script');
+          flutterScript.src = 'flutter.js';
+          
+          flutterScript.onload = () => {
+            log('Flutter.js加载完成');
+            updateStatus('⚙️ 初始化Flutter应用...');
+            
+            // 初始化Flutter
+            _flutter.loader.loadEntrypoint({
+              serviceWorker: {
+                serviceWorkerVersion: null,
+              },
+              onEntrypointLoaded: function(engineInitializer) {
+                log('Flutter入口点加载完成');
+                updateStatus('🚀 启动Flutter引擎...');
+                
+                engineInitializer.initializeEngine().then(function(appRunner) {
+                  log('Flutter引擎初始化完成');
+                  updateStatus('🎨 渲染Flutter应用...');
+                  
+                  appRunner.runApp().then(() => {
+                    log('Flutter应用启动完成');
+                    flutterLoaded = true;
+                    
+                    // 等待Flutter完全渲染后调用ready
+                    setTimeout(() => {
+                      if (isFarcaster) {
+                        callFarcasterReady();
+                      } else {
+                        updateStatus('🎉 Flutter应用加载完成');
+                        document.getElementById('loading').style.display = 'none';
+                      }
+                    }, 1500); // 给Flutter更多时间渲染
+                    
+                  }).catch(error => {
+                    updateStatus('❌ Flutter应用启动失败: ' + error.message);
+                    log('Flutter应用启动错误: ' + error.stack);
+                  });
+                  
+                }).catch(error => {
+                  updateStatus('❌ Flutter引擎初始化失败: ' + error.message);
+                  log('Flutter引擎错误: ' + error.stack);
+                });
+              }
+            });
+          };
+          
+          flutterScript.onerror = () => {
+            updateStatus('❌ Flutter.js加载失败');
+            log('flutter.js文件加载失败');
+          };
+          
+          document.head.appendChild(flutterScript);
+        };
+        
+        serviceWorkerScript.onerror = () => {
+          updateStatus('❌ Service Worker加载失败');
+          log('service worker文件加载失败');
+        };
+        
+        document.head.appendChild(serviceWorkerScript);
+        
+      } catch (error) {
+        updateStatus('❌ Flutter应用加载失败: ' + error.message);
+        log('Flutter加载错误: ' + error.stack);
+      }
+    }
+    
+    // 页面加载完成后开始
+    document.addEventListener('DOMContentLoaded', () => {
+      log('DOM加载完成，开始加载Flutter应用');
+      loadFlutterApp();
+    });
+    
+    // 如果DOM已经加载完成
+    if (document.readyState === 'loading') {
+      log('等待DOM加载...');
+    } else {
+      log('DOM已就绪，立即开始');
+      loadFlutterApp();
+    }
+    
+  </script>
+</body>
+</html>
