@@ -14,10 +14,38 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return false;
     
     try {
+      final userAgent = js.context['navigator']['userAgent'] as String?;
       final currentUrl = js.context['location']['href'] as String?;
-      return currentUrl?.contains('miniApp=true') == true ||
-             currentUrl?.contains('/mini') == true ||
-             js.context['window'] != js.context['parent'];
+      final isIframe = js.context['window'] != js.context['parent'];
+      
+      // 检查多种Farcaster环境指标
+      final indicators = [
+        // URL参数检测
+        currentUrl?.contains('miniApp=true') == true,
+        currentUrl?.contains('/mini') == true,
+        
+        // iframe检测
+        isIframe,
+        
+        // User Agent检测
+        userAgent?.contains('Warpcast') == true,
+        userAgent?.contains('Farcaster') == true,
+        userAgent?.contains('Supercast') == true,
+        
+        // 检查是否有Farcaster SDK
+        js.context['farcasterSDK'] != null,
+      ];
+      
+      final isDetected = indicators.any((indicator) => indicator);
+      
+      debugPrint('🔍 Mini App环境检测:');
+      debugPrint('   URL: $currentUrl');
+      debugPrint('   UserAgent: $userAgent');
+      debugPrint('   isIframe: $isIframe');
+      debugPrint('   hasSDK: ${js.context['farcasterSDK'] != null}');
+      debugPrint('   结果: ${isDetected ? "✅ Farcaster环境" : "❌ 非Farcaster环境"}');
+      
+      return isDetected;
     } catch (e) {
       debugPrint('Error checking Mini App environment: $e');
       return false;
@@ -290,6 +318,8 @@ class FarcasterMiniAppService {
     try {
       final userAgent = js.context['navigator']['userAgent'] as String?;
       final currentUrl = js.context['location']['href'] as String?;
+      final isIframe = js.context['window'] != js.context['parent'];
+      final hasSDK = js.context['farcasterSDK'] != null;
       
       return {
         'platform': 'web',
@@ -297,8 +327,19 @@ class FarcasterMiniAppService {
         'sdkAvailable': isSdkAvailable,
         'userAgent': userAgent ?? 'unknown',
         'currentUrl': currentUrl ?? 'unknown',
+        'isIframe': isIframe,
+        'hasSDK': hasSDK,
         'isWarpcast': userAgent?.contains('Warpcast') == true,
         'isFarcasterClient': _isFarcasterClient(userAgent),
+        'detectionMethods': {
+          'urlMiniApp': currentUrl?.contains('miniApp=true') == true,
+          'urlMini': currentUrl?.contains('/mini') == true,
+          'iframe': isIframe,
+          'warpcastUA': userAgent?.contains('Warpcast') == true,
+          'farcasterUA': userAgent?.contains('Farcaster') == true,
+          'supercastUA': userAgent?.contains('Supercast') == true,
+          'hasSDK': hasSDK,
+        }
       };
     } catch (e) {
       debugPrint('Error getting environment info: $e');
