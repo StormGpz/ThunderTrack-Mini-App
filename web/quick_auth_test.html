@@ -133,23 +133,69 @@
             const userContainer = document.getElementById('user-container');
             const userInfo = document.getElementById('user-info');
             
-            if (context && context.user) {
-                const user = context.user;
-                userInfo.innerHTML = `
-                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                        ${user.pfpUrl ? `<img src="${user.pfpUrl}" class="avatar" />` : '👤'}
-                        <div>
-                            <div style="font-weight: bold;">${user.displayName || user.username || 'Unknown'}</div>
-                            <div style="opacity: 0.8; font-size: 14px;">FID: ${user.fid}</div>
+            try {
+                if (context && context.user) {
+                    addLog('🔍 处理用户信息...', 'info');
+                    
+                    // 安全地提取用户信息，避免Symbol.toPrimitive问题
+                    const user = {};
+                    try {
+                        user.fid = context.user.fid ? String(context.user.fid) : 'unknown';
+                        user.username = context.user.username ? String(context.user.username) : '';
+                        user.displayName = context.user.displayName ? String(context.user.displayName) : '';
+                        // 谨慎处理pfpUrl
+                        user.pfpUrl = '';
+                        if (context.user.pfpUrl) {
+                            try {
+                                user.pfpUrl = String(context.user.pfpUrl);
+                            } catch (e) {
+                                addLog('⚠️ 无法获取用户头像URL', 'warning');
+                            }
+                        }
+                    } catch (e) {
+                        addLog(`⚠️ 提取用户信息时出错: ${e.message}`, 'warning');
+                    }
+                    
+                    // 安全地提取客户端信息
+                    const client = {};
+                    try {
+                        client.platformType = context.client?.platformType ? String(context.client.platformType) : 'unknown';
+                        client.clientFid = context.client?.clientFid ? String(context.client.clientFid) : 'unknown';
+                        client.added = context.client?.added ? '是' : '否';
+                    } catch (e) {
+                        addLog(`⚠️ 提取客户端信息时出错: ${e.message}`, 'warning');
+                    }
+                    
+                    // 安全地提取位置信息
+                    let locationType = '';
+                    try {
+                        locationType = context.location?.type ? String(context.location.type) : '';
+                    } catch (e) {
+                        addLog(`⚠️ 提取位置信息时出错: ${e.message}`, 'warning');
+                    }
+                    
+                    userInfo.innerHTML = `
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            ${user.pfpUrl ? `<img src="${user.pfpUrl}" class="avatar" onerror="this.style.display='none'" />` : '👤'}
+                            <div>
+                                <div style="font-weight: bold;">${user.displayName || user.username || 'Unknown User'}</div>
+                                <div style="opacity: 0.8; font-size: 14px;">FID: ${user.fid}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div style="font-size: 14px;">
-                        <div>平台: ${context.client?.platformType || 'unknown'}</div>
-                        <div>客户端: ${context.client?.clientFid || 'unknown'}</div>
-                        <div>已添加: ${context.client?.added ? '是' : '否'}</div>
-                        ${context.location ? `<div>启动来源: ${context.location.type}</div>` : ''}
-                    </div>
-                `;
+                        <div style="font-size: 14px;">
+                            <div>平台: ${client.platformType}</div>
+                            <div>客户端: ${client.clientFid}</div>
+                            <div>已添加: ${client.added}</div>
+                            ${locationType ? `<div>启动来源: ${locationType}</div>` : ''}
+                        </div>
+                    `;
+                    userContainer.style.display = 'block';
+                    addLog('✅ 用户信息显示完成', 'success');
+                }
+            } catch (error) {
+                addLog(`❌ 显示用户信息失败: ${error.message}`, 'error');
+                // 显示基本信息
+                userInfo.innerHTML = `<div style="color: #f59e0b;">⚠️ 用户信息显示异常</div>`;
                 userContainer.style.display = 'block';
             }
         }
