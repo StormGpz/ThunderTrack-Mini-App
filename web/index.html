@@ -7,6 +7,9 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <!-- 预连接Farcaster服务 -->
+  <link rel="preconnect" href="https://auth.farcaster.xyz" />
+  
   <!-- ThunderTrack App Info -->
   <title>⚡ ThunderTrack - 去中心化交易日记</title>
   <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
@@ -87,6 +90,10 @@
       opacity: 0.8;
       margin-top: 20px;
     }
+    /* Flutter加载时隐藏路由选择器 */
+    .flutter-loading .container {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -98,16 +105,16 @@
     <div class="card">
       <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">🚀 选择应用版本</div>
       
-      <a href="compatible_test.html?miniApp=true" class="option">
-        📱 兼容测试版本
+      <a href="quick_auth_test.html?miniApp=true" class="option">
+        🔐 Quick Auth测试版本
       </a>
       
-      <a href="test_native.html?miniApp=true" class="option">
-        🌐 纯JS测试版本
+      <a href="minimal_sdk_test.html?miniApp=true" class="option">
+        🧪 最小SDK测试版本
       </a>
       
       <a href="javascript:loadFlutter()" class="option">
-        🦋 Flutter完整应用 (实验性)
+        🦋 Flutter完整应用
       </a>
     </div>
     
@@ -116,6 +123,114 @@
       <br>时间: <span id="time"></span>
     </div>
   </div>
+
+  <!-- 如果要加载Flutter，先加载SDK -->
+  <script type="module">
+    let sdkReady = false;
+    let flutterReady = false;
+    
+    async function loadFarcasterSDK() {
+      try {
+        console.log('📦 开始加载Farcaster SDK...');
+        const { sdk } = await import('https://esm.sh/@farcaster/miniapp-sdk');
+        window.farcasterSDK = sdk;
+        console.log('✅ Farcaster SDK加载成功');
+        return sdk;
+      } catch (error) {
+        console.error('❌ SDK加载失败:', error);
+        return null;
+      }
+    }
+    
+    async function callFarcasterReady() {
+      if (!window.farcasterSDK) {
+        console.log('⚠️ SDK未加载，无法调用ready');
+        return;
+      }
+      
+      try {
+        console.log('🚀 调用Farcaster ready...');
+        await window.farcasterSDK.actions.ready();
+        console.log('✅ Farcaster ready调用成功');
+        sdkReady = true;
+      } catch (error) {
+        console.error('❌ Farcaster ready调用失败:', error);
+      }
+    }
+    
+    // 监听Flutter应用加载完成
+    window.addEventListener('flutter-initialized', async () => {
+      console.log('🦋 Flutter应用初始化完成');
+      flutterReady = true;
+      
+      // 延迟一点确保Flutter完全渲染
+      setTimeout(async () => {
+        await callFarcasterReady();
+      }, 500);
+    });
+    
+    // 检查是否在Farcaster环境中
+    const isFarcaster = navigator.userAgent.includes('warpcast') || 
+                       window.location.search.includes('miniApp=true') ||
+                       window.parent !== window;
+    
+    if (isFarcaster) {
+      console.log('🔍 检测到Farcaster环境，预加载SDK...');
+      loadFarcasterSDK();
+    }
+    
+    // 全局函数供按钮调用
+    window.loadFlutter = async function() {
+      console.log('🦋 开始加载Flutter应用...');
+      
+      if (isFarcaster && !window.farcasterSDK) {
+        console.log('📦 在Farcaster环境中，先加载SDK...');
+        await loadFarcasterSDK();
+      }
+      
+      // 隐藏路由选择器
+      document.body.classList.add('flutter-loading');
+      
+      // 创建Flutter应用脚本
+      const serviceWorkerScript = document.createElement('script');
+      serviceWorkerScript.src = 'flutter_service_worker.js?v=' + Date.now();
+      serviceWorkerScript.onload = () => {
+        console.log('📋 Flutter Service Worker加载完成');
+        
+        // 加载Flutter引擎
+        const flutterScript = document.createElement('script');
+        flutterScript.src = 'flutter.js';
+        flutterScript.onload = () => {
+          console.log('🔧 Flutter引擎加载完成，开始初始化...');
+          
+          // 初始化Flutter
+          _flutter.loader.loadEntrypoint({
+            serviceWorker: {
+              serviceWorkerVersion: null,
+            },
+            onEntrypointLoaded: function(engineInitializer) {
+              console.log('⚙️ Flutter入口点加载完成');
+              
+              engineInitializer.initializeEngine().then(function(appRunner) {
+                console.log('🚀 Flutter引擎初始化完成');
+                
+                appRunner.runApp().then(() => {
+                  console.log('🎉 Flutter应用启动完成');
+                  
+                  // 触发Flutter初始化完成事件
+                  setTimeout(() => {
+                    window.dispatchEvent(new Event('flutter-initialized'));
+                  }, 1000);
+                });
+              });
+            }
+          });
+        };
+        document.head.appendChild(flutterScript);
+      };
+      document.head.appendChild(serviceWorkerScript);
+    };
+  </script>
 
   <script>
     // 填充环境信息
@@ -130,16 +245,12 @@
       window.location.href = 'compatible_test.html' + window.location.search;
     } else if (page === 'native' || page === 'test') {
       window.location.href = 'test_native.html' + window.location.search;
+    } else if (page === 'flutter' || params.get('autoFlutter') === 'true') {
+      // 自动加载Flutter
+      setTimeout(loadFlutter, 100);
     }
     
-    function loadFlutter() {
-      if (confirm('加载Flutter完整应用？\n\n注意：Flutter版本在Farcaster中可能有兼容性问题，建议先使用兼容测试版本。')) {
-        // 这里可以加载Flutter版本
-        alert('Flutter版本正在开发中，请先使用兼容测试版本。');
-      }
-    }
-    
-    console.log('✅ ThunderTrack route selector loaded');
+    console.log('✅ ThunderTrack路由选择器加载完成');
   </script>
 </body>
 </html>
