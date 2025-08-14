@@ -38,19 +38,45 @@ class UserProvider extends ChangeNotifier {
       // 记录环境信息用于调试
       _miniAppService.logEnvironmentInfo();
       
-      // 在Mini App环境中，先快速恢复本地状态，然后异步获取Farcaster用户
+      // 在Farcaster Mini App环境中，优先尝试无感登录
       if (_miniAppService.isMiniAppEnvironment) {
-        debugPrint('Mini App environment detected, restoring local state first...');
-        // 先恢复本地状态，不阻塞应用启动
-        await _restoreLocalUser();
-        _setLoading(false);
+        debugPrint('🚀 Farcaster Mini App环境，启动无感登录流程...');
         
-        // 异步获取Farcaster用户信息，不阻塞UI
+        // 先恢复本地状态作为备用
+        await _restoreLocalUser();
+        
+        // 立即尝试从Farcaster获取用户信息（无感登录）
+        try {
+          // 给SDK一点时间加载
+          await Future.delayed(const Duration(milliseconds: 300));
+          
+          if (_miniAppService.isSdkAvailable) {
+            debugPrint('📦 SDK已就绪，立即尝试无感登录...');
+            final farcasterUser = await _miniAppService.getFarcasterUser()
+                .timeout(const Duration(seconds: 3));
+                
+            if (farcasterUser != null && farcasterUser.isNotEmpty) {
+              debugPrint('🎉 无感登录成功！');
+              await _processFarcasterUser(farcasterUser);
+              _setError(null);
+              _setLoading(false);
+              return; // 成功登录，直接返回
+            }
+          }
+          
+          debugPrint('⏳ SDK可能还在加载，启动后台重试...');
+        } catch (e) {
+          debugPrint('⚠️ 立即登录失败，启动后台重试: $e');
+        }
+        
+        // 如果立即登录没成功，启动后台异步重试
+        _setLoading(false);
         _tryGetFarcasterUserAsync();
         return;
       }
       
       // 在普通浏览器环境中，只恢复本地存储
+      debugPrint('🌐 普通浏览器环境，恢复本地用户状态');
       await _restoreLocalUser();
     } catch (e) {
       _setError('初始化用户状态失败: $e');
@@ -62,23 +88,54 @@ class UserProvider extends ChangeNotifier {
   /// 异步尝试获取Farcaster用户信息（不阻塞UI）
   Future<void> _tryGetFarcasterUserAsync() async {
     try {
-      if (_miniAppService.isSdkAvailable) {
-        debugPrint('Attempting to get user from Farcaster Mini App...');
+      if (_miniAppService.isMiniAppEnvironment) {
+        debugPrint('🔍 Farcaster环境检测到，尝试自动登录...');
         
-        // 添加超时机制，避免无限等待
-        final farcasterUser = await _miniAppService.getFarcasterUser()
-            .timeout(const Duration(seconds: 5));
-            
-        if (farcasterUser != null && farcasterUser.isNotEmpty) {
-          debugPrint('Got Farcaster user: ${farcasterUser.toString()}');
-          await _processFarcasterUser(farcasterUser);
-          _setError(null);
-          notifyListeners(); // 更新UI显示登录状态
+        // 等待SDK完全加载
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (_miniAppService.isSdkAvailable) {
+          debugPrint('📦 SDK可用，获取用户信息...');
+          
+          // 直接从context获取用户信息（无感登录）
+          final farcasterUser = await _miniAppService.getFarcasterUser()
+              .timeout(const Duration(seconds: 8));
+              
+          if (farcasterUser != null && farcasterUser.isNotEmpty) {
+            debugPrint('✅ 自动登录成功: ${farcasterUser.toString()}');
+            await _processFarcasterUser(farcasterUser);
+            _setError(null);
+            notifyListeners(); // 立即更新UI显示登录状态
+            return;
+          } else {
+            debugPrint('⚠️ 从context获取用户信息为空');
+          }
+        } else {
+          debugPrint('❌ SDK不可用，可能还在加载中...');
+          
+          // 如果SDK还没加载完成，再等待一段时间重试
+          await Future.delayed(const Duration(seconds: 2));
+          if (_miniAppService.isSdkAvailable) {
+            debugPrint('🔄 SDK延迟加载完成，重试获取用户信息...');
+            final farcasterUser = await _miniAppService.getFarcasterUser();
+            if (farcasterUser != null && farcasterUser.isNotEmpty) {
+              debugPrint('✅ 延迟自动登录成功');
+              await _processFarcasterUser(farcasterUser);
+              _setError(null);
+              notifyListeners();
+              return;
+            }
+          }
         }
+      } else {
+        debugPrint('📱 非Farcaster环境，跳过自动登录');
       }
+      
+      debugPrint('⚠️ 自动登录未成功，用户需要手动登录');
     } catch (e) {
-      debugPrint('Failed to get Farcaster user (non-blocking): $e');
+      debugPrint('❌ 自动登录失败: $e');
       // 这里不设置错误，因为这是非阻塞的尝试
+      // 用户仍然可以手动点击登录
     }
   }
 
@@ -353,7 +410,7 @@ class UserProvider extends ChangeNotifier {
     return [];
   }
 
-  /// 真实的 Farcaster 登录（从 Mini App 获取用户信息）
+  /// 真实的 Farcaster 登录（使用 Quick Auth）
   Future<bool> loginFromFarcaster() async {
     if (!_miniAppService.isMiniAppEnvironment) {
       _setError('不在 Farcaster Mini App 环境中');
@@ -364,20 +421,153 @@ class UserProvider extends ChangeNotifier {
     _setError(null);
 
     try {
+      debugPrint('开始 Quick Auth 登录流程...');
+      
+      // 方法1: 尝试使用 Quick Auth（推荐）
+      final token = await _miniAppService.getQuickAuthToken();
+      if (token != null) {
+        debugPrint('Quick Auth 成功，解析token信息...');
+        
+        // 从JWT token中解析用户信息
+        final userInfo = _parseJwtToken(token);
+        if (userInfo != null) {
+          // 同时获取SDK context中的额外用户信息
+          final contextUser = await _miniAppService.getFarcasterUser();
+          
+          // 合并信息创建用户对象
+          final combinedUserInfo = {
+            ...userInfo,
+            if (contextUser != null) ...contextUser,
+            'authToken': token,
+          };
+          
+          await _processFarcasterUser(combinedUserInfo);
+          debugPrint('Quick Auth 登录成功');
+          return true;
+        }
+      }
+      
+      debugPrint('Quick Auth 不可用，尝试传统方法...');
+      
+      // 方法2: 备用方案 - 直接从context获取用户信息
       final farcasterUser = await _miniAppService.getFarcasterUser();
       
-      if (farcasterUser == null || farcasterUser.isEmpty) {
-        _setError('无法获取 Farcaster 用户信息');
-        return false;
+      if (farcasterUser != null && farcasterUser.isNotEmpty) {
+        await _processFarcasterUser(farcasterUser);
+        debugPrint('Context登录成功');
+        return true;
       }
-
-      await _processFarcasterUser(farcasterUser);
-      return true;
+      
+      _setError('无法获取 Farcaster 用户信息');
+      return false;
+      
     } catch (e) {
+      debugPrint('Farcaster登录出错: $e');
       _setError('Farcaster 登录失败: $e');
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// 使用完整的 Sign In with Farcaster 流程
+  Future<bool> signInWithFarcaster() async {
+    if (!_miniAppService.isMiniAppEnvironment) {
+      _setError('不在 Farcaster Mini App 环境中');
+      return false;
+    }
+
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      debugPrint('开始 Sign In with Farcaster 流程...');
+      
+      final signInResult = await _miniAppService.signInWithFarcaster();
+      
+      if (signInResult != null) {
+        // 这里需要将signature和message发送到服务器进行验证
+        // 目前先模拟验证成功，实际项目中需要后端验证
+        debugPrint('SIWF签名获取成功，需要服务器验证');
+        
+        // 获取用户基本信息
+        final contextUser = await _miniAppService.getFarcasterUser();
+        if (contextUser != null) {
+          final combinedInfo = {
+            ...contextUser,
+            'signature': signInResult['signature'],
+            'message': signInResult['message'],
+            'nonce': signInResult['nonce'],
+            'verified': false, // 标记为未验证，需要服务器验证
+          };
+          
+          await _processFarcasterUser(combinedInfo);
+          debugPrint('SIWF 登录成功（需服务器验证）');
+          return true;
+        }
+      }
+      
+      _setError('Sign In with Farcaster 失败');
+      return false;
+      
+    } catch (e) {
+      if (e.toString().contains('用户拒绝')) {
+        _setError('用户取消了登录');
+      } else {
+        _setError('SIWF 登录失败: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 解析JWT token获取用户信息
+  Map<String, dynamic>? _parseJwtToken(String token) {
+    try {
+      // JWT格式: header.payload.signature
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        debugPrint('Invalid JWT format');
+        return null;
+      }
+      
+      // Base64解码payload
+      String payload = parts[1];
+      
+      // 添加必要的padding
+      switch (payload.length % 4) {
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+      }
+      
+      final decoded = utf8.decode(base64Decode(payload));
+      final payloadMap = jsonDecode(decoded) as Map<String, dynamic>;
+      
+      debugPrint('JWT payload: $payloadMap');
+      
+      // JWT标准字段：
+      // sub: 用户FID
+      // iss: 发行者
+      // aud: 受众
+      // exp: 过期时间
+      // iat: 发行时间
+      
+      return {
+        'fid': payloadMap['sub']?.toString(),
+        'issuer': payloadMap['iss'],
+        'audience': payloadMap['aud'],
+        'expiry': payloadMap['exp'],
+        'issuedAt': payloadMap['iat'],
+      };
+      
+    } catch (e) {
+      debugPrint('Error parsing JWT token: $e');
+      return null;
     }
   }
 

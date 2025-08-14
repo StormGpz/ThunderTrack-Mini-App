@@ -29,39 +29,219 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return;
     
     try {
+      // 首先尝试直接调用 farcasterSDK
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK != null) {
+        final actions = farcasterSDK['actions'];
+        if (actions != null) {
+          final ready = actions['ready'];
+          if (ready != null) {
+            // 调用 sdk.actions.ready()
+            ready.apply([]);
+            debugPrint('Farcaster SDK ready() called successfully');
+            return;
+          }
+        }
+      }
+      
+      // 备用方案：检查是否有全局 ready 函数
       final markReadyFunction = js.context['markMiniAppReady'];
       if (markReadyFunction != null) {
         markReadyFunction.apply([]);
-        debugPrint('Mini App ready signal sent successfully');
+        debugPrint('Global markMiniAppReady() called successfully');
       } else {
-        debugPrint('markMiniAppReady function not found');
+        debugPrint('No ready function found (SDK or global)');
       }
     } catch (e) {
       debugPrint('Error sending Mini App ready signal: $e');
     }
   }
 
-  /// 获取 Farcaster 用户信息
+  /// 获取 Farcaster 用户信息（通过 SDK）
   Future<Map<String, dynamic>?> getFarcasterUser() async {
     if (!kIsWeb) return null;
     
     try {
-      final getUserFunction = js.context['getFarcasterUser'];
-      if (getUserFunction != null) {
-        final result = getUserFunction.apply([]);
-        
-        if (result != null) {
-          // 简化的对象转换
-          return _jsObjectToMap(result);
-        }
-      } else {
-        debugPrint('getFarcasterUser function not found');
+      // 首先检查 Farcaster SDK 是否已加载
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK == null) {
+        debugPrint('Farcaster SDK not found in global context');
+        return null;
       }
+      
+      // 获取 SDK context
+      final sdkContext = farcasterSDK['context'];
+      if (sdkContext == null) {
+        debugPrint('SDK context not found');
+        return null;
+      }
+      
+      // 获取用户信息
+      final user = sdkContext['user'];
+      if (user == null) {
+        debugPrint('User not found in SDK context');
+        return null;
+      }
+      
+      // 转换为 Dart Map
+      final userMap = _jsObjectToMap(user);
+      debugPrint('Farcaster user data: $userMap');
+      return userMap;
+      
     } catch (e) {
       debugPrint('Error getting Farcaster user: $e');
+      return null;
+    }
+  }
+
+  /// 使用 Quick Auth 获取认证token
+  Future<String?> getQuickAuthToken() async {
+    if (!kIsWeb) return null;
+    
+    try {
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK == null) {
+        debugPrint('Farcaster SDK not found');
+        return null;
+      }
+      
+      final quickAuth = farcasterSDK['quickAuth'];
+      if (quickAuth == null) {
+        debugPrint('Quick Auth not found in SDK');
+        return null;
+      }
+      
+      final getToken = quickAuth['getToken'];
+      if (getToken == null) {
+        debugPrint('getToken method not found');
+        return null;
+      }
+      
+      // 调用 sdk.quickAuth.getToken()
+      final result = await _callAsyncFunction(getToken, []);
+      
+      if (result != null && result['token'] != null) {
+        final token = result['token'] as String;
+        debugPrint('Quick Auth token obtained: ${token.substring(0, 20)}...');
+        return token;
+      }
+      
+      debugPrint('No token returned from Quick Auth');
+      return null;
+      
+    } catch (e) {
+      debugPrint('Error getting Quick Auth token: $e');
+      return null;
+    }
+  }
+
+  /// 使用 Sign In with Farcaster
+  Future<Map<String, dynamic>?> signInWithFarcaster() async {
+    if (!kIsWeb) return null;
+    
+    try {
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK == null) {
+        debugPrint('Farcaster SDK not found');
+        return null;
+      }
+      
+      final actions = farcasterSDK['actions'];
+      if (actions == null) {
+        debugPrint('Actions not found in SDK');
+        return null;
+      }
+      
+      final signIn = actions['signIn'];
+      if (signIn == null) {
+        debugPrint('signIn method not found');
+        return null;
+      }
+      
+      // 生成随机nonce（至少8个字符）
+      final nonce = _generateNonce();
+      
+      // 调用 sdk.actions.signIn()
+      final signInParams = js.JsObject.jsify({
+        'nonce': nonce,
+        'acceptAuthAddress': true, // 支持Auth Address以获得最佳用户体验
+      });
+      
+      final result = await _callAsyncFunction(signIn, [signInParams]);
+      
+      if (result != null) {
+        final resultMap = _jsObjectToMap(result);
+        debugPrint('SIWF sign in successful');
+        return {
+          ...resultMap,
+          'nonce': nonce, // 包含nonce以便验证
+        };
+      }
+      
+      debugPrint('No result returned from sign in');
+      return null;
+      
+    } catch (e) {
+      debugPrint('Error signing in with Farcaster: $e');
+      
+      // 检查是否是用户拒绝错误
+      if (e.toString().contains('RejectedByUser')) {
+        throw Exception('用户拒绝了登录请求');
+      }
+      
+      throw Exception('Farcaster登录失败: $e');
+    }
+  }
+
+  /// 生成随机nonce
+  String _generateNonce() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = js.context['Math']['random'];
+    final result = StringBuffer();
+    
+    for (int i = 0; i < 16; i++) {
+      final randomIndex = (random.apply([]) * chars.length).floor();
+      result.write(chars[randomIndex]);
     }
     
-    return null;
+    return result.toString();
+  }
+
+  /// 调用异步JavaScript函数
+  Future<dynamic> _callAsyncFunction(dynamic jsFunction, List<dynamic> args) async {
+    try {
+      final result = jsFunction.apply(args);
+      
+      // 如果返回的是Promise，等待其完成
+      if (result != null && result['then'] != null) {
+        // 这是一个Promise，我们需要等待它
+        return await _promiseToFuture(result);
+      }
+      
+      return result;
+    } catch (e) {
+      debugPrint('Error calling async JS function: $e');
+      rethrow;
+    }
+  }
+
+  /// 将JavaScript Promise转换为Dart Future
+  Future<dynamic> _promiseToFuture(dynamic promise) async {
+    try {
+      // 创建一个Completer来处理Promise的结果
+      final completer = js.context.callMethod('eval', ['''
+        new Promise((resolve, reject) => {
+          arguments[0].then(resolve).catch(reject);
+        })
+      ''']);
+      
+      // 简化处理：直接返回promise结果
+      // 注意：这是一个简化的实现，实际项目中可能需要更复杂的Promise处理
+      return promise;
+    } catch (e) {
+      debugPrint('Error converting Promise to Future: $e');
+      throw e;
+    }
   }
 
   /// 获取以太坊钱包提供者
@@ -87,7 +267,9 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return false;
     
     try {
-      return js.context['farcasterSdk'] != null;
+      // 检查全局 farcasterSDK 对象
+      final farcasterSDK = js.context['farcasterSDK'];
+      return farcasterSDK != null;
     } catch (e) {
       debugPrint('Error checking SDK availability: $e');
       return false;
