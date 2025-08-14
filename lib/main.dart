@@ -1,86 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/settings_provider.dart';
+import 'pages/diary_page.dart';
+import 'pages/trading_page.dart';
+import 'pages/settings_page.dart';
 
 void main() {
-  runApp(const SimpleTestApp());
+  runApp(const ThunderTrackApp());
 }
 
-class SimpleTestApp extends StatelessWidget {
-  const SimpleTestApp({super.key});
+class ThunderTrackApp extends StatelessWidget {
+  const ThunderTrackApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ThunderTrack Test',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (context) => SettingsProvider(),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'ThunderTrack',
+            debugShowCheckedModeBanner: false,
+            themeMode: settings.themeMode,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6366f1)),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF6366f1),
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            locale: settings.locale,
+            home: const MainPage(),
+          );
+        },
       ),
-      home: const TestHomePage(),
     );
   }
 }
 
-class TestHomePage extends StatelessWidget {
-  const TestHomePage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int _selectedIndex = 1; // 默认显示日记页面
+
+  final List<Widget> _pages = [
+    const TradingPage(),
+    const DiaryPage(),
+    const SettingsPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('⚡ ThunderTrack Test'),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(
-              Icons.flash_on,
-              size: 100,
-              color: Colors.blue,
-            ),
-            SizedBox(height: 20),
-            Text(
-              'ThunderTrack',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              '去中心化交易日记',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 30),
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Text(
-                      '🎉 Flutter 启动成功！',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    Text('在 Farcaster Mini App 中运行'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('测试按钮点击成功！')),
-          );
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
         },
-        tooltip: '测试',
-        child: const Icon(Icons.touch_app),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up),
+            label: '交易',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: '日记',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: '设置',
+          ),
+        ],
       ),
     );
   }
