@@ -99,7 +99,10 @@
         </div>
         
         <div class="card">
-            <div>SDK状态: <span class="status" id="status">初始化中...</span></div>
+            <div class="success">🔍 运行模式检测</div>
+            <div>模式: <span id="mode" style="color: #fbbf24; font-weight: bold;"></span></div>
+            <div>Parent: <span id="parent"></span></div>
+            <div>SDK状态: <span class="status" id="status">检测中...</span></div>
         </div>
         
         <button class="button" onclick="testBasic()">
@@ -164,10 +167,25 @@
         setTimeout(forceReady, 1000);
         
         // 填充调试信息
+        var isMiniApp = window.parent !== window;
+        var isWarpcast = navigator.userAgent.toLowerCase().includes('warpcast');
+        
         document.getElementById('url').textContent = window.location.href;
-        document.getElementById('parent').textContent = window.parent !== window ? '嵌入式(Mini App)' : '独立浏览器';
+        document.getElementById('parent').textContent = isMiniApp ? '嵌入式(iframe)' : '独立窗口';
         document.getElementById('userAgent').textContent = navigator.userAgent.substring(0, 60) + '...';
         document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // 检测运行模式
+        if (isMiniApp && isWarpcast) {
+            document.getElementById('mode').textContent = '✅ Mini App模式';
+            document.getElementById('status').textContent = '🎯 尝试SDK通信...';
+        } else if (isWarpcast && !isMiniApp) {
+            document.getElementById('mode').textContent = '⚠️ 浏览器模式';
+            document.getElementById('status').textContent = '💡 需要通过Mini App按钮打开';
+        } else {
+            document.getElementById('mode').textContent = '🌐 普通浏览器';
+            document.getElementById('status').textContent = '✅ 正常浏览器环境';
+        }
         
         // 尝试动态加载SDK (不用ES6 import)
         var sdkLoaded = false;

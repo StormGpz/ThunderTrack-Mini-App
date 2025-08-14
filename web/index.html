@@ -13,8 +13,6 @@
   
   <!-- Farcaster Mini App Embed (for sharing) -->
   <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
-  <!-- Backward compatibility -->
-  <meta name="fc:frame" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"🚀 打开 ThunderTrack","action":{"type":"launch_frame","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
   
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
@@ -23,300 +21,125 @@
   <meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />
   <meta property="og:type" content="website" />
   
-  <!-- Twitter Card Meta Tags -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="⚡ ThunderTrack - 去中心化交易日记" />
-  <meta name="twitter:description" content="基于 Farcaster 的去中心化交易日记应用" />
-  <meta name="twitter:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
-  
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="ThunderTrack">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-  
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
   <link rel="manifest" href="manifest.json">
-  
-  <!-- Farcaster Mini App SDK -->
-  <script type="module">
-    // 检查是否访问原生JS测试页面
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('test') === 'native') {
-      window.location.href = './test_native.html' + window.location.search;
-    } else {
-      // 只有非测试模式才继续执行Flutter相关代码
-      
-      // 检测是否在 Mini App 环境中
-      const currentUrl = window.location.href;
-    
-    console.log('Current URL:', currentUrl);
-    console.log('Search params:', searchParams.toString());
-    console.log('Has miniApp param:', searchParams.has('miniApp'));
-    console.log('miniApp value:', searchParams.get('miniApp'));
-    
-    const isMiniApp = searchParams.has('miniApp') && searchParams.get('miniApp') === 'true' ||
-                     currentUrl.includes('/mini') ||
-                     window.parent !== window;
-    
-    console.log('Detected Mini App environment:', isMiniApp);
-    
-    if (isMiniApp) {
-      console.log('Loading Farcaster Mini App SDK...');
-      // 动态导入 Farcaster Mini App SDK
-      import('https://esm.sh/@farcaster/miniapp-sdk').then(({ sdk }) => {
-        console.log('✅ Farcaster Mini App SDK loaded successfully');
-        
-        // 存储 SDK 实例到全局，供 Flutter 使用
-        window.farcasterSdk = sdk;
-        
-        // Flutter 准备就绪后会调用这个函数
-        window.markMiniAppReady = async function() {
-          try {
-            await sdk.actions.ready();
-            console.log('✅ Mini App ready signal sent successfully');
-          } catch (error) {
-            console.error('❌ Failed to send ready signal:', error);
-          }
-        };
-        
-        // 当Flutter加载完成后自动调用ready()
-        window.autoCallReady = function() {
-          console.log('🚀 Auto-calling Mini App ready...');
-          window.markMiniAppReady();
-        };
-        
-        // 获取用户信息的函数
-        window.getFarcasterUser = async function() {
-          try {
-            if (sdk.user) {
-              const profile = await sdk.user.getProfile();
-              console.log('✅ Got Farcaster user profile:', profile);
-              return profile;
-            }
-            console.log('ℹ️ No user available in SDK');
-            return null;
-          } catch (error) {
-            console.error('❌ Failed to get user profile:', error);
-            return null;
-          }
-        };
-        
-        // 获取钱包提供者的函数
-        window.getEthereumProvider = function() {
-          try {
-            const provider = sdk.wallet.getEthereumProvider();
-            console.log('✅ Got Ethereum provider:', provider);
-            return provider;
-          } catch (error) {
-            console.error('❌ Failed to get Ethereum provider:', error);
-            return null;
-          }
-        };
-        
-      }).catch(error => {
-        console.error('❌ Failed to load Farcaster Mini App SDK:', error);
-        // 如果 SDK 加载失败，提供一个空的实现避免错误
-        window.markMiniAppReady = function() { console.log('⚠️ Mini App SDK not available'); };
-        window.getFarcasterUser = function() { return Promise.resolve(null); };
-        window.getEthereumProvider = function() { return null; };
-      });
-    } else {
-      // 不在 Mini App 环境中，提供空实现
-      console.log('ℹ️ Not running in Mini App environment');
-      window.markMiniAppReady = function() { console.log('ℹ️ Not in Mini App environment'); };
-      window.autoCallReady = function() { console.log('ℹ️ Not in Mini App environment'); };
-      window.getFarcasterUser = function() { return Promise.resolve(null); };
-      window.getEthereumProvider = function() { return null; };
-    }
-    
-    } // 结束外层的else块 (非测试模式)
-  </script>
-  
-  <!-- Loading Styles -->
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
   <style>
     body {
+      font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    }
-    
-    #loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
-      color: white;
-      flex-direction: column;
+      padding: 20px;
     }
-    
-    #loading .logo {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      animation: pulse 2s infinite;
+    .container {
+      text-align: center;
+      max-width: 500px;
     }
-    
-    #loading .title {
-      font-size: 1.5rem;
+    .logo {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+    .title {
+      font-size: 36px;
       font-weight: bold;
-      margin-bottom: 2rem;
+      margin-bottom: 10px;
     }
-    
-    #loading .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 30px;
     }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    .card {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
     }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .option {
+      background: white;
+      color: #6366f1;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+      width: 280px;
+      display: block;
+      text-decoration: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .option:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+    .info {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <!-- Mini App Loading Screen -->
-  <div id="loading">
+  <div class="container">
     <div class="logo">⚡</div>
     <div class="title">ThunderTrack</div>
-    <div class="spinner"></div>
+    <div class="subtitle">去中心化交易日记</div>
+    
+    <div class="card">
+      <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">🚀 选择应用版本</div>
+      
+      <a href="compatible_test.html?miniApp=true" class="option">
+        📱 兼容测试版本
+      </a>
+      
+      <a href="test_native.html?miniApp=true" class="option">
+        🌐 纯JS测试版本
+      </a>
+      
+      <a href="javascript:loadFlutter()" class="option">
+        🦋 Flutter完整应用 (实验性)
+      </a>
+    </div>
+    
+    <div class="info">
+      当前环境: <span id="env">检测中...</span>
+      <br>时间: <span id="time"></span>
+    </div>
   </div>
-  
-  <!-- Flutter App Scripts -->
+
   <script>
-    // 强制Flutter使用HTML渲染器以提高webview兼容性
-    window.flutterConfiguration = {
-      renderer: "html"
-    };
+    // 填充环境信息
+    document.getElementById('env').textContent = navigator.userAgent.includes('warpcast') ? 'Farcaster' : '浏览器';
+    document.getElementById('time').textContent = new Date().toLocaleString();
     
-    var serviceWorkerVersion = null;
-    var scriptLoaded = false;
-    function loadMainDartJs() {
-      if (scriptLoaded) {
-        return;
-      }
-      scriptLoaded = true;
-      var scriptTag = document.createElement('script');
-      scriptTag.src = 'main.dart.js';
-      scriptTag.type = 'application/javascript';
-      scriptTag.onload = function() {
-        console.log('✅ Flutter main.dart.js loaded successfully');
-        // Hide loading screen when Flutter is ready
-        setTimeout(() => {
-          const loading = document.getElementById('loading');
-          if (loading) {
-            console.log('🎯 Hiding loading screen');
-            loading.style.opacity = '0';
-            setTimeout(() => {
-              loading.style.display = 'none';
-              console.log('✅ Loading screen hidden');
-              
-              // 自动调用Mini App ready信号
-              if (window.autoCallReady) {
-                console.log('📞 Auto-calling Mini App ready');
-                window.autoCallReady();
-              }
-              
-              // 备用方案：手动调用
-              if (window.markMiniAppReady) {
-                console.log('📞 Calling markMiniAppReady as backup');
-                window.markMiniAppReady();
-              }
-            }, 300);
-          }
-        }, 1000); // 给Flutter足够时间完全初始化
-      };
-      document.body.append(scriptTag);
-    }
-
-    if ('serviceWorker' in navigator) {
-      // Service workers are supported. Use them.
-      window.addEventListener('load', function () {
-        // Wait for registration to finish before dropping the <script> tag.
-        // Otherwise, the browser will load the script multiple times,
-        // potentially different versions.
-        var serviceWorkerUrl = 'flutter_service_worker.js?v=' + serviceWorkerVersion;
-        navigator.serviceWorker.register(serviceWorkerUrl)
-          .then((reg) => {
-            function waitForActivation(serviceWorker) {
-              serviceWorker.addEventListener('statechange', () => {
-                if (serviceWorker.state == 'activated') {
-                  console.log('Installed new service worker.');
-                  loadMainDartJs();
-                }
-              });
-            }
-            if (!reg.active && (reg.installing || reg.waiting)) {
-              // No active web worker and we have installed or are installing
-              // one for the first time. Simply wait for it to activate.
-              waitForActivation(reg.installing || reg.waiting);
-            } else if (!reg.active.scriptURL.endsWith(serviceWorkerVersion)) {
-              // When the app updates the serviceWorkerVersion changes, so we
-              // need to ask the service worker to update.
-              console.log('New service worker available.');
-              reg.update();
-              waitForActivation(reg.installing);
-            } else {
-              // Existing service worker is still good.
-              console.log('Loading app from service worker.');
-              loadMainDartJs();
-            }
-          });
-
-        // If service worker doesn't succeed in a reasonable amount of time,
-        // fallback to plaint <script> tag.
-        setTimeout(() => {
-          if (!scriptLoaded) {
-            console.warn(
-              'Failed to load app from service worker. Falling back to plain <script> tag.',
-            );
-            loadMainDartJs();
-          }
-        }, 4000);
-      });
-    } else {
-      // Service workers not supported. Just drop the <script> tag.
-      loadMainDartJs();
+    // 检查URL参数进行自动路由
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page') || params.get('test');
+    
+    if (page === 'compatible') {
+      window.location.href = 'compatible_test.html' + window.location.search;
+    } else if (page === 'native' || page === 'test') {
+      window.location.href = 'test_native.html' + window.location.search;
     }
     
-    // 添加全局超时机制 - 如果Flutter在8秒内没有启动，强制处理
-    setTimeout(() => {
-      const loading = document.getElementById('loading');
-      if (loading && loading.style.display !== 'none') {
-        console.warn('⚠️ Flutter loading timeout detected');
-        loading.innerHTML = `
-          <div style="color: white; text-align: center; padding: 20px;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">⚡</div>
-            <div style="font-size: 1.2rem; margin-bottom: 20px;">ThunderTrack</div>
-            <div style="font-size: 0.9rem; opacity: 0.8;">正在启动应用...</div>
-            <div style="font-size: 0.8rem; margin-top: 10px;">
-              <button onclick="location.reload()" style="background: #fff; color: #6366f1; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">重新加载</button>
-            </div>
-          </div>
-        `;
-        
-        // 仍然尝试调用ready()避免Farcaster卡住  
-        if (window.autoCallReady) {
-          console.log('📞 Timeout: Calling ready() to unblock Farcaster');
-          window.autoCallReady();
-        }
+    function loadFlutter() {
+      if (confirm('加载Flutter完整应用？\n\n注意：Flutter版本在Farcaster中可能有兼容性问题，建议先使用兼容测试版本。')) {
+        // 这里可以加载Flutter版本
+        alert('Flutter版本正在开发中，请先使用兼容测试版本。');
       }
-    }, 8000);
+    }
+    
+    console.log('✅ ThunderTrack route selector loaded');
   </script>
 </body>
 </html>
