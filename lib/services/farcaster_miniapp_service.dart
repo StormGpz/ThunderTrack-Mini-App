@@ -460,4 +460,43 @@ class FarcasterMiniAppService {
     });
     debugPrint('==========================================');
   }
+
+  /// 解析JWT Token获取用户信息
+  Map<String, dynamic>? _parseJwtToken(String token) {
+    try {
+      // JWT格式: header.payload.signature
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        debugPrint('❌ JWT格式不正确');
+        return null;
+      }
+      
+      // 解码payload部分
+      String payload = parts[1];
+      
+      // 添加padding使其长度为4的倍数
+      while (payload.length % 4 != 0) {
+        payload += '=';
+      }
+      
+      // Base64解码
+      final bytes = base64Url.decode(payload);
+      final decodedJson = utf8.decode(bytes);
+      final Map<String, dynamic> claims = jsonDecode(decodedJson);
+      
+      debugPrint('🔍 JWT Claims: $claims');
+      
+      // 提取关键信息
+      return {
+        'fid': claims['sub'], // Subject通常是用户FID
+        'expiry': claims['exp'], // 过期时间
+        'issued': claims['iat'], // 签发时间
+        'domain': claims['domain'], // 域名
+        ...claims, // 包含所有原始claims
+      };
+    } catch (e) {
+      debugPrint('❌ JWT解析失败: $e');
+      return null;
+    }
+  }
 }

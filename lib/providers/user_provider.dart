@@ -569,55 +569,6 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// 解析JWT token获取用户信息
-  Map<String, dynamic>? _parseJwtToken(String token) {
-    try {
-      // JWT格式: header.payload.signature
-      final parts = token.split('.');
-      if (parts.length != 3) {
-        debugPrint('Invalid JWT format');
-        return null;
-      }
-      
-      // Base64解码payload
-      String payload = parts[1];
-      
-      // 添加必要的padding
-      switch (payload.length % 4) {
-        case 2:
-          payload += '==';
-          break;
-        case 3:
-          payload += '=';
-          break;
-      }
-      
-      final decoded = utf8.decode(base64Decode(payload));
-      final payloadMap = jsonDecode(decoded) as Map<String, dynamic>;
-      
-      debugPrint('JWT payload: $payloadMap');
-      
-      // JWT标准字段：
-      // sub: 用户FID
-      // iss: 发行者
-      // aud: 受众
-      // exp: 过期时间
-      // iat: 发行时间
-      
-      return {
-        'fid': payloadMap['sub']?.toString(),
-        'issuer': payloadMap['iss'],
-        'audience': payloadMap['aud'],
-        'expiry': payloadMap['exp'],
-        'issuedAt': payloadMap['iat'],
-      };
-      
-    } catch (e) {
-      debugPrint('Error parsing JWT token: $e');
-      return null;
-    }
-  }
-
   /// 通知 Mini App 准备就绪
   Future<void> notifyMiniAppReady() async {
     try {
