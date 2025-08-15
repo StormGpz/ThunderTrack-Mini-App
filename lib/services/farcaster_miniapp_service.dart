@@ -1,6 +1,7 @@
 import 'dart:js' as js;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 /// Farcaster Mini App 服务
@@ -498,12 +499,19 @@ class FarcasterMiniAppService {
     
     debugPrint('🔍 开始转换JS对象到Map...');
     debugPrint('🔍 JS对象类型: ${jsObject.runtimeType}');
+    debugPrint('🔍 JS对象字符串表示: ${jsObject.toString()}');
+    
+    // 检查是否是压缩混淆的对象
+    if (jsObject.toString().contains('instance of minified:')) {
+      debugPrint('⚠️ 检测到压缩混淆的JS对象，使用特殊处理方法...');
+      return _handleMinifiedJsObject(jsObject);
+    }
     
     try {
       // 方法1: 尝试使用 JSON 序列化/反序列化
       debugPrint('🔄 尝试JSON序列化方法...');
       final jsonString = js.context['JSON'].callMethod('stringify', [jsObject]);
-      debugPrint('✅ JSON序列化成功: ${jsonString.toString().substring(0, 100)}...');
+      debugPrint('✅ JSON序列化成功: ${jsonString.toString().substring(0, math.min(100, jsonString.toString().length))}...');
       final result = jsonDecode(jsonString as String) as Map<String, dynamic>;
       debugPrint('✅ JSON转换完成，包含字段: ${result.keys.join(', ')}');
       return result;
@@ -539,6 +547,96 @@ class FarcasterMiniAppService {
         return {};
       }
     }
+  }
+
+  /// 处理压缩混淆的JavaScript对象
+  Map<String, dynamic> _handleMinifiedJsObject(dynamic jsObject) {
+    debugPrint('🔧 处理压缩混淆的JS对象...');
+    
+    try {
+      // 方法1: 强制使用JSON.stringify，即使对象被压缩
+      debugPrint('🔄 强制JSON序列化压缩对象...');
+      final jsonString = js.context['JSON'].callMethod('stringify', [jsObject]);
+      if (jsonString != null && jsonString.toString() != 'null' && jsonString.toString() != '{}') {
+        debugPrint('✅ 压缩对象JSON序列化成功: ${jsonString.toString()}');
+        final result = jsonDecode(jsonString as String) as Map<String, dynamic>;
+        debugPrint('✅ 压缩对象转换完成，包含字段: ${result.keys.join(', ')}');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ 压缩对象JSON序列化失败: $e');
+    }
+    
+    try {
+      // 方法2: 使用Object.keys获取所有属性名
+      debugPrint('🔄 使用Object.keys获取压缩对象属性...');
+      final keys = js.context['Object'].callMethod('keys', [jsObject]);
+      final result = <String, dynamic>{};
+      
+      if (keys != null) {
+        final keyList = List<String>.from(keys);
+        debugPrint('🔍 发现属性: ${keyList.join(', ')}');
+        
+        for (final key in keyList) {
+          try {
+            final value = jsObject[key];
+            if (value != null) {
+              result[key] = _convertJsValue(value);
+              debugPrint('✅ 压缩对象属性 $key: ${result[key]}');
+            }
+          } catch (e) {
+            debugPrint('❌ 获取压缩对象属性 $key 失败: $e');
+          }
+        }
+        
+        debugPrint('✅ 压缩对象属性提取完成，共 ${result.length} 个字段');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ Object.keys方法失败: $e');
+    }
+    
+    // 方法3: 尝试已知字段名的直接访问
+    debugPrint('🔄 尝试直接访问已知字段...');
+    final result = <String, dynamic>{};
+    final knownFields = ['fid', 'username', 'displayName', 'pfpUrl', 'bio', 'location', 'verified'];
+    
+    for (final field in knownFields) {
+      try {
+        final value = jsObject[field];
+        if (value != null) {
+          result[field] = _convertJsValue(value);
+          debugPrint('✅ 直接访问字段 $field: ${result[field]}');
+        }
+      } catch (e) {
+        debugPrint('❌ 直接访问字段 $field 失败: $e');
+      }
+    }
+    
+    debugPrint('🎯 压缩对象最终结果: $result');
+    return result;
+  }
+
+  /// 转换JavaScript值为Dart值
+  dynamic _convertJsValue(dynamic jsValue) {
+    if (jsValue == null) return null;
+    
+    try {
+      // 如果是基本类型，直接返回
+      if (jsValue is String || jsValue is num || jsValue is bool) {
+        return jsValue;
+      }
+      
+      // 如果是对象，尝试JSON序列化
+      final jsonString = js.context['JSON'].callMethod('stringify', [jsValue]);
+      if (jsonString != null && jsonString.toString() != 'null') {
+        return jsonDecode(jsonString as String);
+      }
+    } catch (e) {
+      debugPrint('⚠️ 转换JS值失败: $e');
+    }
+    
+    return jsValue.toString();
   }
 
   /// 安全获取 JS 对象属性
