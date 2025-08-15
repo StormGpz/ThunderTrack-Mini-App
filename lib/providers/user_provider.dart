@@ -505,30 +505,57 @@ class UserProvider extends ChangeNotifier {
       addDebugLog('🔧 开始处理Quick Auth结果...');
       addDebugLog('📋 Auth结果数据: ${authResult.keys.join(', ')}');
       
-      // 详细记录收到的数据
-      addDebugLog('🆔 FID: ${authResult['fid']}');
-      addDebugLog('👤 用户名: ${authResult['username']}');
-      addDebugLog('🏷️ 显示名: ${authResult['displayName']}');
-      addDebugLog('🖼️ 头像: ${authResult['pfpUrl'] != null ? "有" : "无"}');
+      final fid = authResult['fid']?.toString();
+      addDebugLog('🆔 FID: $fid');
       
-      // 从 JWT token 和 context 信息创建用户对象
+      // Quick Auth只提供基本认证信息，需要额外获取用户详情
+      addDebugLog('🔍 Quick Auth缺少用户详情，尝试获取完整信息...');
+      
+      Map<String, dynamic> userDetails = {};
+      
+      // 尝试获取用户详细信息
+      if (fid != null) {
+        final detailInfo = await _miniAppService.getUserInfoByFid(fid);
+        if (detailInfo != null && detailInfo.isNotEmpty) {
+          userDetails = detailInfo;
+          addDebugLog('✅ 成功获取用户详细信息');
+        } else {
+          addDebugLog('⚠️ 无法获取用户详细信息，使用默认值');
+        }
+      }
+      
+      // 合并Quick Auth结果和详细信息
+      final combinedInfo = {
+        ...authResult,
+        ...userDetails,
+      };
+      
+      // 详细记录最终数据
+      addDebugLog('👤 用户名: ${combinedInfo['username'] ?? '无'}');
+      addDebugLog('🏷️ 显示名: ${combinedInfo['displayName'] ?? '无'}');
+      addDebugLog('🖼️ 头像: ${combinedInfo['pfpUrl'] != null ? "有" : "无"}');
+      
+      // 创建用户对象
       final user = User(
-        fid: authResult['fid']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        username: authResult['username']?.toString() ?? 'farcaster_user_${authResult['fid']}',
-        displayName: authResult['displayName']?.toString() ?? authResult['username']?.toString() ?? 'Farcaster User',
-        avatarUrl: authResult['pfpUrl']?.toString(),
-        bio: authResult['bio']?.toString() ?? '来自 Farcaster 的用户',
-        walletAddress: authResult['primaryAddress']?.toString(), // 可能从Quick Auth或context获取
-        followers: _parseFollowers(authResult['followers']),
-        following: _parseFollowing(authResult['following']),
-        isVerified: authResult['verified'] == true,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)), // 默认值
+        fid: fid ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        username: combinedInfo['username']?.toString() ?? 'user_$fid',
+        displayName: combinedInfo['displayName']?.toString() ?? 
+                    combinedInfo['username']?.toString() ?? 
+                    'Farcaster User $fid',
+        avatarUrl: combinedInfo['pfpUrl']?.toString(),
+        bio: combinedInfo['bio']?.toString() ?? '来自 Farcaster 的用户',
+        walletAddress: combinedInfo['primaryAddress']?.toString() ?? 
+                      combinedInfo['custodyAddress']?.toString(),
+        followers: _parseFollowers(combinedInfo['followers']),
+        following: _parseFollowing(combinedInfo['following']),
+        isVerified: combinedInfo['verified'] == true,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
         lastActiveAt: DateTime.now(),
       );
 
       addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
 
-      // 保存认证token（重要！）
+      // 保存认证token
       await _saveAuthToken(authResult['token']);
       await _saveUserToLocal(user);
       

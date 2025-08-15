@@ -232,12 +232,42 @@ class FarcasterMiniAppService {
       if (user != null) {
         final userMap = _jsObjectToMap(user);
         debugPrint('📋 Context用户信息: ${userMap.keys}');
+        debugPrint('🔍 Context详细信息: $userMap');
         return userMap;
+      } else {
+        debugPrint('⚠️ Context中没有用户信息');
       }
     } catch (e) {
       debugPrint('⚠️ 获取context用户信息失败: $e');
     }
     return null;
+  }
+
+  /// 通过FID获取用户详细信息（备用方案）
+  Future<Map<String, dynamic>?> getUserInfoByFid(String fid) async {
+    try {
+      debugPrint('🔍 尝试通过FID获取用户信息: $fid');
+      
+      // 方案1: 尝试从Context获取
+      final contextUser = await _getContextUserInfo();
+      if (contextUser != null && contextUser.isNotEmpty) {
+        debugPrint('✅ 从Context获取到用户信息');
+        return contextUser;
+      }
+      
+      // 方案2: 使用Farcaster公开API
+      debugPrint('🌐 尝试从Farcaster API获取用户信息...');
+      
+      // 这里可以调用 https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}
+      // 但需要API key，或者使用其他公开API
+      
+      debugPrint('💡 建议：实现Neynar API调用或其他用户信息源');
+      
+      return null;
+    } catch (e) {
+      debugPrint('❌ 获取用户详细信息失败: $e');
+      return null;
+    }
   }
 
   /// 使用 Quick Auth 获取认证token（保留原方法兼容性）
