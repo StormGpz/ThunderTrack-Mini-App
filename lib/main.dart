@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
@@ -163,6 +164,14 @@ class _MainPageState extends State<MainPage> {
             title: const Text('⚡ ThunderTrack', style: TextStyle(fontWeight: FontWeight.bold)),
             centerTitle: true,
             actions: [
+              // 调试面板按钮（仅在开发环境或Farcaster环境显示）
+              if (kDebugMode || userProvider.isMiniAppEnvironment)
+                IconButton(
+                  icon: const Icon(Icons.bug_report, size: 20),
+                  tooltip: '调试日志',
+                  onPressed: () => _showDebugPanel(context, userProvider),
+                ),
+              
               if (!userProvider.isAuthenticated) ...[
                 // 未登录时显示登录按钮
                 TextButton(
@@ -308,6 +317,126 @@ class _MainPageState extends State<MainPage> {
             },
             child: const Text('模拟登录'),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示调试面板
+  void _showDebugPanel(BuildContext context, UserProvider userProvider) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.bug_report, size: 20),
+            const SizedBox(width: 8),
+            const Text('调试信息'),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.clear_all, size: 18),
+              tooltip: '清空日志',
+              onPressed: () {
+                userProvider.clearDebugLogs();
+              },
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 环境状态
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('📊 环境状态', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Mini App: ${userProvider.isMiniAppEnvironment ? "✅" : "❌"}'),
+                    Text('SDK可用: ${userProvider.isMiniAppSdkAvailable ? "✅" : "❌"}'),
+                    Text('已登录: ${userProvider.isAuthenticated ? "✅" : "❌"}'),
+                    Text('平台: ${userProvider.environmentInfo['platform']}'),
+                    if (userProvider.isAuthenticated && userProvider.currentUser != null)
+                      Text('用户: ${userProvider.currentUser!.displayName}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // 调试日志
+              const Text('📝 调试日志:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: userProvider.debugLogs.isEmpty
+                      ? const Center(
+                          child: Text(
+                            '暂无调试日志\n尝试点击登录或刷新页面',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: userProvider.debugLogs.length,
+                          itemBuilder: (context, index) {
+                            final log = userProvider.debugLogs[index];
+                            Color textColor = Colors.white;
+                            
+                            // 根据日志内容设置颜色
+                            if (log.contains('✅') || log.contains('成功')) {
+                              textColor = Colors.green[300]!;
+                            } else if (log.contains('❌') || log.contains('失败') || log.contains('错误')) {
+                              textColor = Colors.red[300]!;
+                            } else if (log.contains('⚠️') || log.contains('警告')) {
+                              textColor = Colors.orange[300]!;
+                            } else if (log.contains('🔍') || log.contains('🔄')) {
+                              textColor = Colors.blue[300]!;
+                            }
+                            
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 1),
+                              child: SelectableText(
+                                log,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('关闭'),
+          ),
+          if (!userProvider.isAuthenticated && userProvider.isMiniAppEnvironment)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _connectFarcaster(userProvider);
+              },
+              child: const Text('尝试登录'),
+            ),
         ],
       ),
     );

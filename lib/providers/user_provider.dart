@@ -19,17 +19,44 @@ class UserProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _isAuthenticated = false;
+  
+  // 调试日志列表
+  final List<String> _debugLogs = [];
+  int _maxLogs = 20; // 最多保存20条日志
 
   // Getters
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _isAuthenticated;
+  List<String> get debugLogs => List.unmodifiable(_debugLogs);
   
   // Mini App 相关 getters
   bool get isMiniAppEnvironment => _miniAppService.isMiniAppEnvironment;
   bool get isMiniAppSdkAvailable => _miniAppService.isSdkAvailable;
   Map<String, dynamic> get environmentInfo => _miniAppService.getEnvironmentInfo();
+
+  /// 添加调试日志
+  void addDebugLog(String message) {
+    final timestamp = DateTime.now().toIso8601String().substring(11, 19);
+    final logMessage = '[$timestamp] $message';
+    
+    _debugLogs.insert(0, logMessage); // 新日志在顶部
+    
+    // 限制日志数量
+    if (_debugLogs.length > _maxLogs) {
+      _debugLogs.removeRange(_maxLogs, _debugLogs.length);
+    }
+    
+    debugPrint(logMessage); // 同时输出到控制台
+    notifyListeners(); // 通知UI更新
+  }
+  
+  /// 清空调试日志
+  void clearDebugLogs() {
+    _debugLogs.clear();
+    notifyListeners();
+  }
 
   /// 初始化用户状态
   Future<void> initialize() async {
@@ -427,41 +454,44 @@ class UserProvider extends ChangeNotifier {
   /// 真实的 Farcaster 登录（优先使用 Quick Auth）
   Future<bool> loginFromFarcaster() async {
     if (!_miniAppService.isMiniAppEnvironment) {
+      addDebugLog('❌ 不在 Farcaster Mini App 环境中');
       _setError('不在 Farcaster Mini App 环境中');
       return false;
     }
 
+    addDebugLog('🚀 开始手动 Farcaster 登录流程...');
     _setLoading(true);
     _setError(null);
 
     try {
-      debugPrint('🚀 开始 Farcaster 登录流程...');
+      addDebugLog('🎯 尝试 Quick Auth 登录...');
       
       // 🎯 优先使用 Quick Auth（推荐方案）
       final quickAuthResult = await _miniAppService.quickAuthLogin();
       
       if (quickAuthResult != null && quickAuthResult['fid'] != null) {
-        debugPrint('✅ Quick Auth 登录成功');
+        addDebugLog('✅ Quick Auth 登录成功: FID=${quickAuthResult['fid']}');
         await _processQuickAuthResult(quickAuthResult);
         return true;
       }
       
-      debugPrint('⚠️ Quick Auth 不可用，尝试备用方案...');
+      addDebugLog('⚠️ Quick Auth 不可用，尝试备用方案...');
       
       // 🔄 备用方案：直接从context获取用户信息
       final farcasterUser = await _miniAppService.getFarcasterUser();
       
       if (farcasterUser != null && farcasterUser.isNotEmpty) {
-        debugPrint('✅ Context方案登录成功');
+        addDebugLog('✅ Context方案登录成功');
         await _processFarcasterUser(farcasterUser);
         return true;
       }
       
+      addDebugLog('❌ 所有登录方案都失败了');
       _setError('无法获取 Farcaster 用户信息');
       return false;
       
     } catch (e) {
-      debugPrint('❌ Farcaster登录出错: $e');
+      addDebugLog('❌ Farcaster登录出错: $e');
       _setError('Farcaster 登录失败: $e');
       return false;
     } finally {

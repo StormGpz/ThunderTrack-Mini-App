@@ -1,5 +1,6 @@
 import 'dart:js' as js;
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 /// Farcaster Mini App 服务
@@ -130,25 +131,43 @@ class FarcasterMiniAppService {
 
   /// 使用 Quick Auth 获取认证token和用户信息
   Future<Map<String, dynamic>?> quickAuthLogin() async {
-    if (!kIsWeb) return null;
+    if (!kIsWeb) {
+      debugPrint('❌ 不在Web环境中');
+      return null;
+    }
     
     try {
+      debugPrint('🔍 检查Farcaster SDK...');
       final farcasterSDK = js.context['farcasterSDK'];
       if (farcasterSDK == null) {
-        debugPrint('❌ Farcaster SDK not found');
+        debugPrint('❌ Farcaster SDK not found in js.context');
+        debugPrint('🔍 Context type: ${js.context.runtimeType}');
         return null;
       }
       
+      debugPrint('✅ Farcaster SDK找到，检查Quick Auth...');
       final quickAuth = farcasterSDK['quickAuth'];
       if (quickAuth == null) {
-        debugPrint('❌ Quick Auth not available');
+        debugPrint('❌ Quick Auth not available in SDK');
+        debugPrint('🔍 Available SDK keys: ${_getJsObjectKeys(farcasterSDK)}');
         return null;
       }
       
-      debugPrint('🚀 开始 Quick Auth 登录流程...');
+      debugPrint('✅ Quick Auth可用，检查getToken方法...');
+      final getTokenMethod = quickAuth['getToken'];
+      if (getTokenMethod == null) {
+        debugPrint('❌ getToken method not found');
+        debugPrint('🔍 Available quickAuth keys: ${_getJsObjectKeys(quickAuth)}');
+        return null;
+      }
+      
+      debugPrint('🚀 开始调用sdk.quickAuth.getToken()...');
       
       // 获取认证token
-      final tokenResult = await _callAsyncFunction(quickAuth['getToken'], []);
+      final tokenResult = await _callAsyncFunction(getTokenMethod, []);
+      
+      debugPrint('🔍 Token result: $tokenResult');
+      debugPrint('🔍 Token result type: ${tokenResult.runtimeType}');
       
       if (tokenResult != null && tokenResult['token'] != null) {
         final token = tokenResult['token'] as String;
@@ -161,6 +180,7 @@ class FarcasterMiniAppService {
           
           // 同时尝试从context获取额外用户信息
           final contextUser = await _getContextUserInfo();
+          debugPrint('🔍 Context用户信息: $contextUser');
           
           // 合并信息
           final result = {
@@ -171,17 +191,35 @@ class FarcasterMiniAppService {
             ...?contextUser, // 如果有context用户信息，合并进来
           };
           
-          debugPrint('🎉 Quick Auth 登录成功');
+          debugPrint('🎉 Quick Auth 登录成功，最终结果: $result');
           return result;
+        } else {
+          debugPrint('❌ JWT解析失败');
         }
+      } else {
+        debugPrint('❌ Token result为空或无token字段');
+        debugPrint('🔍 实际获得: $tokenResult');
       }
       
       debugPrint('❌ Quick Auth token获取失败');
       return null;
       
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ Quick Auth 登录出错: $e');
+      debugPrint('📋 Stack trace: $stackTrace');
       return null;
+    }
+  }
+
+  /// 获取JS对象的键名（用于调试）
+  List<String> _getJsObjectKeys(dynamic jsObject) {
+    try {
+      if (jsObject == null) return [];
+      final keys = js.context['Object'].callMethod('keys', [jsObject]);
+      return List<String>.from(keys);
+    } catch (e) {
+      debugPrint('获取JS对象键名失败: $e');
+      return [];
     }
   }
 
@@ -301,19 +339,42 @@ class FarcasterMiniAppService {
   /// 将JavaScript Promise转换为Dart Future
   Future<dynamic> _promiseToFuture(dynamic promise) async {
     try {
-      // 创建一个Completer来处理Promise的结果
-      final completer = js.context.callMethod('eval', ['''
-        new Promise((resolve, reject) => {
-          arguments[0].then(resolve).catch(reject);
-        })
-      ''']);
+      debugPrint('🔄 开始处理JS Promise...');
       
-      // 简化处理：直接返回promise结果
-      // 注意：这是一个简化的实现，实际项目中可能需要更复杂的Promise处理
-      return promise;
+      // 使用JS interop创建Promise处理
+      final completer = Completer<dynamic>();
+      
+      // 创建成功回调
+      final onSuccess = js.allowInterop((dynamic value) {
+        debugPrint('✅ Promise resolve: $value');
+        if (!completer.isCompleted) {
+          completer.complete(value);
+        }
+      });
+      
+      // 创建失败回调
+      final onError = js.allowInterop((dynamic error) {
+        debugPrint('❌ Promise reject: $error');
+        if (!completer.isCompleted) {
+          completer.completeError(Exception('Promise rejected: $error'));
+        }
+      });
+      
+      // 附加回调到Promise
+      promise.callMethod('then', [onSuccess]).callMethod('catch', [onError]);
+      
+      // 设置超时
+      Timer(const Duration(seconds: 10), () {
+        if (!completer.isCompleted) {
+          debugPrint('⏰ Promise超时');
+          completer.completeError(TimeoutException('Promise timeout'));
+        }
+      });
+      
+      return await completer.future;
     } catch (e) {
-      debugPrint('Error converting Promise to Future: $e');
-      throw e;
+      debugPrint('❌ Promise处理错误: $e');
+      rethrow;
     }
   }
 
