@@ -227,21 +227,114 @@ class FarcasterMiniAppService {
   /// 从 SDK context 获取用户详细信息（作为补充）
   Future<Map<String, dynamic>?> _getContextUserInfo() async {
     try {
-      final farcasterSDK = js.context['farcasterSDK'];
-      final user = farcasterSDK?['context']?['user'];
+      debugPrint('🔍 开始获取SDK Context用户信息...');
       
-      if (user != null) {
-        final userMap = _jsObjectToMap(user);
-        debugPrint('📋 Context用户信息: ${userMap.keys}');
-        debugPrint('🔍 Context详细信息: $userMap');
-        return userMap;
-      } else {
-        debugPrint('⚠️ Context中没有用户信息');
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK == null) {
+        debugPrint('❌ Farcaster SDK不存在');
+        return null;
       }
+      
+      debugPrint('✅ Farcaster SDK存在');
+      
+      // 检查 SDK 的完整结构
+      final sdkKeys = _getJsObjectKeys(farcasterSDK);
+      debugPrint('🔍 SDK包含的方法/属性: ${sdkKeys.join(', ')}');
+      
+      // 检查 context
+      final context = farcasterSDK['context'];
+      if (context == null) {
+        debugPrint('❌ SDK.context 不存在');
+        debugPrint('💡 提示: context可能需要用户完全登录后才可用');
+        return null;
+      }
+      
+      debugPrint('✅ SDK.context 存在');
+      final contextKeys = _getJsObjectKeys(context);
+      debugPrint('🔍 Context包含的属性: ${contextKeys.join(', ')}');
+      
+      // 检查 user
+      final user = context['user'];
+      if (user == null) {
+        debugPrint('❌ SDK.context.user 为 null');
+        debugPrint('💡 可能原因:');
+        debugPrint('   1. 用户未在Farcaster中完全登录');
+        debugPrint('   2. 需要特定权限才能访问用户信息');
+        debugPrint('   3. Quick Auth可能不提供context.user数据');
+        
+        // 尝试其他可能的用户信息来源
+        return await _tryAlternativeUserSources(farcasterSDK);
+      }
+      
+      debugPrint('✅ SDK.context.user 存在');
+      debugPrint('🔍 User对象类型: ${user.runtimeType}');
+      debugPrint('🔍 User对象字符串: ${user.toString()}');
+      
+      final userMap = _jsObjectToMap(user);
+      debugPrint('📋 Context用户信息提取结果: ${userMap.keys.join(', ')}');
+      debugPrint('🔍 Context详细信息: $userMap');
+      return userMap;
+      
     } catch (e) {
       debugPrint('⚠️ 获取context用户信息失败: $e');
+      return null;
     }
-    return null;
+  }
+
+  /// 尝试其他可能的用户信息来源
+  Future<Map<String, dynamic>?> _tryAlternativeUserSources(dynamic farcasterSDK) async {
+    debugPrint('🔄 尝试其他用户信息来源...');
+    
+    try {
+      // 1. 检查是否有 getCurrentUser 方法
+      if (farcasterSDK['getCurrentUser'] != null) {
+        debugPrint('🔍 尝试 sdk.getCurrentUser()...');
+        final currentUser = await _callAsyncFunction(farcasterSDK['getCurrentUser'], []);
+        if (currentUser != null) {
+          debugPrint('✅ getCurrentUser() 成功');
+          return _jsObjectToMap(currentUser);
+        }
+      }
+      
+      // 2. 检查是否有 user 直接属性
+      if (farcasterSDK['user'] != null) {
+        debugPrint('🔍 尝试 sdk.user...');
+        final user = farcasterSDK['user'];
+        return _jsObjectToMap(user);
+      }
+      
+      // 3. 检查 context 的其他属性
+      final context = farcasterSDK['context'];
+      if (context != null) {
+        final contextKeys = _getJsObjectKeys(context);
+        debugPrint('🔍 检查context的其他属性: ${contextKeys.join(', ')}');
+        
+        for (final key in contextKeys) {
+          if (key != 'user' && key.toLowerCase().contains('user')) {
+            debugPrint('🔍 尝试 context.$key...');
+            try {
+              final userData = context[key];
+              if (userData != null) {
+                final userMap = _jsObjectToMap(userData);
+                if (userMap.isNotEmpty) {
+                  debugPrint('✅ 从 context.$key 获取到用户数据');
+                  return userMap;
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ context.$key 访问失败: $e');
+            }
+          }
+        }
+      }
+      
+      debugPrint('❌ 所有替代方案都失败了');
+      return null;
+      
+    } catch (e) {
+      debugPrint('❌ 尝试替代方案时出错: $e');
+      return null;
+    }
   }
 
   /// 通过FID获取用户详细信息（备用方案）
