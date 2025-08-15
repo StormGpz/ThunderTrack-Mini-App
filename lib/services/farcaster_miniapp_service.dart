@@ -491,25 +491,51 @@ class FarcasterMiniAppService {
 
   /// 将 JavaScript 对象转换为 Dart Map
   Map<String, dynamic> _jsObjectToMap(dynamic jsObject) {
-    if (jsObject == null) return {};
+    if (jsObject == null) {
+      debugPrint('🔍 JS对象为null');
+      return {};
+    }
+    
+    debugPrint('🔍 开始转换JS对象到Map...');
+    debugPrint('🔍 JS对象类型: ${jsObject.runtimeType}');
     
     try {
-      // 尝试使用 JSON 序列化/反序列化
+      // 方法1: 尝试使用 JSON 序列化/反序列化
+      debugPrint('🔄 尝试JSON序列化方法...');
       final jsonString = js.context['JSON'].callMethod('stringify', [jsObject]);
-      return jsonDecode(jsonString as String) as Map<String, dynamic>;
+      debugPrint('✅ JSON序列化成功: ${jsonString.toString().substring(0, 100)}...');
+      final result = jsonDecode(jsonString as String) as Map<String, dynamic>;
+      debugPrint('✅ JSON转换完成，包含字段: ${result.keys.join(', ')}');
+      return result;
     } catch (e) {
-      debugPrint('Error converting JS object to map: $e');
+      debugPrint('❌ JSON序列化失败: $e');
       
-      // 简化的回退方案
+      // 方法2: 手动提取已知字段
+      debugPrint('🔄 尝试手动提取字段...');
       try {
-        return {
-          'fid': _getProperty(jsObject, 'fid'),
-          'username': _getProperty(jsObject, 'username'),
-          'displayName': _getProperty(jsObject, 'displayName'),
-          'pfpUrl': _getProperty(jsObject, 'pfpUrl'),
-        };
+        final result = <String, dynamic>{};
+        
+        // 获取所有可能的字段
+        final fields = ['fid', 'username', 'displayName', 'pfpUrl', 'bio', 'location', 'verified', 'followers', 'following'];
+        
+        for (final field in fields) {
+          try {
+            final value = _getProperty(jsObject, field);
+            if (value != null) {
+              result[field] = value;
+              debugPrint('✅ 获取字段 $field: ${value.toString().length > 50 ? value.toString().substring(0, 50) + "..." : value}');
+            } else {
+              debugPrint('⚪ 字段 $field: null');
+            }
+          } catch (e) {
+            debugPrint('❌ 获取字段 $field 失败: $e');
+          }
+        }
+        
+        debugPrint('✅ 手动提取完成，共 ${result.length} 个字段');
+        return result;
       } catch (e2) {
-        debugPrint('Error in fallback conversion: $e2');
+        debugPrint('❌ 手动提取也失败: $e2');
         return {};
       }
     }
