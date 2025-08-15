@@ -502,6 +502,15 @@ class UserProvider extends ChangeNotifier {
   /// 处理 Quick Auth 登录结果
   Future<void> _processQuickAuthResult(Map<String, dynamic> authResult) async {
     try {
+      addDebugLog('🔧 开始处理Quick Auth结果...');
+      addDebugLog('📋 Auth结果数据: ${authResult.keys.join(', ')}');
+      
+      // 详细记录收到的数据
+      addDebugLog('🆔 FID: ${authResult['fid']}');
+      addDebugLog('👤 用户名: ${authResult['username']}');
+      addDebugLog('🏷️ 显示名: ${authResult['displayName']}');
+      addDebugLog('🖼️ 头像: ${authResult['pfpUrl'] != null ? "有" : "无"}');
+      
       // 从 JWT token 和 context 信息创建用户对象
       final user = User(
         fid: authResult['fid']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -517,17 +526,23 @@ class UserProvider extends ChangeNotifier {
         lastActiveAt: DateTime.now(),
       );
 
+      addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
+
       // 保存认证token（重要！）
       await _saveAuthToken(authResult['token']);
       await _saveUserToLocal(user);
       
       _currentUser = user;
       _isAuthenticated = true;
+      
+      addDebugLog('✅ 用户状态更新完成');
+      addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
+      
       notifyListeners();
       
-      debugPrint('✅ Quick Auth 用户处理成功: ${user.username}');
+      addDebugLog('🎉 Quick Auth 用户处理成功: ${user.username}');
     } catch (e) {
-      debugPrint('❌ 处理 Quick Auth 结果失败: $e');
+      addDebugLog('❌ 处理 Quick Auth 结果失败: $e');
       throw Exception('处理认证结果失败: $e');
     }
   }

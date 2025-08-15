@@ -35,9 +35,41 @@ class ProfilePage extends StatelessWidget {
         builder: (context, userProvider, child) {
           final user = userProvider.currentUser;
           
+          // 调试信息
+          print('🔍 个人中心调试:');
+          print('   已认证: ${userProvider.isAuthenticated}');
+          print('   用户对象: ${user != null ? "存在" : "null"}');
+          if (user != null) {
+            print('   用户名: ${user.username}');
+            print('   显示名: ${user.displayName}');
+            print('   FID: ${user.fid}');
+          }
+          
+          if (!userProvider.isAuthenticated) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_off, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('用户未登录'),
+                  SizedBox(height: 8),
+                  Text('请返回主页进行登录', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            );
+          }
+          
           if (user == null) {
             return const Center(
-              child: Text('用户信息加载中...'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('用户信息加载中...'),
+                ],
+              ),
             );
           }
 
