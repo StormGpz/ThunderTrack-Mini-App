@@ -499,7 +499,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// 处理 Quick Auth 登录结果（简化版 - 使用 Neynar API）
+  /// 处理 Quick Auth 登录结果（SDK Context方式）
   Future<void> _processQuickAuthResult(Map<String, dynamic> authResult) async {
     try {
       addDebugLog('🔧 开始处理Quick Auth结果...');
@@ -511,29 +511,32 @@ class UserProvider extends ChangeNotifier {
         throw Exception('FID不能为空');
       }
       
-      // 🎯 使用 Neynar API 获取完整用户信息
-      addDebugLog('🔄 使用Neynar API获取完整用户信息...');
+      // 🎯 直接从 SDK Context 获取完整用户信息
+      addDebugLog('🔄 从SDK Context获取完整用户信息...');
       
-      final neynarUser = await _neynarService.getUserByFid(fid);
+      final contextUser = await _miniAppService.getContextUserInfo();
       
-      if (neynarUser != null) {
-        addDebugLog('✅ Neynar API成功获取用户信息');
-        addDebugLog('👤 用户名: ${neynarUser.username}');
-        addDebugLog('🏷️ 显示名: ${neynarUser.displayName}');
-        addDebugLog('🖼️ 头像: ${neynarUser.avatarUrl != null ? "有" : "无"}');
+      if (contextUser != null && contextUser.isNotEmpty) {
+        addDebugLog('✅ SDK Context成功获取用户信息');
+        addDebugLog('👤 用户名: ${contextUser['username'] ?? '无'}');
+        addDebugLog('🏷️ 显示名: ${contextUser['displayName'] ?? '无'}');
+        addDebugLog('🖼️ 头像: ${contextUser['pfpUrl'] != null ? "有" : "无"}');
         
-        // 直接使用 Neynar 返回的 User 对象，但更新一些额外信息
+        // 使用 SDK Context 数据创建用户对象
         final user = User(
           fid: fid,
-          username: neynarUser.username,
-          displayName: neynarUser.displayName,
-          avatarUrl: neynarUser.avatarUrl,
-          bio: neynarUser.bio ?? '来自 Farcaster 的用户',
-          walletAddress: null, // 钱包地址需要从其他API获取
-          followers: neynarUser.followers,
-          following: neynarUser.following,
-          isVerified: neynarUser.isVerified,
-          createdAt: neynarUser.createdAt,
+          username: contextUser['username']?.toString() ?? 'user_$fid',
+          displayName: contextUser['displayName']?.toString() ?? 
+                      contextUser['username']?.toString() ?? 
+                      'Farcaster User $fid',
+          avatarUrl: contextUser['pfpUrl']?.toString(),
+          bio: contextUser['bio']?.toString() ?? '来自 Farcaster 的用户',
+          walletAddress: contextUser['custodyAddress']?.toString() ?? 
+                        contextUser['connectedAddress']?.toString(),
+          followers: [],
+          following: [],
+          isVerified: contextUser['powerBadge'] == true || contextUser['verified'] == true,
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
           lastActiveAt: DateTime.now(),
         );
 
@@ -551,11 +554,11 @@ class UserProvider extends ChangeNotifier {
         
         notifyListeners();
         
-        addDebugLog('🎉 Quick Auth + Neynar 处理成功: ${user.username}');
+        addDebugLog('🎉 Quick Auth + SDK Context 处理成功: ${user.username}');
       } else {
-        addDebugLog('❌ Neynar API无法获取用户信息，使用基本信息');
+        addDebugLog('❌ SDK Context无法获取用户信息，使用基本信息');
         
-        // 如果 Neynar API 失败，使用基本信息创建用户
+        // 如果 SDK Context 失败，使用基本信息创建用户
         final user = User(
           fid: fid,
           username: 'user_$fid',

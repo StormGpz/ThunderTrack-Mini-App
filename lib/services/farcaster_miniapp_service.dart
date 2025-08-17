@@ -200,8 +200,8 @@ class FarcasterMiniAppService {
     }
   }
 
-  /// 从 SDK context 获取用户详细信息（作为补充）
-  Future<Map<String, dynamic>?> _getContextUserInfo() async {
+  /// 从 SDK context 获取用户详细信息（优化版）
+  Future<Map<String, dynamic>?> getContextUserInfo() async {
     try {
       debugPrint('🔍 开始获取SDK Context用户信息...');
       
@@ -213,40 +213,28 @@ class FarcasterMiniAppService {
       
       debugPrint('✅ Farcaster SDK存在');
       
-      // 检查 SDK 的完整结构
-      final sdkKeys = _getJsObjectKeys(farcasterSDK);
-      debugPrint('🔍 SDK包含的方法/属性: ${sdkKeys.join(', ')}');
-      
       // 检查 context
       final context = farcasterSDK['context'];
       if (context == null) {
         debugPrint('❌ SDK.context 不存在');
-        debugPrint('💡 提示: context可能需要用户完全登录后才可用');
         return null;
       }
       
       debugPrint('✅ SDK.context 存在');
-      final contextKeys = _getJsObjectKeys(context);
-      debugPrint('🔍 Context包含的属性: ${contextKeys.join(', ')}');
       
       // 检查 user
       final user = context['user'];
       if (user == null) {
         debugPrint('❌ SDK.context.user 为 null');
-        debugPrint('💡 可能原因:');
-        debugPrint('   1. 用户未在Farcaster中完全登录');
-        debugPrint('   2. 需要特定权限才能访问用户信息');
-        debugPrint('   3. Quick Auth可能不提供context.user数据');
-        
-        // 尝试其他可能的用户信息来源
-        return await _tryAlternativeUserSources(farcasterSDK);
+        return null;
       }
       
       debugPrint('✅ SDK.context.user 存在');
       debugPrint('🔍 User对象类型: ${user.runtimeType}');
       debugPrint('🔍 User对象字符串: ${user.toString()}');
       
-      final userMap = _jsObjectToMap(user);
+      // 使用优化的转换方法
+      final userMap = _extractUserDataFromContext(user);
       debugPrint('📋 Context用户信息提取结果: ${userMap.keys.join(', ')}');
       debugPrint('🔍 Context详细信息: $userMap');
       return userMap;
@@ -255,6 +243,102 @@ class FarcasterMiniAppService {
       debugPrint('⚠️ 获取context用户信息失败: $e');
       return null;
     }
+  }
+
+  /// 专门从 SDK Context 提取用户数据（处理压缩混淆）
+  Map<String, dynamic> _extractUserDataFromContext(dynamic userObject) {
+    debugPrint('🔧 开始提取SDK Context用户数据...');
+    
+    // 方法1: 尝试JSON序列化
+    try {
+      debugPrint('🔄 尝试JSON序列化...');
+      final jsonString = js.context['JSON'].callMethod('stringify', [userObject]);
+      if (jsonString != null && jsonString.toString() != 'null') {
+        debugPrint('✅ JSON序列化成功');
+        final result = jsonDecode(jsonString as String) as Map<String, dynamic>;
+        debugPrint('✅ JSON解析完成，字段: ${result.keys.join(', ')}');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ JSON序列化失败: $e');
+    }
+    
+    // 方法2: 使用Object.keys获取所有属性
+    try {
+      debugPrint('🔄 尝试Object.keys方法...');
+      final keys = js.context['Object'].callMethod('keys', [userObject]);
+      if (keys != null) {
+        final keyList = List<String>.from(keys);
+        debugPrint('🔍 发现属性: ${keyList.join(', ')}');
+        
+        final result = <String, dynamic>{};
+        for (final key in keyList) {
+          try {
+            final value = userObject[key];
+            if (value != null) {
+              // 转换JavaScript值为Dart值
+              result[key] = _convertJsValueToDart(value);
+              debugPrint('✅ 提取属性 $key: ${result[key]}');
+            }
+          } catch (e) {
+            debugPrint('❌ 提取属性 $key 失败: $e');
+          }
+        }
+        
+        if (result.isNotEmpty) {
+          debugPrint('✅ Object.keys方法成功，共 ${result.length} 个字段');
+          return result;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Object.keys方法失败: $e');
+    }
+    
+    // 方法3: 直接访问已知的Farcaster用户字段
+    debugPrint('🔄 尝试直接字段访问...');
+    final result = <String, dynamic>{};
+    final commonFields = [
+      'fid', 'username', 'displayName', 'pfpUrl', 'bio', 
+      'powerBadge', 'verified', 'custodyAddress', 'connectedAddress'
+    ];
+    
+    for (final field in commonFields) {
+      try {
+        final value = userObject[field];
+        if (value != null) {
+          result[field] = _convertJsValueToDart(value);
+          debugPrint('✅ 直接访问 $field: ${result[field]}');
+        }
+      } catch (e) {
+        debugPrint('❌ 直接访问 $field 失败: $e');
+      }
+    }
+    
+    debugPrint('🎯 最终提取结果: $result');
+    return result;
+  }
+
+  /// 转换JavaScript值为Dart值
+  dynamic _convertJsValueToDart(dynamic jsValue) {
+    if (jsValue == null) return null;
+    
+    try {
+      // 基本类型直接返回
+      if (jsValue is String || jsValue is num || jsValue is bool) {
+        return jsValue;
+      }
+      
+      // 对象类型尝试JSON转换
+      final jsonString = js.context['JSON'].callMethod('stringify', [jsValue]);
+      if (jsonString != null && jsonString.toString() != 'null') {
+        return jsonDecode(jsonString as String);
+      }
+    } catch (e) {
+      debugPrint('⚠️ JS值转换失败: $e');
+    }
+    
+    // 兜底返回字符串表示
+    return jsValue.toString();
   }
 
   /// 尝试其他可能的用户信息来源
@@ -319,7 +403,7 @@ class FarcasterMiniAppService {
       debugPrint('🔍 尝试通过FID获取用户信息: $fid');
       
       // 方案1: 尝试从Context获取
-      final contextUser = await _getContextUserInfo();
+      final contextUser = await getContextUserInfo();
       if (contextUser != null && contextUser.isNotEmpty) {
         debugPrint('✅ 从Context获取到用户信息');
         return contextUser;
