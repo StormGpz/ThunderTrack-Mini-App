@@ -15,17 +15,27 @@ class NeynarService {
   /// 获取用户信息
   Future<User> getUserByFid(String fid) async {
     try {
+      debugPrint('🔄 调用Neynar API获取用户信息，FID: $fid');
+      debugPrint('🔗 API URL: ${AppConfig.neynarBaseUrl}${ApiEndpoints.neynarUser}/$fid');
+      debugPrint('🔑 API Key: ${AppConfig.neynarApiKey.substring(0, 8)}...');
+      
       final response = await _apiClient.get(
         '${ApiEndpoints.neynarUser}/$fid',
         baseUrl: AppConfig.neynarBaseUrl,
         options: _getAuthOptions(),
       );
 
+      debugPrint('✅ Neynar API响应状态: ${response.statusCode}');
+      debugPrint('📋 响应数据结构: ${response.data?.keys}');
+
       if (response.statusCode == 200 && response.data != null) {
-        return _parseUser(response.data['result']['user']);
+        final user = _parseUser(response.data['result']['user']);
+        debugPrint('🎉 用户解析成功: ${user.username} (${user.displayName})');
+        return user;
       }
       throw ApiException('获取用户信息失败');
     } catch (e) {
+      debugPrint('❌ Neynar API调用失败: $e');
       throw ApiException('获取用户信息失败: $e');
     }
   }
@@ -169,7 +179,8 @@ class NeynarService {
   Options _getAuthOptions() {
     return Options(
       headers: {
-        'Authorization': 'Bearer ${AppConfig.neynarApiKey}',
+        'api_key': AppConfig.neynarApiKey,
+        'Content-Type': 'application/json',
       },
     );
   }
