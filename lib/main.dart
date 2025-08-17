@@ -7,8 +7,12 @@ import 'pages/diary_page.dart';
 import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
+import 'utils/api_client.dart';
 
 void main() {
+  // 初始化 API 客户端
+  ApiClient().initialize();
+  
   runApp(const ThunderTrackApp());
 }
 
