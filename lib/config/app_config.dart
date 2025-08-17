@@ -13,7 +13,7 @@ class AppConfig {
   
   // Neynar API (Farcaster)
   static const String neynarBaseUrl = 'https://api.neynar.com';
-  static const String neynarApiKey = 'YOUR_NEYNAR_API_KEY'; // 需要从环境变量获取
+  static const String neynarApiKey = '2BF15C3E-13B0-4B28-9CA5-4F687C41B7C3';
   
   // IPFS配置
   static const String ipfsGateway = 'https://ipfs.io/ipfs/';

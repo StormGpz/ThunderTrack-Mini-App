@@ -499,75 +499,87 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// 处理 Quick Auth 登录结果
+  /// 处理 Quick Auth 登录结果（简化版 - 使用 Neynar API）
   Future<void> _processQuickAuthResult(Map<String, dynamic> authResult) async {
     try {
       addDebugLog('🔧 开始处理Quick Auth结果...');
-      addDebugLog('📋 Auth结果数据: ${authResult.keys.join(', ')}');
       
       final fid = authResult['fid']?.toString();
       addDebugLog('🆔 FID: $fid');
       
-      // Quick Auth只提供基本认证信息，需要额外获取用户详情
-      addDebugLog('🔍 Quick Auth缺少用户详情，尝试获取完整信息...');
-      
-      Map<String, dynamic> userDetails = {};
-      
-      // 尝试获取用户详细信息
-      if (fid != null) {
-        final detailInfo = await _miniAppService.getUserInfoByFid(fid);
-        if (detailInfo != null && detailInfo.isNotEmpty) {
-          userDetails = detailInfo;
-          addDebugLog('✅ 成功获取用户详细信息');
-        } else {
-          addDebugLog('⚠️ 无法获取用户详细信息，使用默认值');
-        }
+      if (fid == null) {
+        throw Exception('FID不能为空');
       }
       
-      // 合并Quick Auth结果和详细信息
-      final combinedInfo = {
-        ...authResult,
-        ...userDetails,
-      };
+      // 🎯 使用 Neynar API 获取完整用户信息
+      addDebugLog('🔄 使用Neynar API获取完整用户信息...');
       
-      // 详细记录最终数据
-      addDebugLog('👤 用户名: ${combinedInfo['username'] ?? '无'}');
-      addDebugLog('🏷️ 显示名: ${combinedInfo['displayName'] ?? '无'}');
-      addDebugLog('🖼️ 头像: ${combinedInfo['pfpUrl'] != null ? "有" : "无"}');
+      final neynarUser = await _neynarService.getUserByFid(fid);
       
-      // 创建用户对象
-      final user = User(
-        fid: fid ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        username: combinedInfo['username']?.toString() ?? 'user_$fid',
-        displayName: combinedInfo['displayName']?.toString() ?? 
-                    combinedInfo['username']?.toString() ?? 
-                    'Farcaster User $fid',
-        avatarUrl: combinedInfo['pfpUrl']?.toString(),
-        bio: combinedInfo['bio']?.toString() ?? '来自 Farcaster 的用户',
-        walletAddress: combinedInfo['primaryAddress']?.toString() ?? 
-                      combinedInfo['custodyAddress']?.toString(),
-        followers: _parseFollowers(combinedInfo['followers']),
-        following: _parseFollowing(combinedInfo['following']),
-        isVerified: combinedInfo['verified'] == true,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        lastActiveAt: DateTime.now(),
-      );
+      if (neynarUser != null) {
+        addDebugLog('✅ Neynar API成功获取用户信息');
+        addDebugLog('👤 用户名: ${neynarUser.username}');
+        addDebugLog('🏷️ 显示名: ${neynarUser.displayName}');
+        addDebugLog('🖼️ 头像: ${neynarUser.avatarUrl != null ? "有" : "无"}');
+        
+        // 直接使用 Neynar 返回的 User 对象，但更新一些额外信息
+        final user = User(
+          fid: fid,
+          username: neynarUser.username,
+          displayName: neynarUser.displayName,
+          avatarUrl: neynarUser.avatarUrl,
+          bio: neynarUser.bio ?? '来自 Farcaster 的用户',
+          walletAddress: null, // 钱包地址需要从其他API获取
+          followers: neynarUser.followers,
+          following: neynarUser.following,
+          isVerified: neynarUser.isVerified,
+          createdAt: neynarUser.createdAt,
+          lastActiveAt: DateTime.now(),
+        );
 
-      addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
+        addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
 
-      // 保存认证token
-      await _saveAuthToken(authResult['token']);
-      await _saveUserToLocal(user);
+        // 保存认证token和用户信息
+        await _saveAuthToken(authResult['token']);
+        await _saveUserToLocal(user);
+        
+        _currentUser = user;
+        _isAuthenticated = true;
+        
+        addDebugLog('✅ 用户状态更新完成');
+        addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
+        
+        notifyListeners();
+        
+        addDebugLog('🎉 Quick Auth + Neynar 处理成功: ${user.username}');
+      } else {
+        addDebugLog('❌ Neynar API无法获取用户信息，使用基本信息');
+        
+        // 如果 Neynar API 失败，使用基本信息创建用户
+        final user = User(
+          fid: fid,
+          username: 'user_$fid',
+          displayName: 'Farcaster User $fid',
+          avatarUrl: null,
+          bio: '来自 Farcaster 的用户',
+          walletAddress: null,
+          followers: [],
+          following: [],
+          isVerified: false,
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+          lastActiveAt: DateTime.now(),
+        );
+
+        await _saveAuthToken(authResult['token']);
+        await _saveUserToLocal(user);
+        
+        _currentUser = user;
+        _isAuthenticated = true;
+        
+        addDebugLog('🎯 使用基本用户信息: ${user.displayName}');
+        notifyListeners();
+      }
       
-      _currentUser = user;
-      _isAuthenticated = true;
-      
-      addDebugLog('✅ 用户状态更新完成');
-      addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
-      
-      notifyListeners();
-      
-      addDebugLog('🎉 Quick Auth 用户处理成功: ${user.username}');
     } catch (e) {
       addDebugLog('❌ 处理 Quick Auth 结果失败: $e');
       throw Exception('处理认证结果失败: $e');

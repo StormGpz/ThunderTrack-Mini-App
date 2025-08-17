@@ -130,7 +130,7 @@ class FarcasterMiniAppService {
     }
   }
 
-  /// 使用 Quick Auth 获取认证token和用户信息
+  /// 使用 Quick Auth 获取认证token和FID（简化版）
   Future<Map<String, dynamic>?> quickAuthLogin() async {
     if (!kIsWeb) {
       debugPrint('❌ 不在Web环境中');
@@ -138,76 +138,52 @@ class FarcasterMiniAppService {
     }
     
     try {
-      debugPrint('🔍 检查Farcaster SDK...');
+      debugPrint('🔍 开始Quick Auth登录...');
       final farcasterSDK = js.context['farcasterSDK'];
       if (farcasterSDK == null) {
-        debugPrint('❌ Farcaster SDK not found in js.context');
-        debugPrint('🔍 Context type: ${js.context.runtimeType}');
+        debugPrint('❌ Farcaster SDK not found');
         return null;
       }
       
-      debugPrint('✅ Farcaster SDK找到，检查Quick Auth...');
       final quickAuth = farcasterSDK['quickAuth'];
       if (quickAuth == null) {
-        debugPrint('❌ Quick Auth not available in SDK');
-        debugPrint('🔍 Available SDK keys: ${_getJsObjectKeys(farcasterSDK)}');
+        debugPrint('❌ Quick Auth not available');
         return null;
       }
       
-      debugPrint('✅ Quick Auth可用，检查getToken方法...');
       final getTokenMethod = quickAuth['getToken'];
       if (getTokenMethod == null) {
         debugPrint('❌ getToken method not found');
-        debugPrint('🔍 Available quickAuth keys: ${_getJsObjectKeys(quickAuth)}');
         return null;
       }
       
-      debugPrint('🚀 开始调用sdk.quickAuth.getToken()...');
-      
-      // 获取认证token
+      debugPrint('🚀 调用 sdk.quickAuth.getToken()...');
       final tokenResult = await _callAsyncFunction(getTokenMethod, []);
-      
-      debugPrint('🔍 Token result: $tokenResult');
-      debugPrint('🔍 Token result type: ${tokenResult.runtimeType}');
       
       if (tokenResult != null && tokenResult['token'] != null) {
         final token = tokenResult['token'] as String;
-        debugPrint('✅ Quick Auth token获取成功: ${token.substring(0, 20)}...');
+        debugPrint('✅ Quick Auth token获取成功');
         
-        // 解析JWT获取用户FID
+        // 解析JWT获取FID
         final userInfo = _parseJwtToken(token);
         if (userInfo != null) {
-          debugPrint('✅ JWT解析成功，用户FID: ${userInfo['fid']}');
-          
-          // 同时尝试从context获取额外用户信息
-          final contextUser = await _getContextUserInfo();
-          debugPrint('🔍 Context用户信息: $contextUser');
-          
-          // 合并信息
           final result = {
             'token': token,
             'fid': userInfo['fid'],
             'authMethod': 'quickAuth',
             'tokenExpiry': userInfo['expiry'],
-            ...?contextUser, // 如果有context用户信息，合并进来
           };
           
-          debugPrint('🎉 Quick Auth 登录成功，最终结果: $result');
+          debugPrint('🎉 Quick Auth成功，FID: ${userInfo['fid']}');
           return result;
-        } else {
-          debugPrint('❌ JWT解析失败');
         }
-      } else {
-        debugPrint('❌ Token result为空或无token字段');
-        debugPrint('🔍 实际获得: $tokenResult');
       }
       
-      debugPrint('❌ Quick Auth token获取失败');
+      debugPrint('❌ Quick Auth失败');
       return null;
       
-    } catch (e, stackTrace) {
-      debugPrint('❌ Quick Auth 登录出错: $e');
-      debugPrint('📋 Stack trace: $stackTrace');
+    } catch (e) {
+      debugPrint('❌ Quick Auth出错: $e');
       return null;
     }
   }
