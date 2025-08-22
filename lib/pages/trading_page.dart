@@ -646,7 +646,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                     style: const TextStyle(color: EvaTheme.textGray),
                   ),
                   Text(
-                    '手续费: \$${trade.fee.toStringAsFixed(2)}',
+                    '手续费: \$${trade.fee?.toStringAsFixed(2) ?? '0.00'}',
                     style: const TextStyle(color: EvaTheme.textGray),
                   ),
                 ],

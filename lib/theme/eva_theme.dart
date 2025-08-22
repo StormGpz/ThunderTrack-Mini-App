@@ -88,7 +88,7 @@ class EvaTheme {
     brightness: Brightness.light,
     primarySwatch: _createMaterialColor(primaryPurple),
     primaryColor: primaryPurple,
-    colorScheme: const ColorScheme.light(
+    colorScheme: ColorScheme.light(
       primary: primaryPurple,
       secondary: neonGreen,
       tertiary: evaYellow,
@@ -101,7 +101,7 @@ class EvaTheme {
       onBackground: deepBlack,
       onError: pureWhite,
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: primaryPurple,
       foregroundColor: pureWhite,
       elevation: 4,
@@ -114,7 +114,7 @@ class EvaTheme {
         letterSpacing: 1.2,
       ),
     ),
-    cardTheme: const CardTheme(
+    cardTheme: CardThemeData(
       color: pureWhite,
       elevation: 4,
       shadowColor: primaryPurple,
@@ -135,7 +135,7 @@ class EvaTheme {
     brightness: Brightness.dark,
     primarySwatch: _createMaterialColor(primaryPurple),
     primaryColor: primaryPurple,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: ColorScheme.dark(
       primary: primaryPurple,
       secondary: neonGreen,
       tertiary: evaYellow,
@@ -149,7 +149,7 @@ class EvaTheme {
       onError: pureWhite,
     ),
     scaffoldBackgroundColor: deepBlack,
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: primaryPurple,
       foregroundColor: pureWhite,
       elevation: 4,
@@ -162,7 +162,7 @@ class EvaTheme {
         letterSpacing: 1.2,
       ),
     ),
-    cardTheme: const CardTheme(
+    cardTheme: CardThemeData(
       color: mechGray,
       elevation: 4,
       shadowColor: neonGreen,
@@ -175,7 +175,7 @@ class EvaTheme {
         shadowColor: neonGreen,
       ),
     ),
-    inputDecorationTheme: const InputDecorationTheme(
+    inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: mechGray,
       border: OutlineInputBorder(
