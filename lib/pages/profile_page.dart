@@ -43,7 +43,11 @@ class ProfilePage extends StatelessWidget {
             print('   用户名: ${user.username}');
             print('   显示名: ${user.displayName}');
             print('   FID: ${user.fid}');
+            print('   头像URL: ${user.avatarUrl}');
+          } else {
+            print('⚠️ 用户对象为null！这是问题所在');
           }
+          print('🔍 Provider详情: ${userProvider.toString()}');
           
           if (!userProvider.isAuthenticated) {
             return const Center(
