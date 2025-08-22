@@ -8,6 +8,7 @@ import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
 import 'utils/api_client.dart';
+import 'theme/eva_theme.dart';
 
 void main() {
   // 初始化 API 客户端
@@ -29,44 +30,11 @@ class ThunderTrackApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'ThunderTrack',
+            title: 'ThunderTrack - EVA Edition',
             debugShowCheckedModeBanner: false,
             themeMode: settings.themeMode,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6366f1)),
-              useMaterial3: true,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF6366f1),
-                foregroundColor: Colors.white,
-                elevation: 2,
-                centerTitle: true,
-                iconTheme: IconThemeData(color: Colors.white),
-                titleTextStyle: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF6366f1),
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              appBarTheme: AppBarTheme(
-                backgroundColor: Colors.grey[900],
-                foregroundColor: Colors.white,
-                elevation: 2,
-                centerTitle: true,
-                iconTheme: const IconThemeData(color: Colors.white),
-                titleTextStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            theme: EvaTheme.lightTheme,
+            darkTheme: EvaTheme.darkTheme,
             locale: settings.locale,
             home: const MainPage(),
           );
@@ -175,7 +143,51 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-            title: const Text('⚡ ThunderTrack', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: EvaTheme.neonGreen.withOpacity(0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: EvaTheme.neonGreen.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.flash_on,
+                    color: EvaTheme.neonGreen,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'THUNDERTRACK',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: EvaTheme.pureWhite,
+                      letterSpacing: 2.0,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'EVA-01',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: EvaTheme.neonGreen,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             centerTitle: true,
             actions: [
               // 调试面板按钮（仅在开发环境或Farcaster环境显示）
@@ -217,6 +229,10 @@ class _MainPageState extends State<MainPage> {
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: _onTabTapped,
+            backgroundColor: EvaTheme.mechGray,
+            selectedItemColor: EvaTheme.neonGreen,
+            unselectedItemColor: EvaTheme.textGray,
+            type: BottomNavigationBarType.fixed,
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.trending_up),
@@ -226,10 +242,21 @@ class _MainPageState extends State<MainPage> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _selectedIndex == 1 ? Colors.orange : Colors.orange.withOpacity(0.7),
+                    color: _selectedIndex == 1 ? EvaTheme.neonGreen : EvaTheme.neonGreen.withOpacity(0.3),
                     shape: BoxShape.circle,
+                    boxShadow: _selectedIndex == 1 ? [
+                      BoxShadow(
+                        color: EvaTheme.neonGreen.withOpacity(0.4),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ] : null,
                   ),
-                  child: const Icon(Icons.book, color: Colors.white, size: 20),
+                  child: Icon(
+                    Icons.auto_stories,
+                    color: _selectedIndex == 1 ? EvaTheme.deepBlack : EvaTheme.pureWhite,
+                    size: 20,
+                  ),
                 ),
                 label: '日记',
               ),
