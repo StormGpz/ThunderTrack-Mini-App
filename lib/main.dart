@@ -160,11 +160,18 @@ class _MainPageState extends State<MainPage> {
                   backgroundColor: userProvider.isAuthenticated 
                       ? Colors.white.withOpacity(0.2)
                       : Colors.white.withOpacity(0.3),
-                  child: userProvider.isAuthenticated
+                  backgroundImage: userProvider.isAuthenticated && 
+                                  userProvider.currentUser?.avatarUrl != null
+                      ? NetworkImage(userProvider.currentUser!.avatarUrl!)
+                      : null,
+                  child: userProvider.isAuthenticated && 
+                         userProvider.currentUser?.avatarUrl == null
                       ? (userProvider.currentUser?.isVerified == true
                           ? const Icon(Icons.verified, color: Colors.white, size: 16)
                           : const Icon(Icons.person, color: Colors.white, size: 16))
-                      : const Icon(Icons.person_outline, color: Colors.white, size: 16),
+                      : (!userProvider.isAuthenticated 
+                          ? const Icon(Icons.person_outline, color: Colors.white, size: 16)
+                          : null),
                 ),
               ),
             ),

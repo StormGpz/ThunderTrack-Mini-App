@@ -84,17 +84,47 @@ class ProfilePage extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.indigo.withValues(alpha: 0.2),
-                  child: user.isVerified
-                      ? const Icon(
-                          Icons.verified_user,
-                          color: Colors.indigo,
-                          size: 50,
+                  child: user.avatarUrl != null
+                      ? ClipOval(
+                          child: Image.network(
+                            user.avatarUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              // 头像加载失败时显示默认图标
+                              return user.isVerified
+                                  ? const Icon(
+                                      Icons.verified_user,
+                                      color: Colors.indigo,
+                                      size: 50,
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      color: Colors.indigo,
+                                      size: 50,
+                                    );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const CircularProgressIndicator(
+                                color: Colors.indigo,
+                                strokeWidth: 2,
+                              );
+                            },
+                          ),
                         )
-                      : const Icon(
-                          Icons.person,
-                          color: Colors.indigo,
-                          size: 50,
-                        ),
+                      : (user.isVerified
+                          ? const Icon(
+                              Icons.verified_user,
+                              color: Colors.indigo,
+                              size: 50,
+                            )
+                          : const Icon(
+                              Icons.person,
+                              color: Colors.indigo,
+                              size: 50,
+                            )),
                 ),
                 const SizedBox(height: 16),
 
