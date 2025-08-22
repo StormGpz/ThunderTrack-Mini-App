@@ -8,6 +8,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 先显示基本的测试UI，确保页面能渲染
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人中心'),
@@ -31,80 +32,98 @@ class ProfilePage extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          final user = userProvider.currentUser;
-          
-          // 更全面的调试信息
-          print('🔍 === 个人中心页面调试 ===');
-          print('   已认证: ${userProvider.isAuthenticated}');
-          print('   用户对象: ${user != null ? "存在" : "null"}');
-          print('   Provider哈希: ${userProvider.hashCode}');
-          print('   是否加载中: ${userProvider.isLoading}');
-          print('   错误信息: ${userProvider.error}');
-          print('   调试日志数量: ${userProvider.debugLogs.length}');
-          
-          if (user != null) {
-            print('   用户详情:');
-            print('     - 用户名: ${user.username}');
-            print('     - 显示名: ${user.displayName}');
-            print('     - FID: ${user.fid}');
-            print('     - 头像URL: ${user.avatarUrl}');
-            print('     - 简介: ${user.bio}');
-            print('     - 验证状态: ${user.isVerified}');
-            print('     - 创建时间: ${user.createdAt}');
-            print('     - 关注数: ${user.following.length}');
-            print('     - 粉丝数: ${user.followers.length}');
-          } else {
-            print('⚠️ 用户对象为null！');
-            print('🔍 最新调试日志:');
-            for (int i = 0; i < userProvider.debugLogs.length && i < 5; i++) {
-              print('   ${userProvider.debugLogs[i]}');
-            }
-          }
-          print('🔍 ========================');
-          
-          // 临时测试：添加一个明显的调试区域
-          return Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                color: Colors.red,
-                child: Column(
+      // 强制显示内容，不依赖Consumer
+      body: Column(
+        children: [
+          // 始终显示的测试区域
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            color: Colors.red,
+            child: const Text(
+              '🔍 测试区域 - 如果看到这个说明页面能正常渲染',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Consumer内容区域
+          Expanded(
+            child: Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final user = userProvider.currentUser;
+                
+                // 更全面的调试信息
+                print('🔍 === 个人中心页面调试 ===');
+                print('   已认证: ${userProvider.isAuthenticated}');
+                print('   用户对象: ${user != null ? "存在" : "null"}');
+                print('   Provider哈希: ${userProvider.hashCode}');
+                print('   是否加载中: ${userProvider.isLoading}');
+                print('   错误信息: ${userProvider.error}');
+                print('   调试日志数量: ${userProvider.debugLogs.length}');
+                
+                if (user != null) {
+                  print('   用户详情:');
+                  print('     - 用户名: ${user.username}');
+                  print('     - 显示名: ${user.displayName}');
+                  print('     - FID: ${user.fid}');
+                  print('     - 头像URL: ${user.avatarUrl}');
+                  print('     - 简介: ${user.bio}');
+                  print('     - 验证状态: ${user.isVerified}');
+                  print('     - 创建时间: ${user.createdAt}');
+                  print('     - 关注数: ${user.following.length}');
+                  print('     - 粉丝数: ${user.followers.length}');
+                } else {
+                  print('⚠️ 用户对象为null！');
+                  print('🔍 最新调试日志:');
+                  for (int i = 0; i < userProvider.debugLogs.length && i < 5; i++) {
+                    print('   ${userProvider.debugLogs[i]}');
+                  }
+                }
+                print('🔍 ========================');
+                
+                return Column(
                   children: [
-                    Text(
-                      '🔍 调试信息',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '已认证: ${userProvider.isAuthenticated}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    Text(
-                      '用户: ${user != null ? user.username : "null"}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    Text(
-                      '加载: ${userProvider.isLoading} | 错误: ${userProvider.error != null ? "有" : "无"}',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                    if (userProvider.debugLogs.isNotEmpty)
-                      Text(
-                        '最新日志: ${userProvider.debugLogs.first.split('] ').last}',
-                        style: const TextStyle(color: Colors.yellow, fontSize: 10),
-                        overflow: TextOverflow.ellipsis,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      color: Colors.blue,
+                      child: Column(
+                        children: [
+                          const Text(
+                            '🔍 Consumer调试信息',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '已认证: ${userProvider.isAuthenticated}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                          Text(
+                            '用户: ${user != null ? user.username : "null"}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                          Text(
+                            '加载: ${userProvider.isLoading} | 错误: ${userProvider.error != null ? "有" : "无"}',
+                            style: const TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                          if (userProvider.debugLogs.isNotEmpty)
+                            Text(
+                              '最新日志: ${userProvider.debugLogs.first.split('] ').last}',
+                              style: const TextStyle(color: Colors.yellow, fontSize: 10),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
+                    ),
+                    Expanded(
+                      child: _buildUserContent(userProvider, user),
+                    ),
                   ],
-                ),
-              ),
-              Expanded(
-                child: _buildUserContent(userProvider, user),
-              ),
-            ],
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
