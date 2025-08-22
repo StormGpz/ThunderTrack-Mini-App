@@ -35,32 +35,68 @@ class ProfilePage extends StatelessWidget {
         builder: (context, userProvider, child) {
           final user = userProvider.currentUser;
           
-          // 调试信息
-          print('🔍 个人中心调试:');
+          // 更全面的调试信息
+          print('🔍 === 个人中心页面调试 ===');
           print('   已认证: ${userProvider.isAuthenticated}');
           print('   用户对象: ${user != null ? "存在" : "null"}');
-          if (user != null) {
-            print('   用户名: ${user.username}');
-            print('   显示名: ${user.displayName}');
-            print('   FID: ${user.fid}');
-            print('   头像URL: ${user.avatarUrl}');
-          } else {
-            print('⚠️ 用户对象为null！这是问题所在');
-          }
-          print('🔍 Provider详情: ${userProvider.toString()}');
+          print('   Provider哈希: ${userProvider.hashCode}');
+          print('   是否加载中: ${userProvider.isLoading}');
+          print('   错误信息: ${userProvider.error}');
+          print('   调试日志数量: ${userProvider.debugLogs.length}');
           
-          // 临时测试：添加一个明显的测试区域
+          if (user != null) {
+            print('   用户详情:');
+            print('     - 用户名: ${user.username}');
+            print('     - 显示名: ${user.displayName}');
+            print('     - FID: ${user.fid}');
+            print('     - 头像URL: ${user.avatarUrl}');
+            print('     - 简介: ${user.bio}');
+            print('     - 验证状态: ${user.isVerified}');
+            print('     - 创建时间: ${user.createdAt}');
+            print('     - 关注数: ${user.following.length}');
+            print('     - 粉丝数: ${user.followers.length}');
+          } else {
+            print('⚠️ 用户对象为null！');
+            print('🔍 最新调试日志:');
+            for (int i = 0; i < userProvider.debugLogs.length && i < 5; i++) {
+              print('   ${userProvider.debugLogs[i]}');
+            }
+          }
+          print('🔍 ========================');
+          
+          // 临时测试：添加一个明显的调试区域
           return Column(
             children: [
               Container(
                 width: double.infinity,
-                height: 60,
+                padding: const EdgeInsets.all(12),
                 color: Colors.red,
-                child: Center(
-                  child: Text(
-                    '🔍 调试: 已认证=${userProvider.isAuthenticated}, 用户=${user != null ? user.username : "null"}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      '🔍 调试信息',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '已认证: ${userProvider.isAuthenticated}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    Text(
+                      '用户: ${user != null ? user.username : "null"}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    Text(
+                      '加载: ${userProvider.isLoading} | 错误: ${userProvider.error != null ? "有" : "无"}',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                    if (userProvider.debugLogs.isNotEmpty)
+                      Text(
+                        '最新日志: ${userProvider.debugLogs.first.split('] ').last}',
+                        style: const TextStyle(color: Colors.yellow, fontSize: 10),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
               Expanded(
