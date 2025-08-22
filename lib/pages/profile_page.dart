@@ -8,27 +8,29 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 先显示基本的测试UI，确保页面能渲染
+    // 手动获取Provider实例进行测试
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    print('🔍 手动获取Provider: ${userProvider.hashCode}');
+    print('🔍 手动获取用户: ${userProvider.currentUser?.username ?? "null"}');
+    print('🔍 手动获取认证状态: ${userProvider.isAuthenticated}');
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人中心'),
         centerTitle: true,
         actions: [
-          Consumer<UserProvider>(
-            builder: (context, userProvider, child) {
-              return TextButton(
-                onPressed: () async {
-                  await userProvider.logout();
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: const Text(
-                  '退出登录',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
+          TextButton(
+            onPressed: () async {
+              final provider = Provider.of<UserProvider>(context, listen: false);
+              await provider.logout();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
             },
+            child: const Text(
+              '退出登录',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -40,46 +42,37 @@ class ProfilePage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             color: Colors.red,
-            child: const Text(
-              '🔍 测试区域 - 如果看到这个说明页面能正常渲染',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+            child: Column(
+              children: [
+                const Text(
+                  '🔍 测试区域 - 基本渲染正常',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  '手动获取认证状态: ${userProvider.isAuthenticated}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                Text(
+                  '手动获取用户: ${userProvider.currentUser?.username ?? "null"}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ],
             ),
           ),
           // Consumer内容区域
           Expanded(
             child: Consumer<UserProvider>(
-              builder: (context, userProvider, child) {
-                final user = userProvider.currentUser;
+              builder: (context, consumerProvider, child) {
+                final user = consumerProvider.currentUser;
                 
-                // 更全面的调试信息
-                print('🔍 === 个人中心页面调试 ===');
-                print('   已认证: ${userProvider.isAuthenticated}');
-                print('   用户对象: ${user != null ? "存在" : "null"}');
-                print('   Provider哈希: ${userProvider.hashCode}');
-                print('   是否加载中: ${userProvider.isLoading}');
-                print('   错误信息: ${userProvider.error}');
-                print('   调试日志数量: ${userProvider.debugLogs.length}');
-                
-                if (user != null) {
-                  print('   用户详情:');
-                  print('     - 用户名: ${user.username}');
-                  print('     - 显示名: ${user.displayName}');
-                  print('     - FID: ${user.fid}');
-                  print('     - 头像URL: ${user.avatarUrl}');
-                  print('     - 简介: ${user.bio}');
-                  print('     - 验证状态: ${user.isVerified}');
-                  print('     - 创建时间: ${user.createdAt}');
-                  print('     - 关注数: ${user.following.length}');
-                  print('     - 粉丝数: ${user.followers.length}');
-                } else {
-                  print('⚠️ 用户对象为null！');
-                  print('🔍 最新调试日志:');
-                  for (int i = 0; i < userProvider.debugLogs.length && i < 5; i++) {
-                    print('   ${userProvider.debugLogs[i]}');
-                  }
-                }
-                print('🔍 ========================');
+                print('🔍 === Consumer调试 ===');
+                print('   Consumer Provider哈希: ${consumerProvider.hashCode}');
+                print('   手动Provider哈希: ${userProvider.hashCode}');
+                print('   是否同一个实例: ${identical(consumerProvider, userProvider)}');
+                print('   Consumer认证状态: ${consumerProvider.isAuthenticated}');
+                print('   Consumer用户: ${user?.username ?? "null"}');
+                print('🔍 ===================');
                 
                 return Column(
                   children: [
@@ -95,28 +88,22 @@ class ProfilePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '已认证: ${userProvider.isAuthenticated}',
+                            'Consumer已认证: ${consumerProvider.isAuthenticated}',
                             style: const TextStyle(color: Colors.white, fontSize: 12),
                           ),
                           Text(
-                            '用户: ${user != null ? user.username : "null"}',
+                            'Consumer用户: ${user?.username ?? "null"}',
                             style: const TextStyle(color: Colors.white, fontSize: 12),
                           ),
                           Text(
-                            '加载: ${userProvider.isLoading} | 错误: ${userProvider.error != null ? "有" : "无"}',
+                            'Provider相同: ${identical(consumerProvider, userProvider)}',
                             style: const TextStyle(color: Colors.white, fontSize: 10),
                           ),
-                          if (userProvider.debugLogs.isNotEmpty)
-                            Text(
-                              '最新日志: ${userProvider.debugLogs.first.split('] ').last}',
-                              style: const TextStyle(color: Colors.yellow, fontSize: 10),
-                              overflow: TextOverflow.ellipsis,
-                            ),
                         ],
                       ),
                     ),
                     Expanded(
-                      child: _buildUserContent(userProvider, user),
+                      child: _buildUserContent(consumerProvider, user),
                     ),
                   ],
                 );
