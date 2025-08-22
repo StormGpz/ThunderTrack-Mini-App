@@ -17,11 +17,11 @@ class NeynarService {
   Future<User> getUserByFid(String fid) async {
     try {
       debugPrint('🔄 调用Neynar API获取用户信息，FID: $fid');
-      debugPrint('🔗 API URL: ${AppConfig.neynarBaseUrl}${ApiEndpoints.neynarUser}/$fid');
+      debugPrint('🔗 API URL: ${AppConfig.neynarBaseUrl}${ApiEndpoints.neynarUserBulk}?fids=$fid');
       debugPrint('🔑 API Key: ${AppConfig.neynarApiKey.substring(0, 8)}...');
       
       final response = await _apiClient.get(
-        '${ApiEndpoints.neynarUser}/$fid',
+        '${ApiEndpoints.neynarUserBulk}?fids=$fid',
         baseUrl: AppConfig.neynarBaseUrl,
         options: _getAuthOptions(),
       );
@@ -30,9 +30,14 @@ class NeynarService {
       debugPrint('📋 响应数据结构: ${response.data?.keys}');
 
       if (response.statusCode == 200 && response.data != null) {
-        final user = _parseUser(response.data['result']['user']);
-        debugPrint('🎉 用户解析成功: ${user.username} (${user.displayName})');
-        return user;
+        final users = response.data['users'] as List;
+        if (users.isNotEmpty) {
+          final user = _parseUser(users.first);
+          debugPrint('🎉 用户解析成功: ${user.username} (${user.displayName})');
+          return user;
+        } else {
+          throw ApiException('用户数据为空');
+        }
       }
       throw ApiException('获取用户信息失败');
     } catch (e) {
@@ -180,7 +185,7 @@ class NeynarService {
   Options _getAuthOptions() {
     return Options(
       headers: {
-        'api_key': AppConfig.neynarApiKey,
+        'x-api-key': AppConfig.neynarApiKey,
         'Content-Type': 'application/json',
       },
     );
@@ -193,11 +198,14 @@ class NeynarService {
       username: userData['username'] ?? '',
       displayName: userData['display_name'] ?? '',
       avatarUrl: userData['pfp_url'],
-      bio: userData['profile']['bio']['text'],
+      bio: userData['profile']?['bio']?['text'] ?? '',
       followers: [], // 需要单独获取
       following: [], // 需要单独获取
       isVerified: userData['power_badge'] ?? false,
-      createdAt: DateTime.parse(userData['created_at'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.now().subtract(const Duration(days: 30)), // API没有created_at，使用默认值
+      walletAddress: userData['verifications']?.isNotEmpty == true 
+          ? userData['verifications'][0] 
+          : null,
     );
   }
 }

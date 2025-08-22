@@ -10,6 +10,7 @@ class ApiEndpoints {
   // Neynar API端点 (Farcaster)
   static const String neynarAuth = '/v2/farcaster/auth';
   static const String neynarUser = '/v2/farcaster/user';
+  static const String neynarUserBulk = '/v2/farcaster/user/bulk';
   static const String neynarCast = '/v2/farcaster/cast';
   static const String neynarFollows = '/v2/farcaster/following';
   static const String neynarNotifications = '/v2/farcaster/notifications';
