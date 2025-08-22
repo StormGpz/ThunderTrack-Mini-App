@@ -103,6 +103,9 @@ class _MainPageState extends State<MainPage> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.initialize();
       
+      // 通知 Mini App 准备就绪（关键！）
+      await userProvider.notifyMiniAppReady();
+      
       // 调试信息
       print('🔍 用户初始化完成:');
       print('   环境: ${userProvider.isMiniAppEnvironment ? "Farcaster Mini App" : "普通浏览器"}');
