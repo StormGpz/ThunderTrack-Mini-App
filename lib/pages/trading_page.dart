@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/trading_pair.dart';
 import '../models/trade.dart';
+import '../models/address_auth.dart';
 import '../widgets/trade_form.dart';
+import '../widgets/address_selection_widget.dart';
+import '../services/hyperliquid_service.dart';
 import '../theme/eva_theme.dart';
 
 /// 交易页面 - 类似中心化交易所的行情页面
@@ -17,19 +20,47 @@ class TradingPage extends StatefulWidget {
 class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  final HyperliquidService _hyperliquidService = HyperliquidService();
   
   List<TradingPair> _allTradingPairs = [];
   List<TradingPair> _filteredTradingPairs = [];
   final List<Trade> _userTrades = [];
   bool _isLoading = false;
   String _searchQuery = '';
+  
+  // 地址管理相关状态
+  AddressOption? _currentTradingAddress;
+  bool _isAddressAuthorized = false;
+  bool _showAddressSelection = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _initializeServices();
     _loadTradingPairs();
     _loadUserTrades();
+  }
+
+  /// 初始化服务
+  Future<void> _initializeServices() async {
+    await _hyperliquidService.initialize();
+    _checkCurrentTradingAddress();
+  }
+
+  /// 检查当前交易地址状态
+  void _checkCurrentTradingAddress() {
+    final currentAddress = _hyperliquidService.currentTradingAddress;
+    if (currentAddress != null) {
+      _isAddressAuthorized = _hyperliquidService.isAddressAuthorized(currentAddress);
+      setState(() {
+        _currentTradingAddress = AddressOption(
+          address: currentAddress,
+          type: _isAddressAuthorized ? '已授权钱包' : '钱包地址',
+          isConnected: _isAddressAuthorized,
+        );
+      });
+    }
   }
 
   @override
@@ -170,6 +201,20 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
 
         return Column(
           children: [
+            // 钱包地址状态栏
+            _buildWalletStatusBar(),
+            
+            // 地址选择组件（可展开）
+            if (_showAddressSelection) ...[
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: AddressSelectionWidget(
+                  onAddressSelected: _onAddressSelected,
+                  onAddressAuthorized: _onAddressAuthorized,
+                ),
+              ),
+            ],
+            
             // 搜索栏
             _buildSearchBar(),
             
@@ -196,6 +241,97 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
   }
 
   /// 构建搜索栏
+  /// 构建钱包地址状态栏
+  Widget _buildWalletStatusBar() {
+    return Container(
+      color: EvaTheme.deepBlack,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // 钱包图标
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _isAddressAuthorized 
+                ? EvaTheme.neonGreen.withOpacity(0.2)
+                : EvaTheme.warningYellow.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(
+              _isAddressAuthorized ? Icons.account_balance_wallet : Icons.warning_rounded,
+              color: _isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // 地址信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _currentTradingAddress != null ? '交易钱包' : '未设置钱包',
+                  style: TextStyle(
+                    color: EvaTheme.lightText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _currentTradingAddress != null
+                    ? _formatAddress(_currentTradingAddress!.address)
+                    : '点击设置钱包地址',
+                  style: TextStyle(
+                    color: EvaTheme.lightGray,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // 状态指示和操作按钮
+          if (_currentTradingAddress != null) ...[
+            // 状态标签
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _isAddressAuthorized 
+                  ? EvaTheme.neonGreen.withOpacity(0.2)
+                  : EvaTheme.warningYellow.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _isAddressAuthorized ? '已授权' : '未授权',
+                style: TextStyle(
+                  color: _isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          
+          // 设置按钮
+          IconButton(
+            onPressed: _toggleAddressSelection,
+            icon: Icon(
+              _showAddressSelection ? Icons.expand_less : Icons.expand_more,
+              color: EvaTheme.primaryPurple,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: EvaTheme.primaryPurple.withOpacity(0.1),
+              padding: const EdgeInsets.all(8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -694,5 +830,40 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
     } else {
       return '刚刚';
     }
+  }
+
+  /// 切换地址选择面板显示状态
+  void _toggleAddressSelection() {
+    setState(() {
+      _showAddressSelection = !_showAddressSelection;
+    });
+  }
+
+  /// 地址选择回调
+  void _onAddressSelected(AddressOption address) {
+    setState(() {
+      _currentTradingAddress = address;
+      _isAddressAuthorized = _hyperliquidService.isAddressAuthorized(address.address);
+    });
+    
+    // 设置为当前交易地址
+    _hyperliquidService.setTradingAddress(address.address);
+  }
+
+  /// 地址授权成功回调
+  void _onAddressAuthorized(String address) {
+    setState(() {
+      _isAddressAuthorized = true;
+      _showAddressSelection = false; // 授权成功后收起面板
+    });
+    
+    // 刷新当前地址状态
+    _checkCurrentTradingAddress();
+  }
+
+  /// 格式化地址显示
+  String _formatAddress(String address) {
+    if (address.length <= 10) return address;
+    return '${address.substring(0, 6)}...${address.substring(address.length - 4)}';
   }
 }
