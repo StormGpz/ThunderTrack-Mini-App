@@ -70,10 +70,13 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Stack(
               children: [
+                // 发光边框 - 放在最底层
+                _buildGlowBorder(),
+                
                 // 机甲斜线背景装饰
                 _buildMechBackground(),
                 
-                // 主要的磨砂容器
+                // 主要的磨砂容器 - 确保点击事件能正确传递
                 ClipRRect(
                   borderRadius: BorderRadius.circular(25),
                   child: BackdropFilter(
@@ -109,9 +112,6 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
                     ),
                   ),
                 ),
-                
-                // 荧光绿发光边框
-                _buildGlowBorder(),
               ],
             ),
           ),
@@ -133,22 +133,24 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
 
   /// 构建发光边框
   Widget _buildGlowBorder() {
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: EvaTheme.neonGreen.withOpacity(0.3 * _glowAnimation.value),
-            blurRadius: 20,
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: EvaTheme.primaryPurple.withOpacity(0.2 * _glowAnimation.value),
-            blurRadius: 30,
-            spreadRadius: -5,
-          ),
-        ],
+    return IgnorePointer(  // 确保发光边框不阻挡点击事件
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: EvaTheme.neonGreen.withOpacity(0.3 * _glowAnimation.value),
+              blurRadius: 20,
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: EvaTheme.primaryPurple.withOpacity(0.2 * _glowAnimation.value),
+              blurRadius: 30,
+              spreadRadius: -5,
+            ),
+          ],
+        ),
       ),
     );
   }

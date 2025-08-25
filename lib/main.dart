@@ -377,6 +377,7 @@ class _MainPageState extends State<MainPage> {
   AppBar _buildEvaAppBar(UserProvider userProvider, BuildContext context) {
     return AppBar(
       backgroundColor: EvaTheme.deepBlack,
+      elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GestureDetector(
@@ -392,56 +393,126 @@ class _MainPageState extends State<MainPage> {
               _connectFarcaster(userProvider);
             }
           },
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: userProvider.isAuthenticated 
-                ? Colors.white.withOpacity(0.2)
-                : Colors.white.withOpacity(0.3),
-            backgroundImage: userProvider.isAuthenticated && 
-                            userProvider.currentUser?.avatarUrl != null
-                ? NetworkImage(userProvider.currentUser!.avatarUrl!)
-                : null,
-            child: userProvider.isAuthenticated && 
-                   userProvider.currentUser?.avatarUrl == null
-                ? (userProvider.currentUser?.isVerified == true
-                    ? const Icon(Icons.verified, color: Colors.white, size: 16)
-                    : const Icon(Icons.person, color: Colors.white, size: 16))
-                : (!userProvider.isAuthenticated 
-                    ? const Icon(Icons.person_outline, color: Colors.white, size: 16)
-                    : null),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: userProvider.isAuthenticated 
+                ? EvaTheme.neonGradient
+                : LinearGradient(
+                    colors: [
+                      EvaTheme.primaryPurple.withOpacity(0.5),
+                      EvaTheme.primaryPurple.withOpacity(0.2),
+                    ],
+                  ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: userProvider.isAuthenticated 
+                  ? EvaTheme.neonGreen 
+                  : EvaTheme.primaryPurple,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (userProvider.isAuthenticated 
+                    ? EvaTheme.neonGreen 
+                    : EvaTheme.primaryPurple).withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.transparent,
+              backgroundImage: userProvider.isAuthenticated && 
+                              userProvider.currentUser?.avatarUrl != null
+                  ? NetworkImage(userProvider.currentUser!.avatarUrl!)
+                  : null,
+              child: userProvider.isAuthenticated && 
+                     userProvider.currentUser?.avatarUrl == null
+                  ? (userProvider.currentUser?.isVerified == true
+                      ? Icon(Icons.verified, 
+                          color: EvaTheme.neonGreen, size: 16)
+                      : Icon(Icons.person, 
+                          color: EvaTheme.neonGreen, size: 16))
+                  : (!userProvider.isAuthenticated 
+                      ? Icon(Icons.person_outline, 
+                          color: EvaTheme.primaryPurple, size: 16)
+                      : null),
+            ),
           ),
         ),
       ),
       title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: EvaTheme.neonGreen.withOpacity(0.3)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              EvaTheme.mechGray.withOpacity(0.8),
+              EvaTheme.deepBlack.withOpacity(0.9),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: EvaTheme.neonGreen.withOpacity(0.5), 
+            width: 1
+          ),
           boxShadow: [
             BoxShadow(
-              color: EvaTheme.neonGreen.withOpacity(0.1),
-              blurRadius: 8,
-              spreadRadius: 1,
+              color: EvaTheme.neonGreen.withOpacity(0.2),
+              blurRadius: 15,
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: EvaTheme.primaryPurple.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: -5,
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.flash_on,
-              color: EvaTheme.neonGreen,
-              size: 20,
+            // 闪电图标带动画效果
+            ShaderMask(
+              shaderCallback: (bounds) => EvaTheme.techGradient.createShader(bounds),
+              child: Icon(
+                Icons.flash_on,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              'THUNDERTRACK',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: EvaTheme.pureWhite,
-                letterSpacing: 2.0,
-                fontFamily: 'monospace',
+            const SizedBox(width: 12),
+            // 发光装饰线
+            Container(
+              width: 30,
+              height: 2,
+              decoration: BoxDecoration(
+                gradient: EvaTheme.neonGradient,
+                borderRadius: BorderRadius.circular(1),
+                boxShadow: [
+                  BoxShadow(
+                    color: EvaTheme.neonGreen.withOpacity(0.6),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 应用标题
+            ShaderMask(
+              shaderCallback: (bounds) => EvaTheme.techGradient.createShader(bounds),
+              child: Text(
+                'THUNDERTRACK',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 2.0,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ],
@@ -451,31 +522,89 @@ class _MainPageState extends State<MainPage> {
       actions: [
         // 调试面板按钮（仅在开发环境或Farcaster环境显示）
         if (kDebugMode || userProvider.isMiniAppEnvironment)
-          IconButton(
-            icon: const Icon(Icons.bug_report, size: 20),
-            tooltip: '调试日志',
-            onPressed: () => _showDebugPanel(context, userProvider),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              gradient: EvaTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.bug_report, 
+                color: EvaTheme.lightText, size: 20),
+              tooltip: '调试日志',
+              onPressed: () => _showDebugPanel(context, userProvider),
+            ),
           ),
         
         if (!userProvider.isAuthenticated) ...[
           // 未登录时显示登录按钮
-          TextButton(
-            onPressed: () => _connectFarcaster(userProvider),
-            child: const Text(
-              'Login',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              gradient: EvaTheme.neonGradient,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: TextButton(
+              onPressed: () => _connectFarcaster(userProvider),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                backgroundColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'LOGIN',
+                style: TextStyle(
+                  color: EvaTheme.deepBlack,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1.0,
+                ),
+              ),
             ),
           ),
         ] else ...[
           // 已登录时显示通知图标
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            tooltip: '通知',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('通知功能待实现')),
-              );
-            },
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  EvaTheme.primaryPurple.withOpacity(0.3),
+                  EvaTheme.primaryPurple.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.notifications, 
+                color: EvaTheme.lightText),
+              tooltip: '通知',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('通知功能待实现'),
+                    backgroundColor: EvaTheme.primaryPurple,
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ],
