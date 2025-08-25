@@ -97,6 +97,7 @@ class HyperliquidOrder {
   final DateTime? updatedAt;
   final String? clientOrderId;
   final String address;
+  final double? pnl; // 添加盈亏字段用于测试
 
   HyperliquidOrder({
     this.orderId,
@@ -115,6 +116,7 @@ class HyperliquidOrder {
     this.updatedAt,
     this.clientOrderId,
     required this.address,
+    this.pnl,
   });
 
   /// 剩余数量
@@ -201,6 +203,7 @@ class HyperliquidOrder {
     DateTime? updatedAt,
     String? clientOrderId,
     String? address,
+    double? pnl,
   }) {
     return HyperliquidOrder(
       orderId: orderId ?? this.orderId,
@@ -219,6 +222,7 @@ class HyperliquidOrder {
       updatedAt: updatedAt ?? this.updatedAt,
       clientOrderId: clientOrderId ?? this.clientOrderId,
       address: address ?? this.address,
+      pnl: pnl ?? this.pnl,
     );
   }
 

@@ -48,10 +48,11 @@ class ApiClient {
     String? baseUrl,
   }) async {
     try {
+      final finalOptions = _mergeOptions(options, baseUrl);
       final response = await _dio.get<T>(
         baseUrl != null ? '$baseUrl$path' : path,
         queryParameters: queryParameters,
-        options: options,
+        options: finalOptions,
       );
       return response;
     } catch (e) {
@@ -68,11 +69,12 @@ class ApiClient {
     String? baseUrl,
   }) async {
     try {
+      final finalOptions = _mergeOptions(options, baseUrl);
       final response = await _dio.post<T>(
         baseUrl != null ? '$baseUrl$path' : path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: finalOptions,
       );
       return response;
     } catch (e) {
@@ -89,11 +91,12 @@ class ApiClient {
     String? baseUrl,
   }) async {
     try {
+      final finalOptions = _mergeOptions(options, baseUrl);
       final response = await _dio.put<T>(
         baseUrl != null ? '$baseUrl$path' : path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: finalOptions,
       );
       return response;
     } catch (e) {
@@ -110,16 +113,51 @@ class ApiClient {
     String? baseUrl,
   }) async {
     try {
+      final finalOptions = _mergeOptions(options, baseUrl);
       final response = await _dio.delete<T>(
         baseUrl != null ? '$baseUrl$path' : path,
         data: data,
         queryParameters: queryParameters,
-        options: options,
+        options: finalOptions,
       );
       return response;
     } catch (e) {
       throw _handleDioError(e);
     }
+  }
+
+  /// 合并请求选项，处理Neynar API身份验证
+  Options _mergeOptions(Options? options, String? baseUrl) {
+    final mergedHeaders = <String, dynamic>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // 如果是Neynar API请求，添加API密钥
+    if (baseUrl != null && baseUrl.contains('neynar.com')) {
+      mergedHeaders['api_key'] = AppConfig.neynarApiKey;
+    }
+
+    // 合并用户提供的headers
+    if (options?.headers != null) {
+      mergedHeaders.addAll(options!.headers!);
+    }
+
+    return Options(
+      headers: mergedHeaders,
+      method: options?.method,
+      receiveTimeout: options?.receiveTimeout,
+      sendTimeout: options?.sendTimeout,
+      responseType: options?.responseType,
+      contentType: options?.contentType,
+      validateStatus: options?.validateStatus,
+      receiveDataWhenStatusError: options?.receiveDataWhenStatusError,
+      followRedirects: options?.followRedirects,
+      maxRedirects: options?.maxRedirects,
+      requestEncoder: options?.requestEncoder,
+      responseDecoder: options?.responseDecoder,
+      listFormat: options?.listFormat,
+    );
   }
 
   /// 处理Dio错误

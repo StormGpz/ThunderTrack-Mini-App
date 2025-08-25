@@ -535,48 +535,46 @@ class UserProvider extends ChangeNotifier {
       try {
         final neynarUser = await _neynarService.getUserByFid(fid);
         
-        if (neynarUser != null) {
-          addDebugLog('✅ Neynar API成功获取用户信息');
-          addDebugLog('👤 用户名: ${neynarUser.username}');
-          addDebugLog('🏷️ 显示名: ${neynarUser.displayName}');
-          addDebugLog('🖼️ 头像: ${neynarUser.avatarUrl != null ? "有" : "无"}');
-          
-          // 直接使用 Neynar 返回的 User 对象
-          final user = User(
-            fid: fid,
-            username: neynarUser.username,
-            displayName: neynarUser.displayName,
-            avatarUrl: neynarUser.avatarUrl,
-            bio: neynarUser.bio ?? '来自 Farcaster 的用户',
-            walletAddress: neynarUser.walletAddress, // 保留原有的钱包地址
-            followers: neynarUser.followers,
-            following: neynarUser.following,
-            isVerified: neynarUser.isVerified,
-            createdAt: neynarUser.createdAt,
-            lastActiveAt: DateTime.now(),
-          );
+        addDebugLog('✅ Neynar API成功获取用户信息');
+        addDebugLog('👤 用户名: ${neynarUser.username}');
+        addDebugLog('🏷️ 显示名: ${neynarUser.displayName}');
+        addDebugLog('🖼️ 头像: ${neynarUser.avatarUrl != null ? "有" : "无"}');
+        
+        // 直接使用 Neynar 返回的 User 对象
+        final user = User(
+          fid: fid,
+          username: neynarUser.username,
+          displayName: neynarUser.displayName,
+          avatarUrl: neynarUser.avatarUrl,
+          bio: neynarUser.bio ?? '来自 Farcaster 的用户',
+          walletAddress: neynarUser.walletAddress, // 保留原有的钱包地址
+          followers: neynarUser.followers,
+          following: neynarUser.following,
+          isVerified: neynarUser.isVerified,
+          createdAt: neynarUser.createdAt,
+          lastActiveAt: DateTime.now(),
+        );
 
-          addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
+        addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
 
-          // 保存认证token和用户信息
-          await _saveAuthToken(authResult['token']);
-          await _saveUserToLocal(user);
-          
-          _currentUser = user;
-          _isAuthenticated = true;
-          
-          // 🔑 处理钱包地址
-          await _handleWalletAddress(user);
-          
-          addDebugLog('✅ 用户状态更新完成');
-          addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
-          addDebugLog('💰 钱包地址: ${_walletManager.currentAddress ?? "未设置"}');
-          
-          notifyListeners();
-          
-          addDebugLog('🎉 Quick Auth + Neynar API 处理成功: ${user.username}');
-          return;
-        }
+        // 保存认证token和用户信息
+        await _saveAuthToken(authResult['token']);
+        await _saveUserToLocal(user);
+        
+        _currentUser = user;
+        _isAuthenticated = true;
+        
+        // 🔑 处理钱包地址
+        await _handleWalletAddress(user);
+        
+        addDebugLog('✅ 用户状态更新完成');
+        addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
+        addDebugLog('💰 钱包地址: ${_walletManager.currentAddress ?? "未设置"}');
+        
+        notifyListeners();
+        
+        addDebugLog('🎉 Quick Auth + Neynar API 处理成功: ${user.username}');
+        return;
       } catch (e) {
         addDebugLog('❌ Neynar API调用失败: $e');
         // 继续使用备用方案

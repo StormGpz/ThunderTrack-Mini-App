@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/trading_diary.dart';
-import '../services/diary_template_service.dart';
 import '../widgets/diary_list.dart';
-import '../widgets/create_diary_page.dart';
+import '../widgets/create_diary_step1.dart';
+import '../services/cast_diary_service.dart';
 import '../theme/eva_theme.dart';
 
 /// 交易日记页面，展示自己的日记和广场内容
@@ -18,6 +18,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
   final List<TradingDiary> _myDiaries = [];
   final List<TradingDiary> _publicDiaries = [];
   bool _isLoading = false;
+  final CastDiaryService _castService = CastDiaryService();
 
   @override
   void initState() {
@@ -38,129 +39,129 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
       _isLoading = true;
     });
 
-    // TODO: 从IPFS或本地存储加载日记
-    // 模拟数据
-    await Future.delayed(const Duration(milliseconds: 800));
-    
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+    try {
+      // 并行加载我的日记和广场日记
+      final futures = await Future.wait([
+        _castService.getUserDiaries('123', limit: 50), // TODO: 使用真实的用户FID
+        _castService.getPublicDiaries(limit: 100),
+      ]);
+      
+      if (mounted) {
+        setState(() {
+          _myDiaries.clear();
+          _myDiaries.addAll(futures[0]);
+          
+          _publicDiaries.clear();
+          _publicDiaries.addAll(futures[1]);
+        });
+      }
+    } catch (e) {
+      debugPrint('加载日记失败: $e');
+      // 如果API调用失败，添加一些模拟数据用于展示
+      if (mounted) {
+        setState(() {
+          _addMockDiaries();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
+  
+  /// 添加模拟日记数据
+  void _addMockDiaries() {
+    final now = DateTime.now();
+    
+    // 我的日记示例
+    _myDiaries.addAll([
+      TradingDiary(
+        id: 'mock1',
+        authorFid: '123',
+        title: 'ETH/USDT 突破交易复盘',
+        content: '今天ETH突破了2450关键阻力位，果断入场。市场情绪转强，成交量放大确认突破有效。这次交易让我深刻体会到突破交易的重要性，严格按照策略执行获得了不错的收益。',
+        type: DiaryType.singleTrade,
+        symbol: 'ETH/USDT',
+        tags: ['#Breakout', '#ETH', '#DeFi', '#Profit'],
+        createdAt: now.subtract(const Duration(hours: 2)),
+        updatedAt: now.subtract(const Duration(hours: 2)),
+        isPublic: true,
+        rating: 4.5,
+      ),
+      TradingDiary(
+        id: 'mock2',
+        authorFid: '123',
+        title: 'SOL网格策略本周总结',
+        content: 'SOL在95-105区间震荡，网格策略表现不错。市场缺乏明确方向，适合低频套利。本周通过网格交易获得稳定收益，验证了区间交易策略的有效性。',
+        type: DiaryType.strategySummary,
+        symbol: 'SOL/USDT',
+        tags: ['#Grid', '#SOL', '#Range', '#Strategy'],
+        createdAt: now.subtract(const Duration(days: 1)),
+        updatedAt: now.subtract(const Duration(days: 1)),
+        isPublic: true,
+        rating: 4.0,
+        periodStart: now.subtract(const Duration(days: 7)),
+        periodEnd: now.subtract(const Duration(days: 1)),
+      ),
+    ]);
+    
+    // 广场日记示例
+    _publicDiaries.addAll([
+      ..._myDiaries, // 包含自己的
+      TradingDiary(
+        id: 'public1',
+        authorFid: '456',
+        title: 'BTC趋势跟随策略分享',
+        content: 'BTC重回上升趋势，45000是关键支撑。机构资金持续流入，看好后市。分享一些趋势跟随的心得体会...',
+        type: DiaryType.freeForm,
+        symbol: 'BTC/USDT',
+        tags: ['#BTC', '#Trend', '#Bullish'],
+        createdAt: now.subtract(const Duration(hours: 5)),
+        updatedAt: now.subtract(const Duration(hours: 5)),
+        isPublic: true,
+        likes: 12,
+        comments: 3,
+        reposts: 2,
+      ),
+      TradingDiary(
+        id: 'public2',
+        authorFid: '789',
+        title: 'LINK反转交易心得',
+        content: 'LINK严重超卖，技术面显示反转信号。14.5附近是强支撑，适合抄底。这次反转交易让我学到了耐心等待的重要性。',
+        type: DiaryType.singleTrade,
+        symbol: 'LINK/USDT',
+        tags: ['#LINK', '#Reversal', '#Oversold'],
+        createdAt: now.subtract(const Duration(hours: 8)),
+        updatedAt: now.subtract(const Duration(hours: 8)),
+        isPublic: true,
+        likes: 8,
+        comments: 5,
+        reposts: 1,
+        rating: 3.5,
+      ),
+    ]);
+  }
 
-  /// 显示创建日记模板选择
+  /// 导航到写日记流程
   void _showCreateDiaryOptions() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 拖拽指示器
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '选择日记模板',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...DiaryTemplateService.getAllTemplates().map(
-              (template) => _buildTemplateOption(template),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建模板选项
-  Widget _buildTemplateOption(DiaryTemplate template) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              template.icon,
-              style: const TextStyle(fontSize: 24),
-            ),
-          ),
-        ),
-        title: Text(
-          template.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          template.description,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
-        onTap: () {
-          Navigator.pop(context);
-          _navigateToCreateDiary(template);
-        },
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: Colors.grey.withOpacity(0.2),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 导航到创建日记页面
-  void _navigateToCreateDiary(DiaryTemplate template) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateDiaryPage(
-          template: template,
-          onDiaryCreated: (diary) {
-            setState(() {
-              _myDiaries.insert(0, diary);
-            });
-          },
-        ),
+        builder: (context) => const CreateDiaryStep1(),
       ),
-    );
+    ).then((_) {
+      // 从写日记页面返回后刷新数据
+      _loadDiaries();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: EvaTheme.deepBlack,
       body: Column(
         children: [
           // 自定义Tab栏
@@ -232,7 +233,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
                         emptyWidget: _buildEmptyMyDiary(),
                         onRefresh: _loadDiaries,
                       ),
-                // 广场
+                // 广场日记
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : DiaryList(
@@ -257,7 +258,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
           Icon(
             Icons.book_outlined,
             size: 80,
-            color: Colors.grey[400],
+            color: EvaTheme.textGray,
           ),
           const SizedBox(height: 16),
           Text(
@@ -265,26 +266,36 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: EvaTheme.textGray,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '记录交易心得，分享策略思考',
+            '记录您的交易心得和市场观察',
             style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+              color: EvaTheme.textGray.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _showCreateDiaryOptions,
-            icon: const Icon(Icons.edit, size: 18),
-            label: const Text('写第一篇日记'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
+          Container(
+            decoration: BoxDecoration(
+              gradient: EvaTheme.neonGradient,
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _showCreateDiaryOptions,
+              icon: const Icon(Icons.add, color: Colors.black),
+              label: const Text(
+                '写第一篇日记',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ),
@@ -300,25 +311,24 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.public_outlined,
+            Icons.public_off,
             size: 80,
-            color: Colors.grey[400],
+            color: EvaTheme.textGray,
           ),
           const SizedBox(height: 16),
           Text(
-            '暂无公开日记',
+            '暂无广场内容',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: EvaTheme.textGray,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '成为第一个分享交易心得的人',
+            '成为第一个分享交易日记的人',
             style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+              color: EvaTheme.textGray.withOpacity(0.7),
             ),
           ),
         ],

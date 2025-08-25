@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../theme/eva_theme.dart';
 
-/// 设置页面
+/// 设置页面 - EVA主题，简化版
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: EvaTheme.deepBlack,
       appBar: AppBar(
         title: Consumer<SettingsProvider>(
           builder: (context, settings, child) {
-            return Text(settings.isChineseLocale ? '设置' : 'Settings');
+            return Text(
+              settings.isChineseLocale ? '设置' : 'Settings',
+              style: TextStyle(
+                color: EvaTheme.lightText,
+                fontWeight: FontWeight.bold,
+              ),
+            );
           },
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: EvaTheme.deepBlack,
         elevation: 0,
+        iconTheme: IconThemeData(color: EvaTheme.neonGreen),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
@@ -26,30 +35,27 @@ class SettingsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 外观设置
+                // 基础设置
                 _buildSectionHeader(
-                  context,
-                  settings.isChineseLocale ? '外观' : 'Appearance',
-                  Icons.palette_outlined,
+                  settings.isChineseLocale ? '基础设置' : 'Basic Settings',
+                  Icons.settings_outlined,
                 ),
                 const SizedBox(height: 8),
                 _buildSettingsCard([
-                  _buildThemeSetting(context, settings),
                   _buildLanguageSetting(context, settings),
                 ]),
 
                 const SizedBox(height: 24),
 
-                // 日记设置
+                // 交易设置
                 _buildSectionHeader(
-                  context,
-                  settings.isChineseLocale ? '日记设置' : 'Diary Settings',
-                  Icons.book_outlined,
+                  settings.isChineseLocale ? '交易设置' : 'Trading Settings', 
+                  Icons.trending_up_outlined,
                 ),
                 const SizedBox(height: 8),
                 _buildSettingsCard([
-                  _buildDefaultVisibilitySetting(context, settings),
-                  _buildAutoShareSetting(context, settings),
+                  _buildTradingNotificationSetting(context, settings),
+                  _buildDefaultCurrencySetting(context, settings),
                 ]),
 
                 const SizedBox(height: 32),
@@ -70,13 +76,13 @@ class SettingsPage extends StatelessWidget {
   }
 
   /// 构建节标题
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
         Icon(
           icon,
           size: 20,
-          color: Theme.of(context).primaryColor,
+          color: EvaTheme.neonGreen,
         ),
         const SizedBox(width: 8),
         Text(
@@ -84,7 +90,7 @@ class SettingsPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).primaryColor,
+            color: EvaTheme.neonGreen,
           ),
         ),
       ],
@@ -93,29 +99,25 @@ class SettingsPage extends StatelessWidget {
 
   /// 构建设置卡片
   Widget _buildSettingsCard(List<Widget> children) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            EvaTheme.mechGray.withOpacity(0.8),
+            EvaTheme.deepBlack.withOpacity(0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: EvaTheme.neonGreen.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
       child: Column(
         children: children,
       ),
-    );
-  }
-
-  /// 构建主题设置
-  Widget _buildThemeSetting(BuildContext context, SettingsProvider settings) {
-    return ListTile(
-      leading: Icon(
-        settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-        color: Theme.of(context).primaryColor,
-      ),
-      title: Text(
-        settings.isChineseLocale ? '主题模式' : 'Theme Mode',
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      subtitle: Text(settings.getThemeModeDisplayText()),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => _showThemeModeDialog(context, settings),
     );
   }
 
@@ -124,82 +126,101 @@ class SettingsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(
         Icons.language,
-        color: Theme.of(context).primaryColor,
+        color: EvaTheme.neonGreen,
       ),
       title: Text(
         settings.isChineseLocale ? '语言' : 'Language',
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: EvaTheme.lightText,
+        ),
       ),
-      subtitle: Text(settings.getLanguageDisplayText()),
+      subtitle: Text(
+        settings.isChineseLocale ? '中文' : 'English',
+        style: TextStyle(color: EvaTheme.textGray),
+      ),
+      trailing: Icon(Icons.chevron_right, color: EvaTheme.textGray),
+      onTap: () => _showLanguageDialog(context, settings),
+    );
+  }
+
+  /// 构建交易通知设置
+  Widget _buildTradingNotificationSetting(BuildContext context, SettingsProvider settings) {
+    return ListTile(
+      leading: Icon(
+        Icons.notifications_outlined,
+        color: EvaTheme.neonGreen,
+      ),
+      title: Text(
+        settings.isChineseLocale ? '交易通知' : 'Trading Notifications',
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: EvaTheme.lightText,
+        ),
+      ),
+      subtitle: Text(
+        settings.isChineseLocale ? '重要交易事件提醒' : 'Important trading event alerts',
+        style: TextStyle(color: EvaTheme.textGray),
+      ),
       trailing: Switch(
-        value: settings.isChineseLocale,
-        onChanged: (value) => settings.toggleLanguage(),
-        activeColor: Theme.of(context).primaryColor,
+        value: true, // 默认开启
+        onChanged: (value) {
+          // TODO: 实现通知开关逻辑
+        },
+        activeColor: EvaTheme.neonGreen,
       ),
     );
   }
 
-  /// 构建默认可见性设置
-  Widget _buildDefaultVisibilitySetting(BuildContext context, SettingsProvider settings) {
+  /// 构建默认货币设置
+  Widget _buildDefaultCurrencySetting(BuildContext context, SettingsProvider settings) {
     return ListTile(
       leading: Icon(
-        settings.defaultDiaryIsPublic ? Icons.public : Icons.lock_outline,
-        color: Theme.of(context).primaryColor,
+        Icons.attach_money,
+        color: EvaTheme.neonGreen,
       ),
       title: Text(
-        settings.isChineseLocale ? '默认日记可见性' : 'Default Diary Visibility',
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        settings.isChineseLocale ? '默认计价币种' : 'Default Currency',
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: EvaTheme.lightText,
+        ),
       ),
       subtitle: Text(
-        settings.isChineseLocale 
-            ? '新建日记时的默认可见性设置'
-            : 'Default visibility for new diaries',
+        'USDT',
+        style: TextStyle(color: EvaTheme.textGray),
       ),
-      trailing: Switch(
-        value: settings.defaultDiaryIsPublic,
-        onChanged: (value) => settings.setDefaultDiaryVisibility(value),
-        activeColor: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  /// 构建自动分享设置
-  Widget _buildAutoShareSetting(BuildContext context, SettingsProvider settings) {
-    return ListTile(
-      leading: Icon(
-        Icons.share,
-        color: Theme.of(context).primaryColor,
-      ),
-      title: Text(
-        settings.isChineseLocale ? '自动分享到Farcaster' : 'Auto Share to Farcaster',
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      subtitle: Text(
-        settings.isChineseLocale 
-            ? '创建公开日记时自动开启分享选项'
-            : 'Auto enable sharing when creating public diaries',
-      ),
-      trailing: Switch(
-        value: settings.autoShareEnabled,
-        onChanged: (value) => settings.setAutoShareEnabled(value),
-        activeColor: Theme.of(context).primaryColor,
-      ),
+      trailing: Icon(Icons.chevron_right, color: EvaTheme.textGray),
+      onTap: () => _showCurrencyDialog(context, settings),
     );
   }
 
   /// 构建重置按钮
   Widget _buildResetButton(BuildContext context, SettingsProvider settings) {
     return Center(
-      child: OutlinedButton.icon(
-        onPressed: () => _showResetDialog(context, settings),
-        icon: const Icon(Icons.restore, size: 18),
-        label: Text(
-          settings.isChineseLocale ? '重置所有设置' : 'Reset All Settings',
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              EvaTheme.primaryPurple.withOpacity(0.8),
+              EvaTheme.primaryPurple.withOpacity(0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: EvaTheme.primaryPurple,
+            width: 1,
+          ),
         ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.orange,
-          side: const BorderSide(color: Colors.orange),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: TextButton(
+          onPressed: () => _showResetDialog(context, settings),
+          child: Text(
+            settings.isChineseLocale ? '重置设置' : 'Reset Settings',
+            style: TextStyle(
+              color: EvaTheme.lightText,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
@@ -211,135 +232,148 @@ class SettingsPage extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'ThunderTrack',
+            settings.isChineseLocale ? 'ThunderTrack EVA版本' : 'ThunderTrack EVA Version',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+              color: EvaTheme.textGray,
+              fontSize: 14,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'v1.0.0',
+            '1.0.0',
             style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+              color: EvaTheme.neonGreen,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            settings.isChineseLocale 
-                ? '⚡ 去中心化交易日记应用'
-                : '⚡ Decentralized Trading Diary App',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  /// 显示主题模式对话框
-  void _showThemeModeDialog(BuildContext context, SettingsProvider settings) {
+  /// 显示语言选择对话框
+  void _showLanguageDialog(BuildContext context, SettingsProvider settings) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            settings.isChineseLocale ? '选择主题模式' : 'Choose Theme Mode',
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: Text(settings.isChineseLocale ? '浅色模式' : 'Light Mode'),
-                value: ThemeMode.light,
-                groupValue: settings.themeMode,
+      builder: (context) => AlertDialog(
+        backgroundColor: EvaTheme.mechGray,
+        title: Text(
+          settings.isChineseLocale ? '选择语言' : 'Select Language',
+          style: TextStyle(color: EvaTheme.lightText),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('中文', style: TextStyle(color: EvaTheme.lightText)),
+              leading: Radio<bool>(
+                value: true,
+                groupValue: settings.isChineseLocale,
                 onChanged: (value) {
-                  if (value != null) {
-                    settings.setThemeMode(value);
-                    Navigator.pop(context);
+                  if (value != null && value) {
+                    settings.setLocale(const Locale('zh', 'CN'));
+                    Navigator.of(context).pop();
                   }
                 },
+                activeColor: EvaTheme.neonGreen,
               ),
-              RadioListTile<ThemeMode>(
-                title: Text(settings.isChineseLocale ? '深色模式' : 'Dark Mode'),
-                value: ThemeMode.dark,
-                groupValue: settings.themeMode,
+            ),
+            ListTile(
+              title: const Text('English', style: TextStyle(color: EvaTheme.lightText)),
+              leading: Radio<bool>(
+                value: false,
+                groupValue: settings.isChineseLocale,
                 onChanged: (value) {
-                  if (value != null) {
-                    settings.setThemeMode(value);
-                    Navigator.pop(context);
+                  if (value != null && value) {
+                    settings.setLocale(const Locale('en', 'US'));
+                    Navigator.of(context).pop();
                   }
                 },
+                activeColor: EvaTheme.neonGreen,
               ),
-              RadioListTile<ThemeMode>(
-                title: Text(settings.isChineseLocale ? '跟随系统' : 'Follow System'),
-                value: ThemeMode.system,
-                groupValue: settings.themeMode,
-                onChanged: (value) {
-                  if (value != null) {
-                    settings.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(settings.isChineseLocale ? '取消' : 'Cancel'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  /// 显示重置对话框
+  /// 显示货币选择对话框
+  void _showCurrencyDialog(BuildContext context, SettingsProvider settings) {
+    final currencies = ['USDT', 'USD', 'EUR', 'CNY'];
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: EvaTheme.mechGray,
+        title: Text(
+          settings.isChineseLocale ? '选择计价币种' : 'Select Currency',
+          style: TextStyle(color: EvaTheme.lightText),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: currencies.map((currency) => ListTile(
+            title: Text(currency, style: TextStyle(color: EvaTheme.lightText)),
+            leading: Radio<String>(
+              value: currency,
+              groupValue: 'USDT', // 默认选中USDT
+              onChanged: (value) {
+                // TODO: 实现货币切换逻辑
+                Navigator.of(context).pop();
+              },
+              activeColor: EvaTheme.neonGreen,
+            ),
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  /// 显示重置确认对话框
   void _showResetDialog(BuildContext context, SettingsProvider settings) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            settings.isChineseLocale ? '重置设置' : 'Reset Settings',
-          ),
-          content: Text(
-            settings.isChineseLocale 
-                ? '确定要重置所有设置到默认值吗？此操作无法撤销。'
-                : 'Are you sure you want to reset all settings to default values? This action cannot be undone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(settings.isChineseLocale ? '取消' : 'Cancel'),
+      builder: (context) => AlertDialog(
+        backgroundColor: EvaTheme.mechGray,
+        title: Text(
+          settings.isChineseLocale ? '重置设置' : 'Reset Settings',
+          style: TextStyle(color: EvaTheme.lightText),
+        ),
+        content: Text(
+          settings.isChineseLocale 
+            ? '这将重置所有设置到默认状态，是否继续？'
+            : 'This will reset all settings to default values. Continue?',
+          style: TextStyle(color: EvaTheme.textGray),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              settings.isChineseLocale ? '取消' : 'Cancel',
+              style: TextStyle(color: EvaTheme.textGray),
             ),
-            TextButton(
-              onPressed: () {
-                settings.resetToDefaults();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      settings.isChineseLocale 
-                          ? '设置已重置' 
-                          : 'Settings have been reset',
-                    ),
-                    backgroundColor: Colors.green,
+          ),
+          TextButton(
+            onPressed: () {
+              settings.resetToDefaults();
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    settings.isChineseLocale ? '设置已重置' : 'Settings have been reset',
                   ),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text(settings.isChineseLocale ? '重置' : 'Reset'),
+                  backgroundColor: EvaTheme.neonGreen,
+                ),
+              );
+            },
+            child: Text(
+              settings.isChineseLocale ? '确认' : 'Confirm',
+              style: TextStyle(color: EvaTheme.neonGreen),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }
