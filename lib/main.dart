@@ -480,38 +480,24 @@ class _MainPageState extends State<MainPage> {
               child: Icon(
                 Icons.flash_on,
                 color: Colors.white,
-                size: 20,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 12),
-            // 发光装饰线
-            Container(
-              width: 30,
-              height: 2,
-              decoration: BoxDecoration(
-                gradient: EvaTheme.neonGradient,
-                borderRadius: BorderRadius.circular(1),
-                boxShadow: [
-                  BoxShadow(
-                    color: EvaTheme.neonGreen.withOpacity(0.6),
-                    blurRadius: 4,
-                    spreadRadius: 1,
+            const SizedBox(width: 8),
+            // 应用标题 - 去掉横线，调整字体大小防止溢出
+            Flexible(
+              child: ShaderMask(
+                shaderCallback: (bounds) => EvaTheme.techGradient.createShader(bounds),
+                child: Text(
+                  'THUNDERTRACK',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14, // 减小字体避免溢出
+                    letterSpacing: 1.5, // 减小字母间距
+                    fontFamily: 'monospace',
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 应用标题
-            ShaderMask(
-              shaderCallback: (bounds) => EvaTheme.techGradient.createShader(bounds),
-              child: Text(
-                'THUNDERTRACK',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 2.0,
-                  fontFamily: 'monospace',
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

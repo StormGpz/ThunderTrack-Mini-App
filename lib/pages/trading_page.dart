@@ -244,9 +244,35 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
   /// 构建搜索栏
   /// 构建钱包地址状态栏
   Widget _buildWalletStatusBar() {
-    return EvaMechDecoration.mechPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      glowIntensity: _isAddressAuthorized ? 1.0 : 0.5,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), // 减小垂直内边距
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            EvaTheme.mechGray.withOpacity(0.8),
+            EvaTheme.deepBlack.withOpacity(0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: EvaTheme.neonGreen.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: EvaTheme.neonGreen.withOpacity(_isAddressAuthorized ? 0.1 : 0.05),
+            blurRadius: 20,
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: EvaTheme.primaryPurple.withOpacity(_isAddressAuthorized ? 0.05 : 0.02),
+            blurRadius: 30,
+            spreadRadius: -5,
+          ),
+        ],
+      ),
       child: Row(
         children: [
           // 钱包图标
@@ -372,7 +398,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
 
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), // 减小垂直内边距
       decoration: BoxDecoration(
         color: EvaTheme.mechGray,
         border: Border(
@@ -417,7 +443,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
           ),
           filled: true,
           fillColor: EvaTheme.deepBlack,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16), // 减小垂直内边距
         ),
       ),
     );
@@ -533,7 +559,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
         ] : null,
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // 减小垂直内边距
         leading: CircleAvatar(
           backgroundColor: pair.isFavorite 
               ? EvaTheme.neonGreen.withOpacity(0.2)

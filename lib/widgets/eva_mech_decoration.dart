@@ -56,6 +56,7 @@ class EvaMechDecoration {
         size: Size(size, size),
         painter: CornerDecorationPainter(
           color: color ?? EvaTheme.neonGreen,
+          alignment: alignment,
         ),
       ),
     );
@@ -205,8 +206,12 @@ class MechBackgroundPainter extends CustomPainter {
 /// 角落装饰绘制器
 class CornerDecorationPainter extends CustomPainter {
   final Color color;
+  final AlignmentGeometry alignment;
 
-  CornerDecorationPainter({required this.color});
+  CornerDecorationPainter({
+    required this.color,
+    required this.alignment,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -223,15 +228,28 @@ class CornerDecorationPainter extends CustomPainter {
 
     final path = Path();
     
-    // L 形装饰
-    path.moveTo(0, size.height * 0.7);
-    path.lineTo(0, 0);
-    path.lineTo(size.width * 0.7, 0);
-    
-    // 内部装饰线
-    path.moveTo(5, size.height * 0.5);
-    path.lineTo(5, 5);
-    path.lineTo(size.width * 0.5, 5);
+    // 根据对齐方式绘制不同方向的L形装饰
+    if (alignment == Alignment.topLeft) {
+      // 左上角：从左下到左上到右上
+      path.moveTo(0, size.height * 0.7);
+      path.lineTo(0, 0);
+      path.lineTo(size.width * 0.7, 0);
+      
+      // 内部装饰线
+      path.moveTo(5, size.height * 0.5);
+      path.lineTo(5, 5);
+      path.lineTo(size.width * 0.5, 5);
+    } else if (alignment == Alignment.bottomRight) {
+      // 右下角：从右上到右下到左下
+      path.moveTo(size.width, size.height * 0.3);
+      path.lineTo(size.width, size.height);
+      path.lineTo(size.width * 0.3, size.height);
+      
+      // 内部装饰线
+      path.moveTo(size.width - 5, size.height * 0.5);
+      path.lineTo(size.width - 5, size.height - 5);
+      path.lineTo(size.width * 0.5, size.height - 5);
+    }
 
     // 绘制发光效果
     canvas.drawPath(path, glowPaint);

@@ -82,7 +82,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                     child: Container(
-                      height: 70,
+                      height: 60, // 减少高度，更扁平
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -135,7 +135,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
   Widget _buildGlowBorder() {
     return IgnorePointer(  // 确保发光边框不阻挡点击事件
       child: Container(
-        height: 70,
+        height: 60, // 匹配底边栏高度
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
@@ -161,7 +161,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
       onTap: () => widget.onTap(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), // 减少内边距
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: isSelected 
@@ -180,7 +180,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
               child: Icon(
                 item.icon,
                 color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray,
-                size: isSelected ? 26 : 22,
+                size: isSelected ? 22 : 20, // 减小图标尺寸
               ),
             ),
             const SizedBox(height: 4),
@@ -190,7 +190,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
                 color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray,
-                fontSize: isSelected ? 11 : 10,
+                fontSize: isSelected ? 10 : 9, // 减小文字尺寸
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 letterSpacing: 0.5,
               ),

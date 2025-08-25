@@ -3,6 +3,7 @@ import '../models/trading_diary.dart';
 import '../services/diary_template_service.dart';
 import '../widgets/diary_list.dart';
 import '../widgets/create_diary_page.dart';
+import '../theme/eva_theme.dart';
 
 /// 交易日记页面，展示自己的日记和广场内容
 class DiaryPage extends StatefulWidget {
@@ -165,12 +166,25 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
           // 自定义Tab栏
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  EvaTheme.mechGray.withOpacity(0.9),
+                  EvaTheme.deepBlack,
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: EvaTheme.neonGreen.withOpacity(0.1),
                   offset: const Offset(0, 2),
-                  blurRadius: 4,
+                  blurRadius: 8,
                 ),
               ],
             ),
@@ -198,8 +212,9 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
                   ),
                 ),
               ],
-              labelColor: Theme.of(context).primaryColor,
-              unselectedLabelColor: Colors.grey[600],
+              labelColor: EvaTheme.neonGreen,
+              unselectedLabelColor: EvaTheme.textGray,
+              indicatorColor: EvaTheme.neonGreen,
               indicatorSize: TabBarIndicatorSize.label,
               indicatorWeight: 3,
             ),
@@ -229,10 +244,6 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateDiaryOptions,
-        child: const Icon(Icons.add),
       ),
     );
   }
