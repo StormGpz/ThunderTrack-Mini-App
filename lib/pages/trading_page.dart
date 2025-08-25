@@ -6,6 +6,7 @@ import '../models/trade.dart';
 import '../models/address_auth.dart';
 import '../widgets/trade_form.dart';
 import '../widgets/address_selection_widget.dart';
+import '../widgets/eva_mech_decoration.dart';
 import '../services/hyperliquid_service.dart';
 import '../theme/eva_theme.dart';
 
@@ -243,9 +244,9 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
   /// 构建搜索栏
   /// 构建钱包地址状态栏
   Widget _buildWalletStatusBar() {
-    return Container(
-      color: EvaTheme.deepBlack,
+    return EvaMechDecoration.mechPanel(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      glowIntensity: _isAddressAuthorized ? 1.0 : 0.5,
       child: Row(
         children: [
           // 钱包图标
@@ -253,10 +254,27 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _isAddressAuthorized 
-                ? EvaTheme.neonGreen.withOpacity(0.2)
-                : EvaTheme.warningYellow.withOpacity(0.2),
+              gradient: _isAddressAuthorized 
+                ? EvaTheme.neonGradient
+                : LinearGradient(
+                    colors: [
+                      EvaTheme.warningYellow.withOpacity(0.3),
+                      EvaTheme.warningYellow.withOpacity(0.1),
+                    ],
+                  ),
               borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (_isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow)
+                      .withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
             child: Icon(
               _isAddressAuthorized ? Icons.account_balance_wallet : Icons.warning_rounded,
@@ -271,14 +289,26 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _currentTradingAddress != null ? '交易钱包' : '未设置钱包',
-                  style: TextStyle(
-                    color: EvaTheme.lightText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      _currentTradingAddress != null ? '交易钱包' : '未设置钱包',
+                      style: TextStyle(
+                        color: EvaTheme.lightText,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 发光装饰线
+                    EvaMechDecoration.glowLine(
+                      width: 30,
+                      height: 1,
+                      animated: _isAddressAuthorized,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
                 Text(
                   _currentTradingAddress != null
                     ? _formatAddress(_currentTradingAddress!.address)
@@ -297,10 +327,9 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
             // 状态标签
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _isAddressAuthorized 
-                  ? EvaTheme.neonGreen.withOpacity(0.2)
-                  : EvaTheme.warningYellow.withOpacity(0.2),
+              decoration: EvaMechDecoration.techBorder(
+                color: _isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow,
+                glowIntensity: _isAddressAuthorized ? 1.0 : 0.7,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -316,15 +345,24 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
           ],
           
           // 设置按钮
-          IconButton(
-            onPressed: _toggleAddressSelection,
-            icon: Icon(
-              _showAddressSelection ? Icons.expand_less : Icons.expand_more,
-              color: EvaTheme.primaryPurple,
+          Container(
+            decoration: BoxDecoration(
+              gradient: EvaTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                width: 1,
+              ),
             ),
-            style: IconButton.styleFrom(
-              backgroundColor: EvaTheme.primaryPurple.withOpacity(0.1),
-              padding: const EdgeInsets.all(8),
+            child: IconButton(
+              onPressed: _toggleAddressSelection,
+              icon: Icon(
+                _showAddressSelection ? Icons.expand_less : Icons.expand_more,
+                color: EvaTheme.lightText,
+              ),
+              style: IconButton.styleFrom(
+                padding: const EdgeInsets.all(8),
+              ),
             ),
           ),
         ],

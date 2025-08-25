@@ -23,6 +23,9 @@ class EvaTheme {
   /// 初号机黄色 - 警告和高亮色
   static const Color evaYellow = Color(0xFFFFD600);
   
+  /// 警告黄色 - 与 evaYellow 相同，用于一致性
+  static const Color warningYellow = Color(0xFFFFD600);
+  
   /// 初号机橙色 - AT力场色
   static const Color atFieldOrange = Color(0xFFFF6D00);
 
@@ -39,6 +42,12 @@ class EvaTheme {
   
   /// 文本灰 - 次要文本
   static const Color textGray = Color(0xFF9E9E9E);
+  
+  /// 浅灰色 - 辅助文本
+  static const Color lightGray = Color(0xFF9E9E9E);
+  
+  /// 浅文本色 - 主要文本（暗色主题）
+  static const Color lightText = Color(0xFFE0E0E0);
   
   /// 纯白 - 主要文本
   static const Color pureWhite = Color(0xFFFFFFFF);

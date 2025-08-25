@@ -8,11 +8,20 @@ import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
 import 'utils/api_client.dart';
+import 'services/hyperliquid_service.dart';
+import 'widgets/eva_floating_bottom_bar.dart';
+import 'widgets/eva_mech_decoration.dart';
 import 'theme/eva_theme.dart';
 
-void main() {
+void main() async {
+  // 确保Flutter绑定初始化
+  WidgetsFlutterBinding.ensureInitialized();
+  
   // 初始化 API 客户端
   ApiClient().initialize();
+  
+  // 初始化 Hyperliquid 服务
+  await HyperliquidService().initialize();
   
   runApp(const ThunderTrackApp());
 }
@@ -54,6 +63,12 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 1; // 默认显示日记页面
   late final PageController _pageController;
+
+  final List<EvaTabItem> _tabItems = const [
+    EvaTabItem(icon: Icons.trending_up, label: '交易'),
+    EvaTabItem(icon: Icons.book, label: '日记'),
+    EvaTabItem(icon: Icons.settings, label: '设置'),
+  ];
 
   final List<Widget> _pages = [
     const TradingPage(),
@@ -107,154 +122,39 @@ class _MainPageState extends State<MainPage> {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         return Scaffold(
-          appBar: AppBar(
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: () {
-                  if (userProvider.isAuthenticated) {
-                    // 已登录：跳转个人页面
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfilePage()),
-                    );
-                  } else {
-                    // 未登录：触发登录
-                    _connectFarcaster(userProvider);
-                  }
-                },
-                child: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: userProvider.isAuthenticated 
-                      ? Colors.white.withOpacity(0.2)
-                      : Colors.white.withOpacity(0.3),
-                  backgroundImage: userProvider.isAuthenticated && 
-                                  userProvider.currentUser?.avatarUrl != null
-                      ? NetworkImage(userProvider.currentUser!.avatarUrl!)
-                      : null,
-                  child: userProvider.isAuthenticated && 
-                         userProvider.currentUser?.avatarUrl == null
-                      ? (userProvider.currentUser?.isVerified == true
-                          ? const Icon(Icons.verified, color: Colors.white, size: 16)
-                          : const Icon(Icons.person, color: Colors.white, size: 16))
-                      : (!userProvider.isAuthenticated 
-                          ? const Icon(Icons.person_outline, color: Colors.white, size: 16)
-                          : null),
-                ),
+          backgroundColor: EvaTheme.deepBlack,
+          extendBody: true, // 让内容延伸到底部导航栏下方
+          appBar: _buildEvaAppBar(userProvider, context),
+          body: Stack(
+            children: [
+              // 机甲背景装饰
+              EvaMechDecoration.mechLinesBackground(
+                opacity: 0.08,
+                animated: true,
               ),
-            ),
-            title: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: EvaTheme.neonGreen.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: EvaTheme.neonGreen.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.flash_on,
-                    color: EvaTheme.neonGreen,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'THUNDERTRACK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: EvaTheme.pureWhite,
-                      letterSpacing: 2.0,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            centerTitle: true,
-            actions: [
-              // 调试面板按钮（仅在开发环境或Farcaster环境显示）
-              if (kDebugMode || userProvider.isMiniAppEnvironment)
-                IconButton(
-                  icon: const Icon(Icons.bug_report, size: 20),
-                  tooltip: '调试日志',
-                  onPressed: () => _showDebugPanel(context, userProvider),
-                ),
               
-              if (!userProvider.isAuthenticated) ...[
-                // 未登录时显示登录按钮
-                TextButton(
-                  onPressed: () => _connectFarcaster(userProvider),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ] else ...[
-                // 已登录时显示通知图标
-                IconButton(
-                  icon: const Icon(Icons.notifications),
-                  tooltip: '通知',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('通知功能待实现')),
-                    );
-                  },
-                ),
-              ],
+              // 主要内容
+              PageView(
+                controller: _pageController,
+                onPageChanged: (index) => setState(() => _selectedIndex = index),
+                children: _pages,
+              ),
+              
+              // 角落装饰
+              EvaMechDecoration.cornerDecoration(
+                size: 40,
+                alignment: Alignment.topLeft,
+              ),
+              EvaMechDecoration.cornerDecoration(
+                size: 40,
+                alignment: Alignment.bottomRight,
+              ),
             ],
           ),
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: (index) => setState(() => _selectedIndex = index),
-            children: _pages,
-          ),
-          bottomNavigationBar: BottomNavigationBar(
+          bottomNavigationBar: EvaFloatingBottomBar(
             currentIndex: _selectedIndex,
             onTap: _onTabTapped,
-            backgroundColor: EvaTheme.mechGray,
-            selectedItemColor: EvaTheme.neonGreen,
-            unselectedItemColor: EvaTheme.textGray,
-            type: BottomNavigationBarType.fixed,
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.trending_up),
-                label: '交易',
-              ),
-              BottomNavigationBarItem(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _selectedIndex == 1 ? EvaTheme.neonGreen : EvaTheme.neonGreen.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                    boxShadow: _selectedIndex == 1 ? [
-                      BoxShadow(
-                        color: EvaTheme.neonGreen.withOpacity(0.4),
-                        blurRadius: 15,
-                        spreadRadius: 2,
-                      ),
-                    ] : null,
-                  ),
-                  child: Icon(
-                    Icons.auto_stories,
-                    color: _selectedIndex == 1 ? EvaTheme.deepBlack : EvaTheme.pureWhite,
-                    size: 20,
-                  ),
-                ),
-                label: '日记',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: '设置',
-              ),
-            ],
+            items: _tabItems,
           ),
         );
       },
@@ -470,6 +370,115 @@ class _MainPageState extends State<MainPage> {
             ),
         ],
       ),
+    );
+  }
+
+  /// 构建EVA风格的AppBar
+  AppBar _buildEvaAppBar(UserProvider userProvider, BuildContext context) {
+    return AppBar(
+      backgroundColor: EvaTheme.deepBlack,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: GestureDetector(
+          onTap: () {
+            if (userProvider.isAuthenticated) {
+              // 已登录：跳转个人页面
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            } else {
+              // 未登录：触发登录
+              _connectFarcaster(userProvider);
+            }
+          },
+          child: CircleAvatar(
+            radius: 16,
+            backgroundColor: userProvider.isAuthenticated 
+                ? Colors.white.withOpacity(0.2)
+                : Colors.white.withOpacity(0.3),
+            backgroundImage: userProvider.isAuthenticated && 
+                            userProvider.currentUser?.avatarUrl != null
+                ? NetworkImage(userProvider.currentUser!.avatarUrl!)
+                : null,
+            child: userProvider.isAuthenticated && 
+                   userProvider.currentUser?.avatarUrl == null
+                ? (userProvider.currentUser?.isVerified == true
+                    ? const Icon(Icons.verified, color: Colors.white, size: 16)
+                    : const Icon(Icons.person, color: Colors.white, size: 16))
+                : (!userProvider.isAuthenticated 
+                    ? const Icon(Icons.person_outline, color: Colors.white, size: 16)
+                    : null),
+          ),
+        ),
+      ),
+      title: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: EvaTheme.neonGreen.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: EvaTheme.neonGreen.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.flash_on,
+              color: EvaTheme.neonGreen,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'THUNDERTRACK',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: EvaTheme.pureWhite,
+                letterSpacing: 2.0,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+      ),
+      centerTitle: true,
+      actions: [
+        // 调试面板按钮（仅在开发环境或Farcaster环境显示）
+        if (kDebugMode || userProvider.isMiniAppEnvironment)
+          IconButton(
+            icon: const Icon(Icons.bug_report, size: 20),
+            tooltip: '调试日志',
+            onPressed: () => _showDebugPanel(context, userProvider),
+          ),
+        
+        if (!userProvider.isAuthenticated) ...[
+          // 未登录时显示登录按钮
+          TextButton(
+            onPressed: () => _connectFarcaster(userProvider),
+            child: const Text(
+              'Login',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ] else ...[
+          // 已登录时显示通知图标
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            tooltip: '通知',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('通知功能待实现')),
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 }
