@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
+import '../models/auth_address.dart';
 import '../config/app_config.dart';
 import '../config/api_endpoints.dart';
 import '../utils/api_client.dart';
@@ -178,6 +179,70 @@ class NeynarService {
       return response.statusCode == 200;
     } catch (e) {
       throw ApiException('取消关注失败: $e');
+    }
+  }
+
+  /// 注册开发者管理的认证地址
+  Future<AuthAddressResponse> registerSignedKey({
+    required String address,
+    required int appFid,
+    required int deadline,
+    required String signature,
+    String? redirectUrl,
+  }) async {
+    try {
+      debugPrint('🔄 注册认证地址: $address for App FID: $appFid');
+      
+      final data = {
+        'address': address,
+        'app_fid': appFid,
+        'deadline': deadline,
+        'signature': signature,
+        if (redirectUrl != null) 'redirect_url': redirectUrl,
+      };
+
+      final response = await _apiClient.post(
+        '/v2/farcaster/auth_address/developer_managed/signed_key/',
+        baseUrl: AppConfig.neynarBaseUrl,
+        data: data,
+        options: _getAuthOptions(),
+      );
+
+      debugPrint('✅ 认证地址注册响应: ${response.statusCode}');
+      
+      if (response.statusCode == 200 && response.data != null) {
+        return AuthAddressResponse.fromJson(response.data);
+      }
+      throw ApiException('注册认证地址失败');
+    } catch (e) {
+      debugPrint('❌ 认证地址注册失败: $e');
+      throw ApiException('注册认证地址失败: $e');
+    }
+  }
+
+  /// 查询认证地址状态
+  Future<AuthAddressResponse> getAuthAddressStatus({
+    required String address,
+  }) async {
+    try {
+      debugPrint('🔄 查询认证地址状态: $address');
+      
+      final response = await _apiClient.get(
+        '/v2/farcaster/auth_address/developer_managed/',
+        baseUrl: AppConfig.neynarBaseUrl,
+        queryParameters: {'address': address},
+        options: _getAuthOptions(),
+      );
+
+      debugPrint('✅ 认证地址状态查询响应: ${response.statusCode}');
+      
+      if (response.statusCode == 200 && response.data != null) {
+        return AuthAddressResponse.fromJson(response.data);
+      }
+      throw ApiException('查询认证地址状态失败');
+    } catch (e) {
+      debugPrint('❌ 查询认证地址状态失败: $e');
+      throw ApiException('查询认证地址状态失败: $e');
     }
   }
 

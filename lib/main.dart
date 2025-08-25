@@ -175,16 +175,6 @@ class _MainPageState extends State<MainPage> {
                       fontFamily: 'monospace',
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'EVA-01',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: EvaTheme.neonGreen,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
                 ],
               ),
             ),
