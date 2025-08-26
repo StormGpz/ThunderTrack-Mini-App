@@ -573,7 +573,7 @@ class UserProvider extends ChangeNotifier {
             addDebugLog('❌ FID为空，无法创建signer');
           } else {
             addDebugLog('🔧 开始调用_neynarService.getOrCreateSignerUuid($fid)');
-            final signerInfo = await _neynarService.getOrCreateSignerUuid(fid);
+            final signerInfo = await _neynarService.getOrCreateSignerUuid(fid, addDebugLog);
             addDebugLog('🔧 _neynarService.getOrCreateSignerUuid调用完成');
             if (signerInfo != null) {
               // signerInfo现在包含完整的signer信息

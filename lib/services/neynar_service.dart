@@ -15,11 +15,11 @@ class NeynarService {
   final ApiClient _apiClient = ApiClient();
 
   /// 创建新的signer
-  Future<Map<String, dynamic>?> createSigner() async {
+  Future<Map<String, dynamic>?> createSigner([Function(String)? logCallback]) async {
     try {
-      debugPrint('🔄 创建新的signer...');
-      debugPrint('🌐 API URL: ${AppConfig.neynarBaseUrl}/v2/farcaster/signer');
-      debugPrint('🔑 API Key: ${AppConfig.neynarApiKey.substring(0, 10)}...');
+      logCallback?.call('🔄 创建新的signer...');
+      logCallback?.call('🌐 API URL: ${AppConfig.neynarBaseUrl}/v2/farcaster/signer');
+      logCallback?.call('🔑 API Key: ${AppConfig.neynarApiKey.substring(0, 10)}...');
       
       final response = await _apiClient.post(
         '/v2/farcaster/signer',
@@ -28,9 +28,8 @@ class NeynarService {
         options: _getAuthOptions(),
       );
 
-      debugPrint('📨 Signer创建响应: ${response.statusCode}');
-      debugPrint('📄 响应内容: ${response.data}');
-      debugPrint('📋 响应Headers: ${response.headers}');
+      logCallback?.call('📨 Signer创建响应: ${response.statusCode}');
+      logCallback?.call('📄 响应内容: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
         final result = response.data as Map<String, dynamic>;
@@ -38,21 +37,21 @@ class NeynarService {
         final status = result['status'] as String?;
         final approvalUrl = result['signer_approval_url'] as String?;
         
-        debugPrint('✅ Signer创建成功:');
-        debugPrint('   UUID: ${signerUuid?.substring(0, 8)}...');
-        debugPrint('   状态: $status');
-        debugPrint('   批准URL: $approvalUrl');
+        logCallback?.call('✅ Signer创建成功:');
+        logCallback?.call('   UUID: ${signerUuid?.substring(0, 8)}...');
+        logCallback?.call('   状态: $status');
+        logCallback?.call('   批准URL: $approvalUrl');
         
         return result;
       }
       
-      debugPrint('❌ 创建signer失败: 状态码${response.statusCode}');
+      logCallback?.call('❌ 创建signer失败: 状态码${response.statusCode}');
       return null;
     } catch (e) {
-      debugPrint('❌ 创建signer异常: $e');
-      debugPrint('🔍 异常类型: ${e.runtimeType}');
+      logCallback?.call('❌ 创建signer异常: $e');
+      logCallback?.call('🔍 异常类型: ${e.runtimeType}');
       if (e.toString().contains('DioException')) {
-        debugPrint('🌐 网络请求详情: $e');
+        logCallback?.call('🌐 网络请求详情: $e');
       }
       return null;
     }
@@ -86,17 +85,17 @@ class NeynarService {
   }
 
   /// 获取或创建signer UUID
-  Future<Map<String, dynamic>?> getOrCreateSignerUuid(String fid) async {
+  Future<Map<String, dynamic>?> getOrCreateSignerUuid(String fid, [Function(String)? logCallback]) async {
     try {
-      debugPrint('🔄 为FID $fid 获取或创建signer...');
+      logCallback?.call('🔄 为FID $fid 获取或创建signer...');
       
       // 首先尝试创建新的signer
-      debugPrint('📞 开始调用createSigner()...');
-      final signerInfo = await createSigner();
-      debugPrint('📞 createSigner()调用完成，结果: ${signerInfo != null ? "成功" : "失败"}');
+      logCallback?.call('📞 开始调用createSigner()...');
+      final signerInfo = await createSigner(logCallback);
+      logCallback?.call('📞 createSigner()调用完成，结果: ${signerInfo != null ? "成功" : "失败"}');
       
       if (signerInfo == null) {
-        debugPrint('❌ createSigner返回null');
+        logCallback?.call('❌ createSigner返回null');
         return null;
       }
       
@@ -105,23 +104,23 @@ class NeynarService {
       final approvalUrl = signerInfo['signer_approval_url'] as String?;
       
       if (signerUuid != null) {
-        debugPrint('✅ Signer UUID: ${signerUuid.substring(0, 8)}...');
-        debugPrint('📊 当前状态: $status');
+        logCallback?.call('✅ Signer UUID: ${signerUuid.substring(0, 8)}...');
+        logCallback?.call('📊 当前状态: $status');
         
         // 如果需要批准，显示批准URL
         if (status == 'pending_approval' && approvalUrl != null) {
-          debugPrint('⚠️ Signer需要用户批准');
-          debugPrint('🔗 批准URL: $approvalUrl');
+          logCallback?.call('⚠️ Signer需要用户批准');
+          logCallback?.call('🔗 批准URL: $approvalUrl');
         }
         
         return signerInfo; // 返回完整的signer信息
       }
       
-      debugPrint('❌ signerInfo中没有找到signer_uuid');
+      logCallback?.call('❌ signerInfo中没有找到signer_uuid');
       return null;
     } catch (e) {
-      debugPrint('❌ 获取/创建signer失败: $e');
-      debugPrint('🔍 异常详情: ${e.toString()}');
+      logCallback?.call('❌ 获取/创建signer失败: $e');
+      logCallback?.call('🔍 异常详情: ${e.toString()}');
       return null;
     }
   }
