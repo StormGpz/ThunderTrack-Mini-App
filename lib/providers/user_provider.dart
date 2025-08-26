@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'dart:math' as math;
 import '../models/user.dart';
 import '../services/neynar_service.dart';
 import '../services/farcaster_miniapp_service.dart';
@@ -556,10 +557,35 @@ class UserProvider extends ChangeNotifier {
         );
 
         addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
+        addDebugLog('🔍 检查authResult中的字段...');
+        authResult.forEach((key, value) {
+          addDebugLog('   $key: ${value?.toString().substring(0, math.min(50, value?.toString().length ?? 0))}...');
+        });
 
-        // 保存认证token和signer_uuid
+        // 尝试获取signer_uuid
+        String? signerUuid = authResult['signer_uuid'];
+        String? approvalUrl;
+        
+        if (signerUuid == null) {
+          addDebugLog('⚠️ authResult中没有signer_uuid，尝试通过API创建...');
+          final signerInfo = await _neynarService.getOrCreateSignerUuid(fid);
+          if (signerInfo != null) {
+            // signerInfo现在包含完整的signer信息
+            signerUuid = signerInfo['signer_uuid'] as String?;
+            approvalUrl = signerInfo['signer_approval_url'] as String?;
+            addDebugLog('✅ 通过API创建signer: ${signerUuid?.substring(0, 8)}...');
+            if (approvalUrl != null) {
+              addDebugLog('🔗 需要用户批准: $approvalUrl');
+            }
+          }
+        } else {
+          addDebugLog('✅ 从authResult获得signer_uuid: ${signerUuid.substring(0, 8)}...');
+        }
+        
+        // 保存认证token、signer_uuid和approval_url
         await _saveAuthToken(authResult['token']);
-        await _saveSignerUuid(authResult['signer_uuid']);
+        await _saveSignerUuid(signerUuid);
+        await _saveSignerApprovalUrl(approvalUrl);
         await _saveUserToLocal(user);
         
         _currentUser = user;
@@ -661,6 +687,21 @@ class UserProvider extends ChangeNotifier {
   Future<String?> getSignerUuid() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('${AppConstants.userTokenKey}_signer');
+  }
+
+  /// 保存signer approval URL
+  Future<void> _saveSignerApprovalUrl(String? approvalUrl) async {
+    if (approvalUrl != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('${AppConstants.userTokenKey}_approval', approvalUrl);
+      debugPrint('💾 Signer approval URL已保存');
+    }
+  }
+
+  /// 获取保存的signer approval URL
+  Future<String?> getSignerApprovalUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${AppConstants.userTokenKey}_approval');
   }
 
   /// 保存认证token

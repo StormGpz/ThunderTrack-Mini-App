@@ -14,6 +14,105 @@ class NeynarService {
 
   final ApiClient _apiClient = ApiClient();
 
+  /// 创建新的signer
+  Future<Map<String, dynamic>?> createSigner() async {
+    try {
+      debugPrint('🔄 创建新的signer...');
+      
+      final response = await _apiClient.post(
+        '/v2/farcaster/signer',
+        data: {}, // POST请求不需要body参数
+        baseUrl: AppConfig.neynarBaseUrl,
+        options: _getAuthOptions(),
+      );
+
+      debugPrint('📨 Signer创建响应: ${response.statusCode}');
+      debugPrint('📄 响应内容: ${response.data}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final result = response.data as Map<String, dynamic>;
+        final signerUuid = result['signer_uuid'] as String?;
+        final status = result['status'] as String?;
+        final approvalUrl = result['signer_approval_url'] as String?;
+        
+        debugPrint('✅ Signer创建成功:');
+        debugPrint('   UUID: ${signerUuid?.substring(0, 8)}...');
+        debugPrint('   状态: $status');
+        debugPrint('   批准URL: $approvalUrl');
+        
+        return result;
+      }
+      
+      debugPrint('❌ 创建signer失败');
+      return null;
+    } catch (e) {
+      debugPrint('❌ 创建signer异常: $e');
+      return null;
+    }
+  }
+
+  /// 检查signer状态
+  Future<Map<String, dynamic>?> getSignerStatus(String signerUuid) async {
+    try {
+      debugPrint('🔄 检查signer状态: ${signerUuid.substring(0, 8)}...');
+      
+      final response = await _apiClient.get(
+        '/v2/farcaster/signer?signer_uuid=$signerUuid',
+        baseUrl: AppConfig.neynarBaseUrl,
+        options: _getAuthOptions(),
+      );
+
+      debugPrint('📨 Signer状态响应: ${response.statusCode}');
+      
+      if (response.statusCode == 200 && response.data != null) {
+        final result = response.data as Map<String, dynamic>;
+        final status = result['status'] as String?;
+        debugPrint('📊 Signer状态: $status');
+        return result;
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('❌ 获取signer状态异常: $e');
+      return null;
+    }
+  }
+
+  /// 获取或创建signer UUID
+  Future<Map<String, dynamic>?> getOrCreateSignerUuid(String fid) async {
+    try {
+      debugPrint('🔄 为FID $fid 获取或创建signer...');
+      
+      // 首先尝试创建新的signer
+      final signerInfo = await createSigner();
+      if (signerInfo == null) {
+        return null;
+      }
+      
+      final signerUuid = signerInfo['signer_uuid'] as String?;
+      final status = signerInfo['status'] as String?;
+      final approvalUrl = signerInfo['signer_approval_url'] as String?;
+      
+      if (signerUuid != null) {
+        debugPrint('✅ Signer UUID: ${signerUuid.substring(0, 8)}...');
+        debugPrint('📊 当前状态: $status');
+        
+        // 如果需要批准，显示批准URL
+        if (status == 'pending_approval' && approvalUrl != null) {
+          debugPrint('⚠️ Signer需要用户批准');
+          debugPrint('🔗 批准URL: $approvalUrl');
+        }
+        
+        return signerInfo; // 返回完整的signer信息
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('❌ 获取/创建signer失败: $e');
+      return null;
+    }
+  }
+
   /// 获取用户信息
   Future<User> getUserByFid(String fid) async {
     try {
