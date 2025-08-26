@@ -568,17 +568,24 @@ class UserProvider extends ChangeNotifier {
         
         if (signerUuid == null) {
           addDebugLog('⚠️ authResult中没有signer_uuid，尝试通过API创建...');
-          final signerInfo = await _neynarService.getOrCreateSignerUuid(fid);
-          if (signerInfo != null) {
-            // signerInfo现在包含完整的signer信息
-            signerUuid = signerInfo['signer_uuid'] as String?;
-            approvalUrl = signerInfo['signer_approval_url'] as String?;
-            addDebugLog('✅ 通过API创建signer: ${signerUuid?.substring(0, 8)}...');
-            if (approvalUrl != null) {
-              addDebugLog('🔗 需要用户批准: $approvalUrl');
-            }
+          addDebugLog('📋 当前FID: $fid');
+          if (fid.isEmpty) {
+            addDebugLog('❌ FID为空，无法创建signer');
           } else {
-            addDebugLog('❌ API创建signer失败，signerInfo为null');
+            addDebugLog('🔧 开始调用_neynarService.getOrCreateSignerUuid($fid)');
+            final signerInfo = await _neynarService.getOrCreateSignerUuid(fid);
+            addDebugLog('🔧 _neynarService.getOrCreateSignerUuid调用完成');
+            if (signerInfo != null) {
+              // signerInfo现在包含完整的signer信息
+              signerUuid = signerInfo['signer_uuid'] as String?;
+              approvalUrl = signerInfo['signer_approval_url'] as String?;
+              addDebugLog('✅ 通过API创建signer: ${signerUuid?.substring(0, 8)}...');
+              if (approvalUrl != null) {
+                addDebugLog('🔗 需要用户批准: $approvalUrl');
+              }
+            } else {
+              addDebugLog('❌ API创建signer失败，signerInfo为null');
+            }
           }
         } else {
           addDebugLog('✅ 从authResult获得signer_uuid: ${signerUuid.substring(0, 8)}...');
