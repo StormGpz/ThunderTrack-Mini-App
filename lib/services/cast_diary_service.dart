@@ -134,10 +134,10 @@ class CastDiaryService {
       }
 
       logCallback?.call('📤 发送请求到Neynar API...');
-      logCallback?.call('🌐 API端点: https://api.neynar.com/v2/farcaster/casts');
+      logCallback?.call('🌐 API端点: https://api.neynar.com/v2/farcaster/cast/');
       
       final response = await _apiClient.post(
-        '/v2/farcaster/casts',
+        '/v2/farcaster/cast/',
         data: castData,
         baseUrl: 'https://api.neynar.com',
       );
