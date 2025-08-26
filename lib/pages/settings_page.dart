@@ -163,9 +163,9 @@ class SettingsPage extends StatelessWidget {
         style: TextStyle(color: EvaTheme.textGray),
       ),
       trailing: Switch(
-        value: true, // 默认开启
+        value: settings.tradingNotificationsEnabled, // 使用设置提供者中的状态
         onChanged: (value) {
-          // TODO: 实现通知开关逻辑
+          settings.setTradingNotificationsEnabled(value);
         },
         activeColor: EvaTheme.neonGreen,
       ),
@@ -187,7 +187,7 @@ class SettingsPage extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        'USDT',
+        settings.defaultCurrency,
         style: TextStyle(color: EvaTheme.textGray),
       ),
       trailing: Icon(Icons.chevron_right, color: EvaTheme.textGray),
@@ -286,7 +286,7 @@ class SettingsPage extends StatelessWidget {
                 value: false,
                 groupValue: settings.isChineseLocale,
                 onChanged: (value) {
-                  if (value != null && value) {
+                  if (value != null && !value) {
                     settings.setLocale(const Locale('en', 'US'));
                     Navigator.of(context).pop();
                   }
@@ -317,10 +317,12 @@ class SettingsPage extends StatelessWidget {
             title: Text(currency, style: TextStyle(color: EvaTheme.lightText)),
             leading: Radio<String>(
               value: currency,
-              groupValue: 'USDT', // 默认选中USDT
+              groupValue: settings.defaultCurrency,
               onChanged: (value) {
-                // TODO: 实现货币切换逻辑
-                Navigator.of(context).pop();
+                if (value != null) {
+                  settings.setDefaultCurrency(value);
+                  Navigator.of(context).pop();
+                }
               },
               activeColor: EvaTheme.neonGreen,
             ),

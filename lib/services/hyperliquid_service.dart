@@ -168,6 +168,14 @@ class HyperliquidService {
     debugPrint('📍 设置交易地址: $address');
   }
 
+  /// 清除交易地址
+  Future<void> clearTradingAddress() async {
+    _currentTradingAddress = null;
+    _addressAuthCache.clear();
+    await _saveTradingAddress('');
+    debugPrint('🗑️ 清除交易地址');
+  }
+
   /// 生成授权消息
   String generateAuthMessage(String address) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;

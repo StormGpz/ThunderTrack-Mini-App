@@ -368,6 +368,39 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
               ),
             ),
             const SizedBox(width: 8),
+            
+            // 如果已授权，显示断开连接按钮
+            if (_isAddressAuthorized) ...[
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.red.withOpacity(0.3),
+                      Colors.red.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  onPressed: _disconnectWallet,
+                  icon: Icon(
+                    Icons.power_settings_new,
+                    color: Colors.red,
+                    size: 16,
+                  ),
+                  style: IconButton.styleFrom(
+                    padding: const EdgeInsets.all(6),
+                    minimumSize: const Size(24, 24),
+                  ),
+                  tooltip: '断开连接',
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
           ],
           
           // 设置按钮
@@ -912,6 +945,58 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
     
     // 设置为当前交易地址
     _hyperliquidService.setTradingAddress(address.address);
+  }
+
+  /// 断开钱包连接
+  void _disconnectWallet() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: EvaTheme.mechGray,
+        title: Text(
+          '断开连接',
+          style: TextStyle(color: EvaTheme.lightText),
+        ),
+        content: Text(
+          '确定要断开当前钱包连接吗？这将清除当前的交易地址设置。',
+          style: TextStyle(color: EvaTheme.textGray),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '取消',
+              style: TextStyle(color: EvaTheme.textGray),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _currentTradingAddress = null;
+                _isAddressAuthorized = false;
+                _showAddressSelection = false;
+              });
+              
+              // 清除Hyperliquid服务中的地址设置
+              _hyperliquidService.clearTradingAddress();
+              
+              Navigator.of(context).pop();
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('钱包连接已断开'),
+                  backgroundColor: EvaTheme.neonGreen,
+                ),
+              );
+            },
+            child: Text(
+              '确认',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 地址授权成功回调

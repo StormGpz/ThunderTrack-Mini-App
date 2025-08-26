@@ -11,6 +11,8 @@ class SettingsProvider extends ChangeNotifier {
   static const String _localeKey = 'locale';
   static const String _defaultDiaryVisibilityKey = 'default_diary_visibility';
   static const String _autoShareEnabledKey = 'auto_share_enabled';
+  static const String _tradingNotificationsKey = 'trading_notifications';
+  static const String _defaultCurrencyKey = 'default_currency';
 
   SharedPreferences? _prefs;
   
@@ -19,12 +21,16 @@ class SettingsProvider extends ChangeNotifier {
   Locale _locale = const Locale('zh', 'CN');
   bool _defaultDiaryIsPublic = true;
   bool _autoShareEnabled = false;
+  bool _tradingNotificationsEnabled = true; // 默认开启
+  String _defaultCurrency = 'USDT'; // 默认货币
 
   // Getters
   ThemeMode get themeMode => _themeMode;
   Locale get locale => _locale;
   bool get defaultDiaryIsPublic => _defaultDiaryIsPublic;
   bool get autoShareEnabled => _autoShareEnabled;
+  bool get tradingNotificationsEnabled => _tradingNotificationsEnabled;
+  String get defaultCurrency => _defaultCurrency;
   
   /// 当前是否为深色模式
   bool get isDarkMode => _themeMode == ThemeMode.dark;
@@ -60,6 +66,12 @@ class SettingsProvider extends ChangeNotifier {
 
     // 加载自动分享设置
     _autoShareEnabled = _prefs!.getBool(_autoShareEnabledKey) ?? false;
+
+    // 加载交易通知设置
+    _tradingNotificationsEnabled = _prefs!.getBool(_tradingNotificationsKey) ?? true;
+
+    // 加载默认货币设置
+    _defaultCurrency = _prefs!.getString(_defaultCurrencyKey) ?? 'USDT';
 
     notifyListeners();
   }
@@ -129,17 +141,44 @@ class SettingsProvider extends ChangeNotifier {
     await setAutoShareEnabled(!_autoShareEnabled);
   }
 
+  /// 设置交易通知功能
+  Future<void> setTradingNotificationsEnabled(bool enabled) async {
+    if (_tradingNotificationsEnabled != enabled) {
+      _tradingNotificationsEnabled = enabled;
+      await _prefs?.setBool(_tradingNotificationsKey, enabled);
+      notifyListeners();
+    }
+  }
+
+  /// 切换交易通知功能
+  Future<void> toggleTradingNotifications() async {
+    await setTradingNotificationsEnabled(!_tradingNotificationsEnabled);
+  }
+
+  /// 设置默认货币
+  Future<void> setDefaultCurrency(String currency) async {
+    if (_defaultCurrency != currency) {
+      _defaultCurrency = currency;
+      await _prefs?.setString(_defaultCurrencyKey, currency);
+      notifyListeners();
+    }
+  }
+
   /// 重置所有设置
   Future<void> resetToDefaults() async {
     _themeMode = ThemeMode.system;
     _locale = const Locale('zh', 'CN');
     _defaultDiaryIsPublic = true;
     _autoShareEnabled = false;
+    _tradingNotificationsEnabled = true;
+    _defaultCurrency = 'USDT';
 
     await _prefs?.remove(_themeModeKey);
     await _prefs?.remove(_localeKey);
     await _prefs?.remove(_defaultDiaryVisibilityKey);
     await _prefs?.remove(_autoShareEnabledKey);
+    await _prefs?.remove(_tradingNotificationsKey);
+    await _prefs?.remove(_defaultCurrencyKey);
 
     notifyListeners();
   }
