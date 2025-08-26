@@ -18,6 +18,8 @@ class NeynarService {
   Future<Map<String, dynamic>?> createSigner() async {
     try {
       debugPrint('🔄 创建新的signer...');
+      debugPrint('🌐 API URL: ${AppConfig.neynarBaseUrl}/v2/farcaster/signer');
+      debugPrint('🔑 API Key: ${AppConfig.neynarApiKey.substring(0, 10)}...');
       
       final response = await _apiClient.post(
         '/v2/farcaster/signer',
@@ -28,6 +30,7 @@ class NeynarService {
 
       debugPrint('📨 Signer创建响应: ${response.statusCode}');
       debugPrint('📄 响应内容: ${response.data}');
+      debugPrint('📋 响应Headers: ${response.headers}');
 
       if (response.statusCode == 200 && response.data != null) {
         final result = response.data as Map<String, dynamic>;
@@ -43,10 +46,14 @@ class NeynarService {
         return result;
       }
       
-      debugPrint('❌ 创建signer失败');
+      debugPrint('❌ 创建signer失败: 状态码${response.statusCode}');
       return null;
     } catch (e) {
       debugPrint('❌ 创建signer异常: $e');
+      debugPrint('🔍 异常类型: ${e.runtimeType}');
+      if (e.toString().contains('DioException')) {
+        debugPrint('🌐 网络请求详情: $e');
+      }
       return null;
     }
   }
