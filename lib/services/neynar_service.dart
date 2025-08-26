@@ -91,8 +91,12 @@ class NeynarService {
       debugPrint('🔄 为FID $fid 获取或创建signer...');
       
       // 首先尝试创建新的signer
+      debugPrint('📞 开始调用createSigner()...');
       final signerInfo = await createSigner();
+      debugPrint('📞 createSigner()调用完成，结果: ${signerInfo != null ? "成功" : "失败"}');
+      
       if (signerInfo == null) {
+        debugPrint('❌ createSigner返回null');
         return null;
       }
       
@@ -113,9 +117,11 @@ class NeynarService {
         return signerInfo; // 返回完整的signer信息
       }
       
+      debugPrint('❌ signerInfo中没有找到signer_uuid');
       return null;
     } catch (e) {
       debugPrint('❌ 获取/创建signer失败: $e');
+      debugPrint('🔍 异常详情: ${e.toString()}');
       return null;
     }
   }
