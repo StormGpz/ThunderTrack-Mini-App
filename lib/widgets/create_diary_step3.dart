@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html show window;
 import '../theme/eva_theme.dart';
 import '../models/hyperliquid_models.dart';
 import '../providers/user_provider.dart';
 import '../services/cast_diary_service.dart';
+import '../services/neynar_service.dart';
 
 /// 写日记第三步：Frame预览和发布
 class CreateDiaryStep3 extends StatefulWidget {
@@ -88,6 +91,31 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
 
     debugPrint('🔑 使用signer_uuid: ${signerUuid.substring(0, 8)}...');
 
+    // 先检查signer状态
+    userProvider.addDebugLog('🔍 检查signer状态...');
+    final neynarService = NeynarService();
+    final signerStatus = await neynarService.getSignerStatus(signerUuid);
+    
+    if (signerStatus != null) {
+      final status = signerStatus['status'] as String?;
+      final approvalUrl = signerStatus['signer_approval_url'] as String?;
+      
+      userProvider.addDebugLog('📊 Signer状态: $status');
+      
+      if (status == 'pending_approval' && approvalUrl != null) {
+        userProvider.addDebugLog('⚠️ Signer需要用户批准');
+        userProvider.addDebugLog('🔗 批准URL: $approvalUrl');
+        _showError('Signer需要批准，请先批准后再发布');
+        return;
+      } else if (status != 'approved') {
+        userProvider.addDebugLog('❌ Signer状态不可用: $status');
+        _showError('Signer状态异常，请重新登录');
+        return;
+      }
+    } else {
+      userProvider.addDebugLog('⚠️ 无法获取signer状态');
+    }
+
     setState(() => _isPublishing = true);
 
     try {
@@ -124,6 +152,77 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
         setState(() => _isPublishing = false);
       }
     }
+  }
+
+  /// 分享到Farcaster (使用Intent URL)
+  Future<void> _shareToFarcaster() async {
+    try {
+      // 构建分享文本
+      final shareText = _buildShareText();
+      final frameUrl = _useFrameFormat ? _generateFrameUrl() : null;
+      
+      // 构建Warpcast分享URL
+      final encodedText = Uri.encodeComponent(shareText);
+      String warpcastUrl = 'https://warpcast.com/~/compose?text=$encodedText';
+      
+      if (frameUrl != null && frameUrl.isNotEmpty) {
+        final encodedFrame = Uri.encodeComponent(frameUrl);
+        warpcastUrl += '&embeds[]=$encodedFrame';
+      }
+      
+      debugPrint('🔗 分享URL: $warpcastUrl');
+      
+      // 在Web环境中打开新窗口
+      if (kIsWeb) {
+        // 使用window.open在新窗口中打开
+        html.window.open(warpcastUrl, '_blank');
+        _showSuccess();
+      } else {
+        // 移动端可以使用url_launcher
+        _showError('请在Web版本中使用此功能');
+      }
+    } catch (e) {
+      debugPrint('❌ 分享失败: $e');
+      _showError('分享失败，请重试');
+    }
+  }
+
+  /// 构建分享文本
+  String _buildShareText() {
+    final buffer = StringBuffer();
+    
+    // 标题和标签
+    buffer.writeln('🔥 交易复盘 #ThunderTrack #TTrade');
+    buffer.writeln();
+    
+    // 交易信息
+    buffer.writeln('📊 主要交易对: $_mainTradingPair');
+    
+    // 盈亏信息
+    final pnlEmoji = widget.totalPnL >= 0 ? '💰' : '📉';
+    final pnlSign = widget.totalPnL >= 0 ? '+' : '';
+    buffer.writeln('$pnlEmoji 总盈亏: $pnlSign\$${widget.totalPnL.toStringAsFixed(2)}');
+    buffer.writeln();
+    
+    // 策略和情绪
+    buffer.writeln('🎯 策略: $_strategyDisplayName');
+    buffer.writeln('😊 心情: ${_sentimentInfo['name']}');
+    buffer.writeln();
+    
+    // 用户内容
+    if (widget.content.isNotEmpty) {
+      buffer.writeln('📝 复盘心得:');
+      buffer.writeln(widget.content);
+      buffer.writeln();
+    }
+    
+    // 标签
+    if (widget.tags.isNotEmpty) {
+      buffer.write('🏷️ ');
+      buffer.writeln(widget.tags.map((tag) => '#$tag').join(' '));
+    }
+    
+    return buffer.toString().trim();
   }
 
   /// 生成Frame URL (模拟)
@@ -874,7 +973,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ElevatedButton(
-              onPressed: _isPublishing ? null : _publishDiary,
+              onPressed: _isPublishing ? null : _shareToFarcaster,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
@@ -912,7 +1011,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '发布到Farcaster',
+                        '分享到Farcaster',
                         style: TextStyle(
                           color: EvaTheme.deepBlack,
                           fontWeight: FontWeight.bold,
