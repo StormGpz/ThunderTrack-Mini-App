@@ -577,6 +577,8 @@ class UserProvider extends ChangeNotifier {
             if (approvalUrl != null) {
               addDebugLog('🔗 需要用户批准: $approvalUrl');
             }
+          } else {
+            addDebugLog('❌ API创建signer失败，signerInfo为null');
           }
         } else {
           addDebugLog('✅ 从authResult获得signer_uuid: ${signerUuid.substring(0, 8)}...');
@@ -584,8 +586,26 @@ class UserProvider extends ChangeNotifier {
         
         // 保存认证token、signer_uuid和approval_url
         await _saveAuthToken(authResult['token']);
-        await _saveSignerUuid(signerUuid);
-        await _saveSignerApprovalUrl(approvalUrl);
+        
+        if (signerUuid != null) {
+          await _saveSignerUuid(signerUuid);
+          addDebugLog('💾 已保存signer_uuid: ${signerUuid.substring(0, 8)}...');
+          
+          // 立即验证是否保存成功
+          final savedSigner = await getSignerUuid();
+          if (savedSigner != null) {
+            addDebugLog('✅ 验证signer_uuid保存成功: ${savedSigner.substring(0, 8)}...');
+          } else {
+            addDebugLog('❌ 验证失败：无法读取已保存的signer_uuid');
+          }
+        } else {
+          addDebugLog('⚠️ signerUuid为null，跳过保存');
+        }
+        
+        if (approvalUrl != null) {
+          await _saveSignerApprovalUrl(approvalUrl);
+          addDebugLog('💾 已保存approval_url');
+        }
         await _saveUserToLocal(user);
         
         _currentUser = user;
