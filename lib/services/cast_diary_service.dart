@@ -134,14 +134,6 @@ class CastDiaryService {
 
       debugPrint('📤 发送请求到Neynar API...');
       
-      // 模拟环境下直接返回成功
-      if (signerUuid.contains('mock') || signerUuid.contains('19d0c5fd')) {
-        debugPrint('🎭 检测到模拟环境，返回成功');
-        // 模拟网络延迟
-        await Future.delayed(const Duration(milliseconds: 1500));
-        return true;
-      }
-
       final response = await _apiClient.post(
         '/v2/farcaster/casts',
         data: castData,
@@ -149,16 +141,10 @@ class CastDiaryService {
       );
 
       debugPrint('📨 API响应状态码: ${response.statusCode}');
+      debugPrint('📨 API响应内容: ${response.data}');
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('❌ 发布交易日记失败: $e');
-      
-      // 如果是网络错误或API错误，在模拟环境下仍然返回成功
-      if (signerUuid.contains('mock') || signerUuid.contains('19d0c5fd')) {
-        debugPrint('🎭 模拟环境中忽略网络错误，返回成功');
-        return true;
-      }
-      
       return false;
     }
   }

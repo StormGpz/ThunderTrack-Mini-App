@@ -77,13 +77,16 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
   Future<void> _publishDiary() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     
-    // 模拟环境下跳过身份验证检查
-    if (!userProvider.isAuthenticated) {
-      debugPrint('⚠️ 用户未认证，但在模拟环境下继续执行');
+    // 获取真实的signer_uuid
+    final signerUuid = await userProvider.getSignerUuid();
+    
+    if (signerUuid == null) {
+      debugPrint('⚠️ 未找到signer_uuid，使用模拟数据');
+      _showError('未找到发布凭证，请重新登录Farcaster');
+      return;
     }
 
-    // TODO: 需要获取真实的signer_uuid，这里暂时用模拟数据
-    const mockSignerUuid = '19d0c5fd-9b33-4a48-a0e2-bc7b0555baec';
+    debugPrint('🔑 使用signer_uuid: ${signerUuid.substring(0, 8)}...');
 
     setState(() => _isPublishing = true);
 
@@ -91,7 +94,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       debugPrint('🚀 开始发布日记，主要交易对: $_mainTradingPair');
       
       final success = await _diaryService.publishTradingDiary(
-        signerUuid: mockSignerUuid,
+        signerUuid: signerUuid,
         tradingPair: _mainTradingPair,
         pnl: widget.totalPnL,
         strategy: _strategyDisplayName,

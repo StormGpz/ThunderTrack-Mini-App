@@ -557,8 +557,9 @@ class UserProvider extends ChangeNotifier {
 
         addDebugLog('👤 创建的用户对象: ${user.displayName} (${user.username})');
 
-        // 保存认证token和用户信息
+        // 保存认证token和signer_uuid
         await _saveAuthToken(authResult['token']);
+        await _saveSignerUuid(authResult['signer_uuid']);
         await _saveUserToLocal(user);
         
         _currentUser = user;
@@ -604,6 +605,7 @@ class UserProvider extends ChangeNotifier {
         );
 
         await _saveAuthToken(authResult['token']);
+        await _saveSignerUuid(authResult['signer_uuid']);
         await _saveUserToLocal(user);
         
         _currentUser = user;
@@ -631,6 +633,7 @@ class UserProvider extends ChangeNotifier {
       );
 
       await _saveAuthToken(authResult['token']);
+      await _saveSignerUuid(authResult['signer_uuid']);
       await _saveUserToLocal(user);
       
       _currentUser = user;
@@ -643,6 +646,21 @@ class UserProvider extends ChangeNotifier {
       addDebugLog('❌ 处理 Quick Auth 结果失败: $e');
       throw Exception('处理认证结果失败: $e');
     }
+  }
+
+  /// 保存signer UUID
+  Future<void> _saveSignerUuid(String? signerUuid) async {
+    if (signerUuid != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('${AppConstants.userTokenKey}_signer', signerUuid);
+      debugPrint('💾 Signer UUID已保存: ${signerUuid.substring(0, 8)}...');
+    }
+  }
+
+  /// 获取保存的signer UUID
+  Future<String?> getSignerUuid() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${AppConstants.userTokenKey}_signer');
   }
 
   /// 保存认证token
