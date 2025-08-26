@@ -135,7 +135,7 @@ class ApiClient {
 
     // 如果是Neynar API请求，添加API密钥
     if (baseUrl != null && baseUrl.contains('neynar.com')) {
-      mergedHeaders['api_key'] = AppConfig.neynarApiKey;
+      mergedHeaders['x-api-key'] = AppConfig.neynarApiKey;
     }
 
     // 合并用户提供的headers
