@@ -100,12 +100,13 @@ class CastDiaryService {
     required List<String> tags,
     required String content,
     String? frameUrl,
+    Function(String)? logCallback,
   }) async {
     try {
-      debugPrint('📝 开始发布交易日记...');
-      debugPrint('🔑 Signer UUID: $signerUuid');
-      debugPrint('💱 交易对: $tradingPair');
-      debugPrint('💰 盈亏: $pnl');
+      logCallback?.call('📝 开始发布交易日记...');
+      logCallback?.call('🔑 Signer UUID: ${signerUuid.substring(0, 8)}...');
+      logCallback?.call('💱 交易对: $tradingPair');
+      logCallback?.call('💰 盈亏: $pnl');
       
       // 构建Cast文本内容
       final castText = _buildCastText(
@@ -117,7 +118,7 @@ class CastDiaryService {
         content: content,
       );
       
-      debugPrint('📄 Cast内容: $castText');
+      logCallback?.call('📄 Cast内容长度: ${castText.length} 字符');
 
       final Map<String, dynamic> castData = {
         'signer_uuid': signerUuid,
@@ -129,10 +130,11 @@ class CastDiaryService {
         castData['embeds'] = [
           {'url': frameUrl}
         ];
-        debugPrint('🖼️ Frame URL: $frameUrl');
+        logCallback?.call('🖼️ 包含Frame URL');
       }
 
-      debugPrint('📤 发送请求到Neynar API...');
+      logCallback?.call('📤 发送请求到Neynar API...');
+      logCallback?.call('🌐 API端点: https://api.neynar.com/v2/farcaster/casts');
       
       final response = await _apiClient.post(
         '/v2/farcaster/casts',
@@ -140,11 +142,19 @@ class CastDiaryService {
         baseUrl: 'https://api.neynar.com',
       );
 
-      debugPrint('📨 API响应状态码: ${response.statusCode}');
-      debugPrint('📨 API响应内容: ${response.data}');
-      return response.statusCode == 200;
+      logCallback?.call('📨 API响应状态码: ${response.statusCode}');
+      logCallback?.call('📨 API响应内容: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        logCallback?.call('✅ 日记发布成功！');
+        return true;
+      } else {
+        logCallback?.call('❌ 发布失败，状态码: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
-      debugPrint('❌ 发布交易日记失败: $e');
+      logCallback?.call('❌ 发布交易日记失败: $e');
+      logCallback?.call('🔍 错误详情: ${e.toString()}');
       return false;
     }
   }

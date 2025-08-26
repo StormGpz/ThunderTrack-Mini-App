@@ -102,6 +102,11 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
         tags: widget.tags,
         content: widget.content,
         frameUrl: _useFrameFormat ? _generateFrameUrl() : null,
+        logCallback: (String message) {
+          // 将发布日志传递给UserProvider
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          userProvider.addDebugLog(message);
+        },
       );
 
       if (success) {
