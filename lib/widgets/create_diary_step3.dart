@@ -233,18 +233,19 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (临时使用简单URL测试)
+  /// 生成Frame URL (使用生产环境)
   String _generateFrameUrl() {
-    // 临时使用一个简单的URL测试embeds功能
-    // 后续需要实现真正的Frame服务器
-    return 'https://www.google.com';
+    // 使用生产环境的Vercel域名
+    final baseUrl = 'https://thundertrack-miniapp.vercel.app/api/frame/diary';
+    final queryParams = <String, String>{
+      'pair': _mainTradingPair,
+      'pnl': widget.totalPnL.toString(),
+      'strategy': _strategyDisplayName,
+      'sentiment': _sentimentInfo['name'],
+    };
     
-    // 原来的Frame URL逻辑(暂时注释)
-    // return 'https://thundertrack.example.com/frame/diary?'
-    //        'pair=${Uri.encodeComponent(_mainTradingPair)}&'
-    //        'pnl=${widget.totalPnL}&'
-    //        'strategy=${Uri.encodeComponent(_strategyDisplayName)}&'
-    //        'sentiment=${Uri.encodeComponent(_sentimentInfo['name'])}';
+    final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+    return uri.toString();
   }
 
   /// 显示成功消息
