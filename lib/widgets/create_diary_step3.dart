@@ -233,10 +233,10 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (使用单独的API服务)
+  /// 生成Frame URL (使用Mini App同域名)
   String _generateFrameUrl() {
-    // 使用单独的Frame API服务
-    final baseUrl = 'https://thunder-track-frame-api.vercel.app/api/frame/diary';
+    // 使用Mini App同域名的Frame API
+    final baseUrl = 'https://thundertrack-miniapp.vercel.app/api/frame';
     final queryParams = <String, String>{
       'pair': _mainTradingPair,
       'pnl': widget.totalPnL.toString(),
