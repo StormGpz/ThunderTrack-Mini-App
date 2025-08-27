@@ -7,6 +7,7 @@ import 'pages/diary_page.dart';
 import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
+import 'widgets/frame_diary_detail_page.dart';
 import 'utils/api_client.dart';
 import 'services/hyperliquid_service.dart';
 import 'widgets/eva_floating_bottom_bar.dart';
@@ -89,6 +90,9 @@ class _MainPageState extends State<MainPage> {
       // 通知 Mini App 准备就绪（关键！）
       await userProvider.notifyMiniAppReady();
       
+      // 检查URL参数，如果有diary参数则跳转到详情页
+      await _checkUrlParameters();
+      
       // 调试信息
       print('🔍 用户初始化完成:');
       print('   环境: ${userProvider.isMiniAppEnvironment ? "Farcaster Mini App" : "普通浏览器"}');
@@ -104,6 +108,50 @@ class _MainPageState extends State<MainPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// 检查URL参数并处理Frame跳转
+  Future<void> _checkUrlParameters() async {
+    try {
+      final currentUrl = Uri.base.toString();
+      final uri = Uri.parse(currentUrl);
+      
+      // 检查是否有diary参数（来自Frame点击）
+      if (uri.queryParameters.containsKey('diary')) {
+        final pair = uri.queryParameters['diary'];
+        final pnl = double.tryParse(uri.queryParameters['pnl'] ?? '0');
+        final strategy = uri.queryParameters['strategy'];
+        final sentiment = uri.queryParameters['sentiment'];
+        
+        if (pair != null && mounted) {
+          // 生成日记ID
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final diaryId = '${pair.replaceAll('/', '')}-$timestamp';
+          
+          print('🔗 检测到Frame跳转参数，导航到日记详情页');
+          print('   交易对: $pair, 盈亏: $pnl, 策略: $strategy, 情绪: $sentiment');
+          
+          // 延迟一下确保页面已初始化
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => FrameDiaryDetailPage(
+                  diaryId: diaryId,
+                  pair: pair,
+                  pnl: pnl,
+                  strategy: strategy,
+                  sentiment: sentiment,
+                ),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ 检查URL参数时出错: $e');
+    }
   }
 
   void _onTabTapped(int index) {

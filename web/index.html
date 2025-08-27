@@ -36,12 +36,12 @@
       // 动态生成交易复盘的Frame embed
       const frameEmbed = {
         version: "1",
-        imageUrl: `https://thundertrack-miniapp.vercel.app/frame-image.svg?pair=${encodeURIComponent(pair)}&pnl=${pnl}&strategy=${encodeURIComponent(strategy)}&sentiment=${encodeURIComponent(sentiment)}`,
+        imageUrl: `https://thundertrack-miniapp.vercel.app/frame-image.svg`,
         button: {
           title: "查看详情",
           action: {
             type: "launch_miniapp",
-            url: "https://thundertrack-miniapp.vercel.app",
+            url: `https://thundertrack-miniapp.vercel.app/?diary=${encodeURIComponent(pair)}&pnl=${pnl}&strategy=${encodeURIComponent(strategy)}&sentiment=${encodeURIComponent(sentiment)}`,
             name: "ThunderTrack",
             splashImageUrl: "https://thundertrack-miniapp.vercel.app/icons/Icon-192.png",
             splashBackgroundColor: "#1a1a2e"
