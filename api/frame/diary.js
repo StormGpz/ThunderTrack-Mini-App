@@ -1,4 +1,14 @@
-export default function handler(req, res) {
+// Vercel API Route for Farcaster Frame
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -70,5 +80,5 @@ export default function handler(req, res) {
 </html>`;
 
   res.setHeader('Content-Type', 'text/html');
-  res.send(html);
+  res.status(200).send(html);
 }
