@@ -22,6 +22,43 @@
 
   <!-- Farcaster Mini App Embed -->
   <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"⚡ ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
+  
+  <!-- Frame参数处理脚本 -->
+  <script>
+    // 检查URL参数，如果包含Frame数据则更新meta标签
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('frame') === 'true') {
+      const pair = urlParams.get('pair') || 'Unknown';
+      const pnl = urlParams.get('pnl') || '0';
+      const strategy = urlParams.get('strategy') || 'Unknown';
+      const sentiment = urlParams.get('sentiment') || 'Unknown';
+      
+      // 动态生成交易复盘的Frame embed
+      const frameEmbed = {
+        version: "1",
+        imageUrl: `https://thundertrack-miniapp.vercel.app/frame-image.svg?pair=${encodeURIComponent(pair)}&pnl=${pnl}&strategy=${encodeURIComponent(strategy)}&sentiment=${encodeURIComponent(sentiment)}`,
+        button: {
+          title: "查看详情",
+          action: {
+            type: "launch_miniapp",
+            url: "https://thundertrack-miniapp.vercel.app",
+            name: "ThunderTrack",
+            splashImageUrl: "https://thundertrack-miniapp.vercel.app/icons/Icon-192.png",
+            splashBackgroundColor: "#1a1a2e"
+          }
+        }
+      };
+      
+      // 更新meta标签
+      const metaTag = document.querySelector('meta[name="fc:miniapp"]');
+      if (metaTag) {
+        metaTag.setAttribute('content', JSON.stringify(frameEmbed));
+      }
+      
+      // 更新页面标题
+      document.title = `ThunderTrack 交易复盘 - ${pair}`;
+    }
+  </script>
 
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
