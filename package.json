@@ -4,13 +4,13 @@
   "description": "ThunderTrack Mini App with Farcaster Frame support",
   "main": "index.js",
   "scripts": {
-    "build": "flutter build web",
+    "build": "flutter build web --release",
     "start": "flutter run -d web"
   },
   "keywords": ["flutter", "farcaster", "frame", "trading"],
   "author": "ThunderTrack",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   }
 }

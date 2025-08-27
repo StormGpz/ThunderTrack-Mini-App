@@ -1,0 +1,19 @@
+# 告诉Vercel忽略这些文件，但保留API文件夹
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+android/
+ios/
+linux/
+macos/
+windows/
+test/
+frame_server/
+
+# 保留这些重要文件
+!api/
+!build/web/
+!vercel.json
+!package.json
