@@ -233,19 +233,10 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (使用Mini App同域名)
+  /// 生成Frame URL (测试：只使用主域名)
   String _generateFrameUrl() {
-    // 使用Mini App同域名的Frame API
-    final baseUrl = 'https://thundertrack-miniapp.vercel.app/api/frame';
-    final queryParams = <String, String>{
-      'pair': _mainTradingPair,
-      'pnl': widget.totalPnL.toString(),
-      'strategy': _strategyDisplayName,
-      'sentiment': _sentimentInfo['name'],
-    };
-    
-    final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
-    return uri.toString();
+    // 测试：只返回主app地址，看是否显示为卡片
+    return 'https://thundertrack-miniapp.vercel.app/';
   }
 
   /// 显示成功消息
