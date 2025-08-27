@@ -161,16 +161,24 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       final shareText = _buildShareText();
       final frameUrl = _useFrameFormat ? _generateFrameUrl() : null;
       
+      debugPrint('🎯 使用Frame格式: $_useFrameFormat');
+      if (frameUrl != null) {
+        debugPrint('🖼️ 生成的Frame URL: $frameUrl');
+      }
+      
       // 构建Warpcast分享URL
       final encodedText = Uri.encodeComponent(shareText);
       String warpcastUrl = 'https://warpcast.com/~/compose?text=$encodedText';
       
       if (frameUrl != null && frameUrl.isNotEmpty) {
         final encodedFrame = Uri.encodeComponent(frameUrl);
+        // 尝试不同的参数格式
         warpcastUrl += '&embeds[]=$encodedFrame';
+        // 或者尝试: warpcastUrl += '&embed=$encodedFrame';
+        debugPrint('🔗 编码后的Frame URL: $encodedFrame');
       }
       
-      debugPrint('🔗 分享URL: $warpcastUrl');
+      debugPrint('🔗 完整分享URL: $warpcastUrl');
       
       // 在Web环境中打开新窗口
       if (kIsWeb) {
@@ -225,15 +233,18 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (模拟)
+  /// 生成Frame URL (临时使用简单URL测试)
   String _generateFrameUrl() {
-    // 这里应该生成一个真实的Frame URL
-    // Frame会展示交易数据的可视化界面
-    return 'https://thundertrack.example.com/frame/diary?'
-           'pair=${Uri.encodeComponent(_mainTradingPair)}&'
-           'pnl=${widget.totalPnL}&'
-           'strategy=${Uri.encodeComponent(_strategyDisplayName)}&'
-           'sentiment=${Uri.encodeComponent(_sentimentInfo['name'])}';
+    // 临时使用一个简单的URL测试embeds功能
+    // 后续需要实现真正的Frame服务器
+    return 'https://www.google.com';
+    
+    // 原来的Frame URL逻辑(暂时注释)
+    // return 'https://thundertrack.example.com/frame/diary?'
+    //        'pair=${Uri.encodeComponent(_mainTradingPair)}&'
+    //        'pnl=${widget.totalPnL}&'
+    //        'strategy=${Uri.encodeComponent(_strategyDisplayName)}&'
+    //        'sentiment=${Uri.encodeComponent(_sentimentInfo['name'])}';
   }
 
   /// 显示成功消息
