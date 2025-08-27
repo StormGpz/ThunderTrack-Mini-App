@@ -4,15 +4,9 @@
       "runtime": "nodejs18.x"
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/frame/(.*)",
-      "destination": "/api/frame/$1"
-    }
-  ],
   "headers": [
     {
-      "source": "/api/frame/(.*)",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -25,10 +19,6 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
         }
       ]
     }
