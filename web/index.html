@@ -27,8 +27,12 @@
     const isFrame = urlParams.get('frame') === 'true';
     
     if (isFrame) {
-      // Frame版本的meta标签
-      document.write('<meta name="fc:miniapp" content=\'{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/frame-image.svg","button":{"title":"查看详情","action":{"type":"launch_miniapp","url":"https://thundertrack-miniapp.vercel.app/?diary=' + encodeURIComponent(urlParams.get('pair') || 'Unknown') + '&pnl=' + (urlParams.get('pnl') || '0') + '&strategy=' + encodeURIComponent(urlParams.get('strategy') || 'Unknown') + '&sentiment=' + encodeURIComponent(urlParams.get('sentiment') || 'Unknown') + '","name":"ThunderTrack","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-192.png","splashBackgroundColor":"#1a1a2e"}}}\' />');
+      // Frame版本的标准Frame meta标签
+      document.write('<meta property="fc:frame" content="vNext" />');
+      document.write('<meta property="fc:frame:image" content="https://thundertrack-miniapp.vercel.app/frame-image.svg" />');
+      document.write('<meta property="fc:frame:button:1" content="查看详情" />');
+      document.write('<meta property="fc:frame:button:1:action" content="link" />');
+      document.write('<meta property="fc:frame:button:1:target" content="https://thundertrack-miniapp.vercel.app/?pair=' + encodeURIComponent(urlParams.get('pair') || 'Unknown') + '&pnl=' + (urlParams.get('pnl') || '0') + '&strategy=' + encodeURIComponent(urlParams.get('strategy') || 'Unknown') + '&sentiment=' + encodeURIComponent(urlParams.get('sentiment') || 'Unknown') + '" />');
       
       // Frame版本的OG标签
       document.write('<meta property="og:title" content="ThunderTrack 交易复盘 - ' + (urlParams.get('pair') || 'Unknown') + '" />');
