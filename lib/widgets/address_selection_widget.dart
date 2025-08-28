@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/address_auth.dart';
-import '../models/user.dart';
-import '../services/address_detection_service.dart';
 import '../services/hyperliquid_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/eva_theme.dart';
@@ -25,7 +23,7 @@ class AddressSelectionWidget extends StatefulWidget {
 }
 
 class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
-  final AddressDetectionService _addressService = AddressDetectionService();
+  // Address detection service removed - functionality not available
   final HyperliquidService _hyperliquidService = HyperliquidService();
   
   List<AddressOption> _availableAddresses = [];
@@ -51,18 +49,13 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
       final user = userProvider.currentUser;
       
       if (user != null) {
-        final addresses = await _addressService.detectAvailableAddresses(user);
-        final recommended = await _addressService.getRecommendedAddress(user);
-        
+        // Address detection functionality removed
         setState(() {
-          _availableAddresses = addresses;
-          _selectedAddress = recommended;
+          _availableAddresses = [];
+          _selectedAddress = null;
         });
 
-        // 如果有推荐地址，自动选择
-        if (recommended != null && widget.onAddressSelected != null) {
-          widget.onAddressSelected!(recommended);
-        }
+        // Address detection functionality removed - no recommended address available
       }
     } catch (e) {
       setState(() {
@@ -106,6 +99,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
           SnackBar(
             content: Text('✅ 地址授权成功'),
             backgroundColor: EvaTheme.neonGreen,
+            
           ),
         );
       } else {
@@ -138,7 +132,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
       decoration: BoxDecoration(
         color: EvaTheme.deepBlack,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: EvaTheme.primaryPurple.withOpacity(0.3)),
+        border: Border.all(color: EvaTheme.primaryPurple.withValues(alpha: 0.3)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -165,7 +159,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
       decoration: BoxDecoration(
         color: EvaTheme.deepBlack,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: EvaTheme.errorRed.withOpacity(0.3)),
+        border: Border.all(color: EvaTheme.errorRed.withValues(alpha: 0.3)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -220,7 +214,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
       decoration: BoxDecoration(
         color: EvaTheme.deepBlack,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: EvaTheme.primaryPurple.withOpacity(0.3)),
+        border: Border.all(color: EvaTheme.primaryPurple.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,9 +246,9 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: EvaTheme.errorRed.withOpacity(0.1),
+                color: EvaTheme.errorRed.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: EvaTheme.errorRed.withOpacity(0.3)),
+                border: Border.all(color: EvaTheme.errorRed.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -346,12 +340,12 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isSelected ? EvaTheme.primaryPurple.withOpacity(0.1) : Colors.transparent,
+        color: isSelected ? EvaTheme.primaryPurple.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSelected 
             ? EvaTheme.primaryPurple 
-            : EvaTheme.lightGray.withOpacity(0.2),
+            : EvaTheme.lightGray.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
@@ -359,7 +353,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: option.recommended ? EvaTheme.neonGreen.withOpacity(0.2) : EvaTheme.primaryPurple.withOpacity(0.2),
+            color: option.recommended ? EvaTheme.neonGreen.withValues(alpha: 0.2) : EvaTheme.primaryPurple.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Icon(
@@ -389,7 +383,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: EvaTheme.neonGreen.withOpacity(0.2),
+                            color: EvaTheme.neonGreen.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -405,7 +399,7 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
                     ],
                   ),
                   Text(
-                    _addressService.formatAddress(option.address),
+                    option.address, // Address service removed - functionality not available
                     style: TextStyle(
                       color: EvaTheme.lightGray,
                       fontSize: 12,
@@ -419,8 +413,8 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isAuthorized 
-                    ? EvaTheme.neonGreen.withOpacity(0.2)
-                    : EvaTheme.warningYellow.withOpacity(0.2),
+                    ? EvaTheme.neonGreen.withValues(alpha: 0.2)
+                    : EvaTheme.warningYellow.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

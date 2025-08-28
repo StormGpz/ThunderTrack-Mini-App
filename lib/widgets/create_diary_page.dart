@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import '../models/trading_diary.dart';
 import '../services/diary_template_service.dart';
-import '../services/farcaster_share_service.dart';
 import '../providers/settings_provider.dart';
 
 /// 创建日记页面
@@ -98,8 +97,8 @@ class _CreateDiaryPageState extends State<CreateDiaryPage> {
 
       // 分享到Farcaster（如果勾选了）
       if (_shareToFarcaster && _isPublic) {
-        final shareService = FarcasterShareService();
-        await shareService.shareDiary(diary);
+        // Farcaster share service removed - functionality not available
+        // Farcaster share service removed - functionality not available
       }
 
       if (mounted) {
@@ -361,7 +360,7 @@ class _CreateDiaryPageState extends State<CreateDiaryPage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     offset: const Offset(0, -2),
                     blurRadius: 4,
                   ),

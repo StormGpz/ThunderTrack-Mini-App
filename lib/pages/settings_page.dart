@@ -105,13 +105,13 @@ class SettingsPage extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -167,7 +167,7 @@ class SettingsPage extends StatelessWidget {
         onChanged: (value) {
           settings.setTradingNotificationsEnabled(value);
         },
-        activeColor: EvaTheme.neonGreen,
+        activeThumbColor: EvaTheme.neonGreen,
       ),
     );
   }
@@ -202,8 +202,8 @@ class SettingsPage extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              EvaTheme.primaryPurple.withOpacity(0.8),
-              EvaTheme.primaryPurple.withOpacity(0.6),
+              EvaTheme.primaryPurple.withValues(alpha: 0.8),
+              EvaTheme.primaryPurple.withValues(alpha: 0.6),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -267,32 +267,30 @@ class SettingsPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('中文', style: TextStyle(color: EvaTheme.lightText)),
-              leading: Radio<bool>(
-                value: true,
-                groupValue: settings.isChineseLocale,
-                onChanged: (value) {
-                  if (value != null && value) {
-                    settings.setLocale(const Locale('zh', 'CN'));
-                    Navigator.of(context).pop();
-                  }
-                },
-                activeColor: EvaTheme.neonGreen,
+              title: Text('中文', 
+                style: TextStyle(color: settings.isChineseLocale ? EvaTheme.neonGreen : EvaTheme.lightText)
               ),
+              leading: Icon(
+                settings.isChineseLocale ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: EvaTheme.neonGreen,
+              ),
+              onTap: () {
+                settings.setLocale(const Locale('zh', 'CN'));
+                Navigator.of(context).pop();
+              },
             ),
             ListTile(
-              title: const Text('English', style: TextStyle(color: EvaTheme.lightText)),
-              leading: Radio<bool>(
-                value: false,
-                groupValue: settings.isChineseLocale,
-                onChanged: (value) {
-                  if (value != null && !value) {
-                    settings.setLocale(const Locale('en', 'US'));
-                    Navigator.of(context).pop();
-                  }
-                },
-                activeColor: EvaTheme.neonGreen,
+              title: Text('English', 
+                style: TextStyle(color: !settings.isChineseLocale ? EvaTheme.neonGreen : EvaTheme.lightText)
               ),
+              leading: Icon(
+                !settings.isChineseLocale ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: EvaTheme.neonGreen,
+              ),
+              onTap: () {
+                settings.setLocale(const Locale('en', 'US'));
+                Navigator.of(context).pop();
+              },
             ),
           ],
         ),
@@ -314,18 +312,19 @@ class SettingsPage extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: currencies.map((currency) => ListTile(
-            title: Text(currency, style: TextStyle(color: EvaTheme.lightText)),
-            leading: Radio<String>(
-              value: currency,
-              groupValue: settings.defaultCurrency,
-              onChanged: (value) {
-                if (value != null) {
-                  settings.setDefaultCurrency(value);
-                  Navigator.of(context).pop();
-                }
-              },
-              activeColor: EvaTheme.neonGreen,
+            title: Text(currency, 
+              style: TextStyle(
+                color: currency == settings.defaultCurrency ? EvaTheme.neonGreen : EvaTheme.lightText
+              )
             ),
+            leading: Icon(
+              currency == settings.defaultCurrency ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: EvaTheme.neonGreen,
+            ),
+            onTap: () {
+              settings.setDefaultCurrency(currency);
+              Navigator.of(context).pop();
+            },
           )).toList(),
         ),
       ),

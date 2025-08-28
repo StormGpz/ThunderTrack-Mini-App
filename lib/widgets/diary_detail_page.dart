@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/trading_diary.dart';
-import '../services/farcaster_share_service.dart';
 import 'package:intl/intl.dart';
 
 /// 日记详情页面
@@ -43,16 +42,14 @@ class _DiaryDetailPageState extends State<DiaryDetailPage> {
     HapticFeedback.lightImpact();
   }
 
-  /// 分享日记
+  /// 分享日记 (功能已移除)
   Future<void> _shareDiary() async {
-    final shareService = FarcasterShareService();
-    final success = await shareService.shareDiary(widget.diary);
-    
+    // Farcaster share service removed - functionality not available
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? '分享成功！' : '分享失败，请稍后重试'),
-          backgroundColor: success ? Colors.green : Colors.red,
+        const SnackBar(
+          content: Text('分享功能暂不可用'),
+          backgroundColor: Colors.orange,
         ),
       );
     }
@@ -92,7 +89,7 @@ class _DiaryDetailPageState extends State<DiaryDetailPage> {
                     end: Alignment.bottomRight,
                     colors: [
                       Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.8),
+                      Theme.of(context).primaryColor.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -196,10 +193,10 @@ class _DiaryDetailPageState extends State<DiaryDetailPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getTypeColor().withOpacity(0.1),
+                    color: _getTypeColor().withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _getTypeColor().withOpacity(0.3),
+                      color: _getTypeColor().withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(

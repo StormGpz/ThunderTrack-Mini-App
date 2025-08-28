@@ -171,19 +171,19 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  EvaTheme.mechGray.withOpacity(0.9),
+                  EvaTheme.mechGray.withValues(alpha: 0.9),
                   EvaTheme.deepBlack,
                 ],
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: EvaTheme.neonGreen.withOpacity(0.1),
+                  color: EvaTheme.neonGreen.withValues(alpha: 0.1),
                   offset: const Offset(0, 2),
                   blurRadius: 8,
                 ),
@@ -273,7 +273,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
           Text(
             '记录您的交易心得和市场观察',
             style: TextStyle(
-              color: EvaTheme.textGray.withOpacity(0.7),
+              color: EvaTheme.textGray.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 24),
@@ -328,7 +328,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
           Text(
             '成为第一个分享交易日记的人',
             style: TextStyle(
-              color: EvaTheme.textGray.withOpacity(0.7),
+              color: EvaTheme.textGray.withValues(alpha: 0.7),
             ),
           ),
         ],

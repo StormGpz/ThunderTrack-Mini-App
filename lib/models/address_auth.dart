@@ -144,7 +144,7 @@ class AddressOption {
 
   @override
   String toString() {
-    return 'AddressOption(${displayName})';
+    return 'AddressOption($displayName)';
   }
 
   @override

@@ -228,7 +228,7 @@ class HyperliquidOrder {
 
   @override
   String toString() {
-    return 'HyperliquidOrder(${side.displayName} ${size} ${symbol} @ ${displayPrice}, ${status.displayName})';
+    return 'HyperliquidOrder(${side.displayName} $size $symbol @ $displayPrice, ${status.displayName})';
   }
 
   @override

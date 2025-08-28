@@ -251,23 +251,23 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: EvaTheme.neonGreen.withOpacity(_isAddressAuthorized ? 0.1 : 0.05),
+            color: EvaTheme.neonGreen.withValues(alpha: _isAddressAuthorized ? 0.1 : 0.05),
             blurRadius: 20,
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: EvaTheme.primaryPurple.withOpacity(_isAddressAuthorized ? 0.05 : 0.02),
+            color: EvaTheme.primaryPurple.withValues(alpha: _isAddressAuthorized ? 0.05 : 0.02),
             blurRadius: 30,
             spreadRadius: -5,
           ),
@@ -284,8 +284,8 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 ? EvaTheme.neonGradient
                 : LinearGradient(
                     colors: [
-                      EvaTheme.warningYellow.withOpacity(0.3),
-                      EvaTheme.warningYellow.withOpacity(0.1),
+                      EvaTheme.warningYellow.withValues(alpha: 0.3),
+                      EvaTheme.warningYellow.withValues(alpha: 0.1),
                     ],
                   ),
               borderRadius: BorderRadius.circular(18),
@@ -296,7 +296,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
               boxShadow: [
                 BoxShadow(
                   color: (_isAddressAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow)
-                      .withOpacity(0.3),
+                      .withValues(alpha: 0.3),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
@@ -375,13 +375,13 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.red.withOpacity(0.3),
-                      Colors.red.withOpacity(0.1),
+                      Colors.red.withValues(alpha: 0.3),
+                      Colors.red.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: Colors.red.withOpacity(0.5),
+                    color: Colors.red.withValues(alpha: 0.5),
                     width: 1,
                   ),
                 ),
@@ -409,7 +409,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
               gradient: EvaTheme.primaryGradient,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                color: EvaTheme.primaryPurple.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -435,11 +435,11 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
       decoration: BoxDecoration(
         color: EvaTheme.mechGray,
         border: Border(
-          bottom: BorderSide(color: EvaTheme.neonGreen.withOpacity(0.3)),
+          bottom: BorderSide(color: EvaTheme.neonGreen.withValues(alpha: 0.3)),
         ),
         boxShadow: [
           BoxShadow(
-            color: EvaTheme.neonGreen.withOpacity(0.05),
+            color: EvaTheme.neonGreen.withValues(alpha: 0.05),
             blurRadius: 10,
             spreadRadius: 1,
           ),
@@ -488,7 +488,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
       decoration: BoxDecoration(
         color: EvaTheme.mechGray,
         border: Border(
-          bottom: BorderSide(color: EvaTheme.neonGreen.withOpacity(0.2)),
+          bottom: BorderSide(color: EvaTheme.neonGreen.withValues(alpha: 0.2)),
         ),
       ),
       child: TabBar(
@@ -581,11 +581,11 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: pair.isFavorite 
-            ? Border.all(color: EvaTheme.neonGreen.withOpacity(0.3), width: 1)
+            ? Border.all(color: EvaTheme.neonGreen.withValues(alpha: 0.3), width: 1)
             : null,
         boxShadow: pair.isFavorite ? [
           BoxShadow(
-            color: EvaTheme.neonGreen.withOpacity(0.1),
+            color: EvaTheme.neonGreen.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
           ),
@@ -595,8 +595,8 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // 减小垂直内边距
         leading: CircleAvatar(
           backgroundColor: pair.isFavorite 
-              ? EvaTheme.neonGreen.withOpacity(0.2)
-              : EvaTheme.primaryPurple.withOpacity(0.2),
+              ? EvaTheme.neonGreen.withValues(alpha: 0.2)
+              : EvaTheme.primaryPurple.withValues(alpha: 0.2),
           child: Text(
             pair.baseAsset.substring(0, 1),
             style: TextStyle(
@@ -644,9 +644,9 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: priceColor.withOpacity(0.15),
+                    color: priceColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: priceColor.withOpacity(0.3)),
+                    border: Border.all(color: priceColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     pair.formattedPriceChangePercent,
@@ -747,7 +747,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
               gradient: EvaTheme.techGradient,
               boxShadow: [
                 BoxShadow(
-                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
@@ -820,11 +820,11 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: sideColor.withOpacity(0.2)),
+          border: Border.all(color: sideColor.withValues(alpha: 0.2)),
         ),
         child: ListTile(
           leading: CircleAvatar(
-            backgroundColor: sideColor.withOpacity(0.2),
+            backgroundColor: sideColor.withValues(alpha: 0.2),
             child: Icon(
               trade.side == 'buy' ? Icons.trending_up : Icons.trending_down,
               color: sideColor,
@@ -890,13 +890,13 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: trade.status == 'filled' 
-                  ? EvaTheme.neonGreen.withOpacity(0.2) 
-                  : EvaTheme.warningOrange.withOpacity(0.2),
+                  ? EvaTheme.neonGreen.withValues(alpha: 0.2) 
+                  : EvaTheme.warningOrange.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: trade.status == 'filled' 
-                    ? EvaTheme.neonGreen.withOpacity(0.5)
-                    : EvaTheme.warningOrange.withOpacity(0.5),
+                    ? EvaTheme.neonGreen.withValues(alpha: 0.5)
+                    : EvaTheme.warningOrange.withValues(alpha: 0.5),
               ),
             ),
             child: Text(

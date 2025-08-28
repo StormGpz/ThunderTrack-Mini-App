@@ -26,17 +26,17 @@ class EvaMechDecoration {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(12),
       border: Border.all(
-        color: (color ?? EvaTheme.neonGreen).withOpacity(0.6),
+        color: (color ?? EvaTheme.neonGreen).withValues(alpha: 0.6),
         width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: (color ?? EvaTheme.neonGreen).withOpacity(0.2 * glowIntensity),
+          color: (color ?? EvaTheme.neonGreen).withValues(alpha: 0.2 * glowIntensity),
           blurRadius: 10,
           spreadRadius: 1,
         ),
         BoxShadow(
-          color: (color ?? EvaTheme.neonGreen).withOpacity(0.1 * glowIntensity),
+          color: (color ?? EvaTheme.neonGreen).withValues(alpha: 0.1 * glowIntensity),
           blurRadius: 20,
           spreadRadius: 2,
         ),
@@ -83,7 +83,7 @@ class EvaMechDecoration {
           color: color ?? EvaTheme.neonGreen,
           boxShadow: [
             BoxShadow(
-              color: (color ?? EvaTheme.neonGreen).withOpacity(0.6),
+              color: (color ?? EvaTheme.neonGreen).withValues(alpha: 0.6),
               blurRadius: 4,
               spreadRadius: 1,
             ),
@@ -106,23 +106,23 @@ class EvaMechDecoration {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: EvaTheme.neonGreen.withOpacity(0.1 * glowIntensity),
+            color: EvaTheme.neonGreen.withValues(alpha: 0.1 * glowIntensity),
             blurRadius: 20,
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: EvaTheme.primaryPurple.withOpacity(0.05 * glowIntensity),
+            color: EvaTheme.primaryPurple.withValues(alpha: 0.05 * glowIntensity),
             blurRadius: 30,
             spreadRadius: -5,
           ),
@@ -159,12 +159,12 @@ class MechBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = EvaTheme.neonGreen.withOpacity(opacity)
+      ..color = EvaTheme.neonGreen.withValues(alpha: opacity)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
     final glowPaint = Paint()
-      ..color = EvaTheme.neonGreen.withOpacity(opacity * 0.3)
+      ..color = EvaTheme.neonGreen.withValues(alpha: opacity * 0.3)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
@@ -221,7 +221,7 @@ class CornerDecorationPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final glowPaint = Paint()
-      ..color = color.withOpacity(0.5)
+      ..color = color.withValues(alpha: 0.5)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
@@ -270,7 +270,7 @@ class PanelDecorationPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = EvaTheme.neonGreen.withOpacity(opacity)
+      ..color = EvaTheme.neonGreen.withValues(alpha: opacity)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -349,12 +349,12 @@ class _AnimatedGlowLineState extends State<AnimatedGlowLine>
             color: widget.color,
             boxShadow: [
               BoxShadow(
-                color: widget.color.withOpacity(0.6 * _glowAnimation.value),
+                color: widget.color.withValues(alpha: 0.6 * _glowAnimation.value),
                 blurRadius: 6 * _glowAnimation.value,
                 spreadRadius: 1 * _glowAnimation.value,
               ),
               BoxShadow(
-                color: widget.color.withOpacity(0.3 * _glowAnimation.value),
+                color: widget.color.withValues(alpha: 0.3 * _glowAnimation.value),
                 blurRadius: 12 * _glowAnimation.value,
                 spreadRadius: 2 * _glowAnimation.value,
               ),

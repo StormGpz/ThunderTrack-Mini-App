@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
-import '../models/auth_address.dart';
 import '../config/app_config.dart';
 import '../config/api_endpoints.dart';
 import '../utils/api_client.dart';
@@ -294,7 +293,7 @@ class NeynarService {
   }
 
   /// 注册开发者管理的认证地址
-  Future<AuthAddressResponse> registerSignedKey({
+  Future<Map<String, dynamic>?> registerSignedKey({
     required String address,
     required int appFid,
     required int deadline,
@@ -322,7 +321,7 @@ class NeynarService {
       debugPrint('✅ 认证地址注册响应: ${response.statusCode}');
       
       if (response.statusCode == 200 && response.data != null) {
-        return AuthAddressResponse.fromJson(response.data);
+        return response.data;
       }
       throw ApiException('注册认证地址失败');
     } catch (e) {
@@ -332,7 +331,7 @@ class NeynarService {
   }
 
   /// 查询认证地址状态
-  Future<AuthAddressResponse> getAuthAddressStatus({
+  Future<Map<String, dynamic>?> getAuthAddressStatus({
     required String address,
   }) async {
     try {
@@ -348,7 +347,7 @@ class NeynarService {
       debugPrint('✅ 认证地址状态查询响应: ${response.statusCode}');
       
       if (response.statusCode == 200 && response.data != null) {
-        return AuthAddressResponse.fromJson(response.data);
+        return response.data;
       }
       throw ApiException('查询认证地址状态失败');
     } catch (e) {

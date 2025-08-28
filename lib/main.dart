@@ -93,14 +93,6 @@ class _MainPageState extends State<MainPage> {
       // 检查URL参数，如果有diary参数则跳转到详情页
       await _checkUrlParameters();
       
-      // 调试信息
-      print('🔍 用户初始化完成:');
-      print('   环境: ${userProvider.isMiniAppEnvironment ? "Farcaster Mini App" : "普通浏览器"}');
-      print('   SDK可用: ${userProvider.isMiniAppSdkAvailable}');
-      print('   已登录: ${userProvider.isAuthenticated}');
-      if (userProvider.isAuthenticated) {
-        print('   用户: ${userProvider.currentUser?.displayName ?? userProvider.currentUser?.username}');
-      }
     });
   }
 
@@ -128,8 +120,6 @@ class _MainPageState extends State<MainPage> {
           final timestamp = DateTime.now().millisecondsSinceEpoch;
           final diaryId = '${pair.replaceAll('/', '')}-$timestamp';
           
-          print('🔗 检测到Frame跳转参数，导航到日记详情页');
-          print('   交易对: $pair, 盈亏: $pnl, 策略: $strategy, 情绪: $sentiment');
           
           // 延迟一下确保页面已初始化
           await Future.delayed(const Duration(milliseconds: 500));
@@ -150,7 +140,7 @@ class _MainPageState extends State<MainPage> {
         }
       }
     } catch (e) {
-      print('❌ 检查URL参数时出错: $e');
+      // Ignore URL parsing errors during app initialization
     }
   }
 
@@ -447,8 +437,8 @@ class _MainPageState extends State<MainPage> {
                 ? EvaTheme.neonGradient
                 : LinearGradient(
                     colors: [
-                      EvaTheme.primaryPurple.withOpacity(0.5),
-                      EvaTheme.primaryPurple.withOpacity(0.2),
+                      EvaTheme.primaryPurple.withValues(alpha: 0.5),
+                      EvaTheme.primaryPurple.withValues(alpha: 0.2),
                     ],
                   ),
               borderRadius: BorderRadius.circular(18),
@@ -462,7 +452,7 @@ class _MainPageState extends State<MainPage> {
                 BoxShadow(
                   color: (userProvider.isAuthenticated 
                     ? EvaTheme.neonGreen 
-                    : EvaTheme.primaryPurple).withOpacity(0.3),
+                    : EvaTheme.primaryPurple).withValues(alpha: 0.3),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
@@ -497,23 +487,23 @@ class _MainPageState extends State<MainPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              EvaTheme.mechGray.withOpacity(0.8),
-              EvaTheme.deepBlack.withOpacity(0.9),
+              EvaTheme.mechGray.withValues(alpha: 0.8),
+              EvaTheme.deepBlack.withValues(alpha: 0.9),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: EvaTheme.neonGreen.withOpacity(0.5), 
+            color: EvaTheme.neonGreen.withValues(alpha: 0.5), 
             width: 1
           ),
           boxShadow: [
             BoxShadow(
-              color: EvaTheme.neonGreen.withOpacity(0.2),
+              color: EvaTheme.neonGreen.withValues(alpha: 0.2),
               blurRadius: 15,
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: EvaTheme.primaryPurple.withOpacity(0.1),
+              color: EvaTheme.primaryPurple.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: -5,
             ),
@@ -562,7 +552,7 @@ class _MainPageState extends State<MainPage> {
               gradient: EvaTheme.primaryGradient,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                color: EvaTheme.primaryPurple.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -583,7 +573,7 @@ class _MainPageState extends State<MainPage> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
@@ -616,13 +606,13 @@ class _MainPageState extends State<MainPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  EvaTheme.primaryPurple.withOpacity(0.3),
-                  EvaTheme.primaryPurple.withOpacity(0.1),
+                  EvaTheme.primaryPurple.withValues(alpha: 0.3),
+                  EvaTheme.primaryPurple.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: EvaTheme.primaryPurple.withOpacity(0.5),
+                color: EvaTheme.primaryPurple.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),

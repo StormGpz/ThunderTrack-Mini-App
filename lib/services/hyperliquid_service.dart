@@ -6,7 +6,6 @@ import '../utils/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 /// Hyperliquid API服务
 class HyperliquidService {

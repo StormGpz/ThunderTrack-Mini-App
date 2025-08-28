@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import '../models/user.dart';
 import '../services/neynar_service.dart';
 import '../services/farcaster_miniapp_service.dart';
-import '../services/wallet_address_manager.dart';
 import '../utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,7 +15,6 @@ class UserProvider extends ChangeNotifier {
 
   final NeynarService _neynarService = NeynarService();
   final FarcasterMiniAppService _miniAppService = FarcasterMiniAppService();
-  final WalletAddressManager _walletManager = WalletAddressManager();
   
   User? _currentUser;
   bool _isLoading = false;
@@ -25,7 +23,7 @@ class UserProvider extends ChangeNotifier {
   
   // 调试日志列表
   final List<String> _debugLogs = [];
-  int _maxLogs = 20; // 最多保存20条日志
+  final int _maxLogs = 20; // 最多保存20条日志
 
   // Getters
   User? get currentUser => _currentUser;
@@ -40,14 +38,9 @@ class UserProvider extends ChangeNotifier {
   Map<String, dynamic> get environmentInfo => _miniAppService.getEnvironmentInfo();
 
   // 钱包相关 getters
-  String? get walletAddress => _walletManager.currentAddress;
-  bool get isWalletConnected => _walletManager.isWalletConnected;
-  String get walletStatusText {
-    if (_walletManager.currentStatus == null) {
-      return '未连接';
-    }
-    return _walletManager.currentStatus!.displayName;
-  }
+  String? get walletAddress => null; // Wallet functionality removed
+  bool get isWalletConnected => false; // Wallet functionality removed
+  String get walletStatusText => '未连接'; // Wallet functionality removed
 
   /// 添加调试日志
   void addDebugLog(String message) {
@@ -76,7 +69,7 @@ class UserProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       // 初始化钱包管理器
-      await _walletManager.initialize();
+      // Wallet manager initialization removed
       
       // 记录环境信息用于调试
       _miniAppService.logEnvironmentInfo();
@@ -307,7 +300,7 @@ class UserProvider extends ChangeNotifier {
       await prefs.remove(AppConstants.userProfileKey);
       
       // 断开钱包连接
-      await _walletManager.disconnectWallet();
+      // Wallet disconnect functionality removed
       
       _currentUser = null;
       _isAuthenticated = false;
@@ -623,7 +616,7 @@ class UserProvider extends ChangeNotifier {
         
         addDebugLog('✅ 用户状态更新完成');
         addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
-        addDebugLog('💰 钱包地址: ${_walletManager.currentAddress ?? "未设置"}');
+        addDebugLog('💰 钱包地址: 未设置 (钱包功能已移除)');
         
         notifyListeners();
         
@@ -816,25 +809,9 @@ class UserProvider extends ChangeNotifier {
   /// 处理用户钱包地址
   Future<void> _handleWalletAddress(User user) async {
     try {
-      addDebugLog('🔑 开始处理钱包地址...');
-      
-      // 1. 从用户验证地址获取钱包地址
-      final walletAddress = await _walletManager.getWalletAddressFromUser(user);
-      
-      if (walletAddress != null && walletAddress.isNotEmpty) {
-        addDebugLog('✅ 找到用户钱包地址: ${walletAddress.substring(0, 8)}...');
-        await _walletManager.setWalletAddress(walletAddress);
-        
-        // 更新用户对象中的钱包地址
-        if (_currentUser != null && _currentUser!.walletAddress != walletAddress) {
-          _currentUser = _currentUser!.copyWith(walletAddress: walletAddress);
-          await _saveUserToLocal(_currentUser!);
-        }
-      } else {
-        addDebugLog('⚠️ 用户没有验证的钱包地址，需要手动连接');
-      }
+      addDebugLog('🔑 钱包功能已移除，跳过钱包地址处理');
     } catch (e) {
-      addDebugLog('❌ 处理钱包地址失败: $e');
+      addDebugLog('❌ 钱包地址处理跳过：$e');
     }
   }
 
@@ -846,30 +823,8 @@ class UserProvider extends ChangeNotifier {
     int? deadline,
   }) async {
     try {
-      addDebugLog('🔄 正在注册钱包地址: ${address.substring(0, 8)}...');
-      
-      final success = await _walletManager.registerWalletAddress(
-        address: address,
-        appFid: appFid,
-        signature: signature,
-        deadline: deadline,
-      );
-
-      if (success) {
-        addDebugLog('✅ 钱包地址连接成功');
-        
-        // 更新当前用户的钱包地址
-        if (_currentUser != null) {
-          _currentUser = _currentUser!.copyWith(walletAddress: address);
-          await _saveUserToLocal(_currentUser!);
-        }
-        
-        notifyListeners();
-        return true;
-      } else {
-        addDebugLog('❌ 钱包地址连接失败');
-        return false;
-      }
+      addDebugLog('❌ 钱包连接功能已移除');
+      return false;
     } catch (e) {
       addDebugLog('❌ 连接钱包地址出错: $e');
       _setError('连接钱包地址失败: $e');
@@ -877,24 +832,15 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// 检查钱包地址状态
+  /// 检查钱包地址状态 (功能已移除)
   Future<void> checkWalletStatus() async {
-    if (_walletManager.currentAddress != null) {
-      try {
-        addDebugLog('🔄 检查钱包状态...');
-        await _walletManager.checkWalletStatus(_walletManager.currentAddress!);
-        addDebugLog('✅ 钱包状态: ${_walletManager.currentStatus?.displayName}');
-        notifyListeners();
-      } catch (e) {
-        addDebugLog('❌ 检查钱包状态失败: $e');
-      }
-    }
+    addDebugLog('📱 钱包状态检查功能已移除');
   }
 
   /// 断开钱包连接
   Future<void> disconnectWallet() async {
     try {
-      await _walletManager.disconnectWallet();
+      // Wallet disconnect functionality removed
       addDebugLog('✅ 钱包已断开连接');
       
       // 更新用户对象，清除钱包地址
@@ -916,13 +862,7 @@ class UserProvider extends ChangeNotifier {
     required int appFid,
     int? deadline,
   }) {
-    final actualDeadline = deadline ?? 
-      (DateTime.now().millisecondsSinceEpoch ~/ 1000) + (24 * 60 * 60);
-    
-    return _walletManager.generateSignatureData(
-      address: address,
-      appFid: appFid,
-      deadline: actualDeadline,
-    );
+    // Wallet signature generation removed - functionality not available
+    return <String, dynamic>{};
   }
 }

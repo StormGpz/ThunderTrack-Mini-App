@@ -168,13 +168,13 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -197,7 +197,7 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
       decoration: BoxDecoration(
         color: isCompleted 
           ? EvaTheme.neonGreen 
-          : (isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3)),
+          : (isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3)),
         shape: BoxShape.circle,
         border: Border.all(
           color: isCompleted || isActive ? EvaTheme.neonGreen : EvaTheme.textGray,
@@ -223,7 +223,7 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
     return Container(
       height: 2,
       decoration: BoxDecoration(
-        color: isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3),
+        color: isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(1),
       ),
     );
@@ -236,13 +236,13 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -349,16 +349,16 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
                 decoration: BoxDecoration(
                   gradient: isSelected
                     ? LinearGradient(colors: [
-                        EvaTheme.neonGreen.withOpacity(0.2),
-                        EvaTheme.neonGreen.withOpacity(0.1),
+                        EvaTheme.neonGreen.withValues(alpha: 0.2),
+                        EvaTheme.neonGreen.withValues(alpha: 0.1),
                       ])
                     : LinearGradient(colors: [
-                        EvaTheme.mechGray.withOpacity(0.6),
-                        EvaTheme.deepBlack.withOpacity(0.8),
+                        EvaTheme.mechGray.withValues(alpha: 0.6),
+                        EvaTheme.deepBlack.withValues(alpha: 0.8),
                       ]),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3),
+                    color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -446,16 +446,16 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
                 decoration: BoxDecoration(
                   gradient: isSelected
                     ? LinearGradient(colors: [
-                        (sentiment['color'] as Color).withOpacity(0.2),
-                        (sentiment['color'] as Color).withOpacity(0.1),
+                        (sentiment['color'] as Color).withValues(alpha: 0.2),
+                        (sentiment['color'] as Color).withValues(alpha: 0.1),
                       ])
                     : LinearGradient(colors: [
-                        EvaTheme.mechGray.withOpacity(0.6),
-                        EvaTheme.deepBlack.withOpacity(0.8),
+                        EvaTheme.mechGray.withValues(alpha: 0.6),
+                        EvaTheme.deepBlack.withValues(alpha: 0.8),
                       ]),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? sentiment['color'] : EvaTheme.textGray.withOpacity(0.3),
+                    color: isSelected ? sentiment['color'] : EvaTheme.textGray.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -523,15 +523,15 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
                   }
                 });
               },
-              backgroundColor: EvaTheme.mechGray.withOpacity(0.5),
-              selectedColor: EvaTheme.neonGreen.withOpacity(0.2),
+              backgroundColor: EvaTheme.mechGray.withValues(alpha: 0.5),
+              selectedColor: EvaTheme.neonGreen.withValues(alpha: 0.2),
               checkmarkColor: EvaTheme.neonGreen,
               labelStyle: TextStyle(
                 color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
               side: BorderSide(
-                color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3),
+                color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3),
                 width: 1,
               ),
             );
@@ -563,10 +563,10 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: EvaTheme.mechGray.withOpacity(0.3),
+            color: EvaTheme.mechGray.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: EvaTheme.neonGreen.withOpacity(0.3),
+              color: EvaTheme.neonGreen.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -597,13 +597,13 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            EvaTheme.deepBlack.withOpacity(0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.8),
             EvaTheme.deepBlack,
           ],
         ),
         border: Border(
           top: BorderSide(
-            color: EvaTheme.neonGreen.withOpacity(0.3),
+            color: EvaTheme.neonGreen.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -640,8 +640,8 @@ class _CreateDiaryStep2State extends State<CreateDiaryStep2> {
               gradient: isComplete
                 ? EvaTheme.neonGradient
                 : LinearGradient(colors: [
-                    EvaTheme.textGray.withOpacity(0.3),
-                    EvaTheme.textGray.withOpacity(0.2),
+                    EvaTheme.textGray.withValues(alpha: 0.3),
+                    EvaTheme.textGray.withValues(alpha: 0.2),
                   ]),
               borderRadius: BorderRadius.circular(12),
             ),

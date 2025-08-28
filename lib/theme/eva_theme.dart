@@ -102,12 +102,12 @@ class EvaTheme {
       secondary: neonGreen,
       tertiary: evaYellow,
       surface: pureWhite,
-      background: Color(0xFFF5F5F5),
+      // background: Color(0xFFF5F5F5), // Deprecated - replaced with surface
       error: errorRed,
       onPrimary: pureWhite,
       onSecondary: deepBlack,
       onSurface: deepBlack,
-      onBackground: deepBlack,
+      // onBackground: deepBlack, // Deprecated - replaced with onSurface
       onError: pureWhite,
     ),
     appBarTheme: AppBarTheme(
@@ -149,12 +149,12 @@ class EvaTheme {
       secondary: neonGreen,
       tertiary: evaYellow,
       surface: mechGray,
-      background: deepBlack,
+      // background: deepBlack, // Deprecated - replaced with surface
       error: errorRed,
       onPrimary: pureWhite,
       onSecondary: deepBlack,
       onSurface: pureWhite,
-      onBackground: pureWhite,
+      // onBackground: pureWhite, // Deprecated - replaced with onSurface
       onError: pureWhite,
     ),
     scaffoldBackgroundColor: deepBlack,
@@ -198,9 +198,9 @@ class EvaTheme {
 
   /// 创建MaterialColor
   static MaterialColor _createMaterialColor(Color color) {
-    final int red = color.red;
-    final int green = color.green;
-    final int blue = color.blue;
+    final int red = (color.r * 255.0).round() & 0xff;
+    final int green = (color.g * 255.0).round() & 0xff;
+    final int blue = (color.b * 255.0).round() & 0xff;
 
     final Map<int, Color> shades = {
       50: Color.fromRGBO(red, green, blue, .1),
@@ -215,7 +215,7 @@ class EvaTheme {
       900: Color.fromRGBO(red, green, blue, 1),
     };
 
-    return MaterialColor(color.value, shades);
+    return MaterialColor(Color.alphaBlend(color, Colors.transparent).value, shades);
   }
 
   // === 特殊效果组件 ===
@@ -226,12 +226,12 @@ class EvaTheme {
     borderRadius: BorderRadius.circular(8),
     boxShadow: [
       BoxShadow(
-        color: neonGreen.withOpacity(0.5),
+        color: neonGreen.withValues(alpha: 0.5),
         blurRadius: 20,
         spreadRadius: 2,
       ),
       BoxShadow(
-        color: neonGreen.withOpacity(0.3),
+        color: neonGreen.withValues(alpha: 0.3),
         blurRadius: 40,
         spreadRadius: 4,
       ),
@@ -244,7 +244,7 @@ class EvaTheme {
     borderRadius: BorderRadius.circular(8),
     boxShadow: [
       BoxShadow(
-        color: primaryPurple.withOpacity(0.5),
+        color: primaryPurple.withValues(alpha: 0.5),
         blurRadius: 20,
         spreadRadius: 2,
       ),
@@ -257,7 +257,7 @@ class EvaTheme {
     borderRadius: BorderRadius.circular(8),
     boxShadow: [
       BoxShadow(
-        color: neonGreen.withOpacity(0.2),
+        color: neonGreen.withValues(alpha: 0.2),
         blurRadius: 10,
         spreadRadius: 1,
       ),

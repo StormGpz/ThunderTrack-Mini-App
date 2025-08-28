@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/trading_diary.dart';
-import '../services/farcaster_share_service.dart';
 import 'diary_detail_page.dart';
 
 /// 日记列表组件
@@ -81,15 +80,11 @@ class DiaryCard extends StatelessWidget {
     this.onTap,
   });
 
-  /// 分享日记到Farcaster
+  /// 分享日记到Farcaster (功能已移除)
   Future<void> _shareDiary() async {
-    final shareService = FarcasterShareService();
-    final success = await shareService.shareDiary(diary);
-    
-    if (!success) {
-      // TODO: 显示错误提示
-      print('分享失败');
-    }
+    // Farcaster share service removed - functionality not available
+    // TODO: 实现其他分享方式或显示提示
+    debugPrint('分享功能暂不可用');
   }
 
   @override
@@ -266,10 +261,10 @@ class DiaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

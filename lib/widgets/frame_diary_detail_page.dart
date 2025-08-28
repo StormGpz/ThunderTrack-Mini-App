@@ -57,10 +57,10 @@ class FrameDiaryDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: EvaTheme.primaryPurple.withOpacity(0.1),
+                color: EvaTheme.primaryPurple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: EvaTheme.primaryPurple.withOpacity(0.3),
+                  color: EvaTheme.primaryPurple.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -91,13 +91,13 @@ class FrameDiaryDetailPage extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    EvaTheme.mechGray.withOpacity(0.9),
+                    EvaTheme.mechGray.withValues(alpha: 0.9),
                     EvaTheme.deepBlack,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: EvaTheme.neonGreen.withOpacity(0.3),
+                  color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -110,7 +110,7 @@ class FrameDiaryDetailPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: EvaTheme.neonGreen.withOpacity(0.2),
+                          color: EvaTheme.neonGreen.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -171,7 +171,7 @@ class FrameDiaryDetailPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (_sentimentInfo['color'] as Color).withOpacity(0.2),
+                            color: (_sentimentInfo['color'] as Color).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: _sentimentInfo['color'],
@@ -200,10 +200,10 @@ class FrameDiaryDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: EvaTheme.primaryPurple.withOpacity(0.1),
+                color: EvaTheme.primaryPurple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: EvaTheme.primaryPurple.withOpacity(0.3),
+                  color: EvaTheme.primaryPurple.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),

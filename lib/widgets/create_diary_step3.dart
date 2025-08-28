@@ -84,12 +84,9 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     final signerUuid = await userProvider.getSignerUuid();
     
     if (signerUuid == null) {
-      debugPrint('⚠️ 未找到signer_uuid，使用模拟数据');
       _showError('未找到发布凭证，请重新登录Farcaster');
       return;
     }
-
-    debugPrint('🔑 使用signer_uuid: ${signerUuid.substring(0, 8)}...');
 
     // 先检查signer状态
     userProvider.addDebugLog('🔍 检查signer状态...');
@@ -119,7 +116,6 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     setState(() => _isPublishing = true);
 
     try {
-      debugPrint('🚀 开始发布日记，主要交易对: $_mainTradingPair');
       
       final success = await _diaryService.publishTradingDiary(
         signerUuid: signerUuid,
@@ -138,14 +134,11 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       );
 
       if (success) {
-        debugPrint('✅ 日记发布成功');
         _showSuccess();
       } else {
-        debugPrint('❌ 日记发布失败');
         _showError('发布失败，请重试');
       }
     } catch (e) {
-      debugPrint('💥 发布过程中发生异常: $e');
       _showError('发布失败：$e');
     } finally {
       if (mounted) {
@@ -161,10 +154,6 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       final shareText = _buildShareText();
       final frameUrl = _useFrameFormat ? _generateFrameUrl() : null;
       
-      debugPrint('🎯 使用Frame格式: $_useFrameFormat');
-      if (frameUrl != null) {
-        debugPrint('🖼️ 生成的Frame URL: $frameUrl');
-      }
       
       // 构建Warpcast分享URL
       final encodedText = Uri.encodeComponent(shareText);
@@ -175,10 +164,8 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
         // 尝试不同的参数格式
         warpcastUrl += '&embeds[]=$encodedFrame';
         // 或者尝试: warpcastUrl += '&embed=$encodedFrame';
-        debugPrint('🔗 编码后的Frame URL: $encodedFrame');
       }
       
-      debugPrint('🔗 完整分享URL: $warpcastUrl');
       
       // 在Web环境中打开新窗口
       if (kIsWeb) {
@@ -190,7 +177,6 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
         _showError('请在Web版本中使用此功能');
       }
     } catch (e) {
-      debugPrint('❌ 分享失败: $e');
       _showError('分享失败，请重试');
     }
   }
@@ -344,13 +330,13 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            EvaTheme.mechGray.withOpacity(0.8),
-            EvaTheme.deepBlack.withOpacity(0.9),
+            EvaTheme.mechGray.withValues(alpha: 0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.9),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: EvaTheme.neonGreen.withOpacity(0.3),
+          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -373,7 +359,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
       decoration: BoxDecoration(
         color: isCompleted 
           ? EvaTheme.neonGreen 
-          : (isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3)),
+          : (isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3)),
         shape: BoxShape.circle,
         border: Border.all(
           color: isCompleted || isActive ? EvaTheme.neonGreen : EvaTheme.textGray,
@@ -399,7 +385,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return Container(
       height: 2,
       decoration: BoxDecoration(
-        color: isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3),
+        color: isActive ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(1),
       ),
     );
@@ -466,16 +452,16 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
         decoration: BoxDecoration(
           gradient: isSelected
             ? LinearGradient(colors: [
-                EvaTheme.neonGreen.withOpacity(0.2),
-                EvaTheme.neonGreen.withOpacity(0.1),
+                EvaTheme.neonGreen.withValues(alpha: 0.2),
+                EvaTheme.neonGreen.withValues(alpha: 0.1),
               ])
             : LinearGradient(colors: [
-                EvaTheme.mechGray.withOpacity(0.6),
-                EvaTheme.deepBlack.withOpacity(0.8),
+                EvaTheme.mechGray.withValues(alpha: 0.6),
+                EvaTheme.deepBlack.withValues(alpha: 0.8),
               ]),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withOpacity(0.3),
+            color: isSelected ? EvaTheme.neonGreen : EvaTheme.textGray.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -539,13 +525,13 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                EvaTheme.mechGray.withOpacity(0.9),
+                EvaTheme.mechGray.withValues(alpha: 0.9),
                 EvaTheme.deepBlack,
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: EvaTheme.neonGreen.withOpacity(0.3),
+              color: EvaTheme.neonGreen.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -557,8 +543,8 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      EvaTheme.neonGreen.withOpacity(0.2),
-                      EvaTheme.neonGreen.withOpacity(0.1),
+                      EvaTheme.neonGreen.withValues(alpha: 0.2),
+                      EvaTheme.neonGreen.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: const BorderRadius.only(
@@ -571,7 +557,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: EvaTheme.neonGreen.withOpacity(0.2),
+                        color: EvaTheme.neonGreen.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -632,12 +618,12 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                           decoration: BoxDecoration(
                             gradient: widget.totalPnL >= 0
                               ? LinearGradient(colors: [
-                                  EvaTheme.neonGreen.withOpacity(0.8),
-                                  EvaTheme.neonGreen.withOpacity(0.6),
+                                  EvaTheme.neonGreen.withValues(alpha: 0.8),
+                                  EvaTheme.neonGreen.withValues(alpha: 0.6),
                                 ])
                               : LinearGradient(colors: [
-                                  Colors.red.withOpacity(0.8),
-                                  Colors.red.withOpacity(0.6),
+                                  Colors.red.withValues(alpha: 0.8),
+                                  Colors.red.withValues(alpha: 0.6),
                                 ]),
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -671,7 +657,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: EvaTheme.deepBlack.withOpacity(0.5),
+                          color: EvaTheme.deepBlack.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -695,7 +681,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: (_sentimentInfo['color'] as Color).withOpacity(0.2),
+                            color: (_sentimentInfo['color'] as Color).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: _sentimentInfo['color'],
@@ -735,7 +721,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color: EvaTheme.neonGreen.withOpacity(0.3),
+                      color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -767,7 +753,7 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color, width: 1),
       ),
@@ -808,10 +794,10 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: EvaTheme.mechGray.withOpacity(0.3),
+            color: EvaTheme.mechGray.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: EvaTheme.neonGreen.withOpacity(0.3),
+              color: EvaTheme.neonGreen.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -872,10 +858,10 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: EvaTheme.primaryPurple.withOpacity(0.1),
+        color: EvaTheme.primaryPurple.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: EvaTheme.primaryPurple.withOpacity(0.3),
+          color: EvaTheme.primaryPurple.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -928,13 +914,13 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            EvaTheme.deepBlack.withOpacity(0.8),
+            EvaTheme.deepBlack.withValues(alpha: 0.8),
             EvaTheme.deepBlack,
           ],
         ),
         border: Border(
           top: BorderSide(
-            color: EvaTheme.neonGreen.withOpacity(0.3),
+            color: EvaTheme.neonGreen.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -970,8 +956,8 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
             decoration: BoxDecoration(
               gradient: _isPublishing
                 ? LinearGradient(colors: [
-                    EvaTheme.textGray.withOpacity(0.5),
-                    EvaTheme.textGray.withOpacity(0.3),
+                    EvaTheme.textGray.withValues(alpha: 0.5),
+                    EvaTheme.textGray.withValues(alpha: 0.3),
                   ])
                 : EvaTheme.neonGradient,
               borderRadius: BorderRadius.circular(12),

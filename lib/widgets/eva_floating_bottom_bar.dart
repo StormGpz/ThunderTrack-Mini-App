@@ -88,14 +88,14 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            EvaTheme.deepBlack.withOpacity(0.8),
-                            EvaTheme.mechGray.withOpacity(0.7),
-                            EvaTheme.primaryPurple.withOpacity(0.3),
+                            EvaTheme.deepBlack.withValues(alpha: 0.8),
+                            EvaTheme.mechGray.withValues(alpha: 0.7),
+                            EvaTheme.primaryPurple.withValues(alpha: 0.3),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
-                          color: EvaTheme.neonGreen.withOpacity(0.3),
+                          color: EvaTheme.neonGreen.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -140,12 +140,12 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: EvaTheme.neonGreen.withOpacity(0.3 * _glowAnimation.value),
+              color: EvaTheme.neonGreen.withValues(alpha: 0.3 * _glowAnimation.value),
               blurRadius: 20,
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: EvaTheme.primaryPurple.withOpacity(0.2 * _glowAnimation.value),
+              color: EvaTheme.primaryPurple.withValues(alpha: 0.2 * _glowAnimation.value),
               blurRadius: 30,
               spreadRadius: -5,
             ),
@@ -165,10 +165,10 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: isSelected 
-            ? EvaTheme.neonGreen.withOpacity(0.2)
+            ? EvaTheme.neonGreen.withValues(alpha: 0.2)
             : Colors.transparent,
           border: isSelected 
-            ? Border.all(color: EvaTheme.neonGreen.withOpacity(0.5), width: 1)
+            ? Border.all(color: EvaTheme.neonGreen.withValues(alpha: 0.5), width: 1)
             : null,
         ),
         child: Column(
@@ -209,7 +209,7 @@ class _EvaFloatingBottomBarState extends State<EvaFloatingBottomBar>
                   borderRadius: BorderRadius.circular(1),
                   boxShadow: [
                     BoxShadow(
-                      color: EvaTheme.neonGreen.withOpacity(0.6),
+                      color: EvaTheme.neonGreen.withValues(alpha: 0.6),
                       blurRadius: 4,
                       spreadRadius: 1,
                     ),
@@ -243,12 +243,12 @@ class MechLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = EvaTheme.neonGreen.withOpacity(0.1 * glowIntensity)
+      ..color = EvaTheme.neonGreen.withValues(alpha: 0.1 * glowIntensity)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
     final glowPaint = Paint()
-      ..color = EvaTheme.neonGreen.withOpacity(0.05 * glowIntensity)
+      ..color = EvaTheme.neonGreen.withValues(alpha: 0.05 * glowIntensity)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
