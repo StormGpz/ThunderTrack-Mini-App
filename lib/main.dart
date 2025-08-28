@@ -108,9 +108,9 @@ class _MainPageState extends State<MainPage> {
       final currentUrl = Uri.base.toString();
       final uri = Uri.parse(currentUrl);
       
-      // 检查是否有diary参数（来自Frame点击）
-      if (uri.queryParameters.containsKey('diary')) {
-        final pair = uri.queryParameters['diary'];
+      // 检查是否有pair参数（来自Frame点击）
+      if (uri.queryParameters.containsKey('pair')) {
+        final pair = uri.queryParameters['pair'];
         final pnl = double.tryParse(uri.queryParameters['pnl'] ?? '0');
         final strategy = uri.queryParameters['strategy'];
         final sentiment = uri.queryParameters['sentiment'];
