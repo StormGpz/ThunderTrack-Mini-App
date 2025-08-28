@@ -219,28 +219,10 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (包含交易数据参数)
+  /// 生成Mini App URL (用于启动器显示)
   String _generateFrameUrl() {
-    // 构建包含交易数据的URL参数，让Frame能够动态显示内容
-    final params = <String, String>{
-      'frame': 'true', // 关键：标识这是Frame模式
-      'pair': _mainTradingPair,
-      'pnl': widget.totalPnL.toStringAsFixed(2),
-      'strategy': widget.strategy,
-      'sentiment': widget.sentiment,
-    };
-    
-    if (widget.tags.isNotEmpty) {
-      params['tags'] = widget.tags.join(',');
-    }
-    
-    final uri = Uri.https(
-      'thundertrack-miniapp.vercel.app',
-      '/',
-      params,
-    );
-    
-    return uri.toString();
+    // 直接返回主页URL，让Farcaster识别为Mini App启动器
+    return 'https://thundertrack-miniapp.vercel.app/';
   }
 
   /// 显示成功消息
