@@ -21,42 +21,14 @@
   <meta name="description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成">
 
   <!-- Farcaster Mini App Embed -->
-  <script>
-    // 在页面加载前检查Frame参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const isFrame = urlParams.get('frame') === 'true';
-    
-    if (isFrame) {
-      // Frame版本的标准Frame meta标签
-      document.write('<meta property="fc:frame" content="vNext" />');
-      document.write('<meta property="fc:frame:image" content="https://thundertrack-miniapp.vercel.app/frame-image.svg" />');
-      document.write('<meta property="fc:frame:button:1" content="查看详情" />');
-      document.write('<meta property="fc:frame:button:1:action" content="link" />');
-      document.write('<meta property="fc:frame:button:1:target" content="https://thundertrack-miniapp.vercel.app/?pair=' + encodeURIComponent(urlParams.get('pair') || 'Unknown') + '&pnl=' + (urlParams.get('pnl') || '0') + '&strategy=' + encodeURIComponent(urlParams.get('strategy') || 'Unknown') + '&sentiment=' + encodeURIComponent(urlParams.get('sentiment') || 'Unknown') + '" />');
-      
-      // Frame版本的OG标签
-      document.write('<meta property="og:title" content="ThunderTrack 交易复盘 - ' + (urlParams.get('pair') || 'Unknown') + '" />');
-      document.write('<meta property="og:description" content="交易对: ' + (urlParams.get('pair') || 'Unknown') + ' | 盈亏: ' + (urlParams.get('pnl') || '0') + ' | 策略: ' + (urlParams.get('strategy') || 'Unknown') + '" />');
-      document.write('<meta property="og:image" content="https://thundertrack-miniapp.vercel.app/frame-image.svg" />');
-      
-      // 更新页面标题
-      document.title = 'ThunderTrack 交易复盘 - ' + (urlParams.get('pair') || 'Unknown');
-    } else {
-      // 默认版本的meta标签  
-      document.write('<meta name="fc:miniapp" content=\'{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"⚡ ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}\' />');
-    }
-  </script>
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","button":{"title":"⚡ ThunderTrack","action":{"type":"launch_miniapp","name":"ThunderTrack","url":"https://thundertrack-miniapp.vercel.app","splashImageUrl":"https://thundertrack-miniapp.vercel.app/icons/Icon-512.png","splashBackgroundColor":"#6366f1"}}}' />
 
-  <!-- 默认Open Graph Meta Tags (Frame模式时会被覆盖) -->
-  <script>
-    if (new URLSearchParams(window.location.search).get('frame') !== 'true') {
-      document.write('<meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />');
-      document.write('<meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />');
-      document.write('<meta property="og:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />');
-      document.write('<meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />');
-      document.write('<meta property="og:type" content="website" />');
-    }
-  </script>
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="⚡ ThunderTrack - 去中心化交易日记" />
+  <meta property="og:description" content="基于 Farcaster 的去中心化交易日记应用，支持 IPFS 存储和 Hyperliquid API 集成" />
+  <meta property="og:image" content="https://thundertrack-miniapp.vercel.app/icons/Icon-512.png" />
+  <meta property="og:url" content="https://thundertrack-miniapp.vercel.app" />
+  <meta property="og:type" content="website" />
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
