@@ -11,43 +11,16 @@
     "homeUrl": "https://thundertrack-miniapp.vercel.app",
     "splashImageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-200.png",
     "splashBackgroundColor": "#6366f1",
-    "webhookUrl": "https://thundertrack-miniapp.vercel.app/api/webhook",
     "subtitle": "去中心化交易日记",
     "description": "基于Farcaster的去中心化交易日记应用，支持IPFS存储和Hyperliquid API集成，记录交易心得，分享策略思考",
     "primaryCategory": "finance",
     "tags": [
       "trading",
       "diary",
-      "defi",
+      "defi", 
       "crypto",
       "strategy"
     ],
-    "tagline": "记录交易分享智慧",
-    "ogTitle": "ThunderTrack",
-    "ogDescription": "去中心化交易日记-记录交易心得分享策略思考",
-    "ogImageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-1024.png"
-  },
-  "frame": {
-    "version": "1",
-    "name": "ThunderTrack",
-    "iconUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-1024.png",
-    "homeUrl": "https://thundertrack-miniapp.vercel.app",
-    "splashImageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-200.png",
-    "splashBackgroundColor": "#6366f1",
-    "webhookUrl": "https://thundertrack-miniapp.vercel.app/api/webhook",
-    "subtitle": "去中心化交易日记",
-    "description": "基于Farcaster的去中心化交易日记应用，支持IPFS存储和Hyperliquid API集成，记录交易心得，分享策略思考",
-    "primaryCategory": "finance",
-    "tags": [
-      "trading",
-      "diary",
-      "defi",
-      "crypto",
-      "strategy"
-    ],
-    "tagline": "记录交易分享智慧",
-    "ogTitle": "ThunderTrack",
-    "ogDescription": "去中心化交易日记-记录交易心得分享策略思考",
-    "ogImageUrl": "https://thundertrack-miniapp.vercel.app/icons/Icon-1024.png"
+    "tagline": "记录交易分享智慧"
   }
 }
