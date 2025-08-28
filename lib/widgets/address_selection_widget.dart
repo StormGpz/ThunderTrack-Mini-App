@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/address_auth.dart';
 import '../services/hyperliquid_service.dart';
+import '../services/farcaster_miniapp_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/eva_theme.dart';
 
@@ -25,6 +26,7 @@ class AddressSelectionWidget extends StatefulWidget {
 class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
   // Address detection service removed - functionality not available
   final HyperliquidService _hyperliquidService = HyperliquidService();
+  final FarcasterMiniAppService _miniAppService = FarcasterMiniAppService();
   
   List<AddressOption> _availableAddresses = [];
   AddressOption? _selectedAddress;
@@ -49,13 +51,72 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
       final user = userProvider.currentUser;
       
       if (user != null) {
-        // Address detection functionality removed
+        // 从用户信息中获取绑定的钱包地址
+        final addresses = <AddressOption>[];
+        
+        // 调试：打印用户信息
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.addDebugLog('🔍 检查用户钱包地址...');
+        userProvider.addDebugLog('📊 用户FID: ${user.fid}');
+        userProvider.addDebugLog('📊 用户名: ${user.username}');
+        userProvider.addDebugLog('📊 钱包地址: ${user.walletAddress ?? "null"}');
+        
+        // 检查用户是否有绑定的钱包地址
+        if (user.walletAddress != null && user.walletAddress!.isNotEmpty) {
+          addresses.add(AddressOption(
+            address: user.walletAddress!,
+            type: 'Farcaster绑定钱包',
+            recommended: true,
+            isConnected: true,
+          ));
+          userProvider.addDebugLog('✅ 找到绑定钱包地址: ${user.walletAddress}');
+        } else {
+          userProvider.addDebugLog('❌ 用户未绑定钱包地址');
+          
+          // 尝试从Mini App服务直接获取更多信息
+          try {
+            final contextInfo = await _miniAppService.getContextUserInfo();
+            if (contextInfo != null) {
+              userProvider.addDebugLog('📋 Context信息字段: ${contextInfo.keys.join(', ')}');
+              
+              // 检查多种可能的地址字段
+              final addressFields = ['custodyAddress', 'connectedAddress', 'verifiedAddress', 'walletAddress', 'address'];
+              for (final field in addressFields) {
+                final addressValue = contextInfo[field];
+                if (addressValue != null && addressValue.toString().isNotEmpty) {
+                  addresses.add(AddressOption(
+                    address: addressValue.toString(),
+                    type: 'Farcaster $field',
+                    recommended: true,
+                    isConnected: true,
+                  ));
+                  userProvider.addDebugLog('✅ 从Context获取到${field}: $addressValue');
+                  break; // 找到一个就够了
+                }
+              }
+            }
+          } catch (e) {
+            userProvider.addDebugLog('❌ 获取Context信息失败: $e');
+          }
+        }
+        
         setState(() {
-          _availableAddresses = [];
-          _selectedAddress = null;
+          _availableAddresses = addresses;
+          // 如果有地址，自动选择第一个
+          if (addresses.isNotEmpty) {
+            _selectedAddress = addresses.first;
+            if (widget.onAddressSelected != null) {
+              widget.onAddressSelected!(addresses.first);
+            }
+          }
         });
-
-        // Address detection functionality removed - no recommended address available
+        
+        // 最终结果日志
+        if (addresses.isEmpty) {
+          userProvider.addDebugLog('💡 最终结果：用户未绑定任何钱包地址，显示空状态页面');
+        } else {
+          userProvider.addDebugLog('🎯 找到 ${addresses.length} 个可用钱包地址');
+        }
       }
     } catch (e) {
       setState(() {
