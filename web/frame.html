@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <script>
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const pair = urlParams.get('pair') || 'BTC/USDT';
+        const pnl = urlParams.get('pnl') || '-67.3';
+        const strategy = urlParams.get('strategy') || '摆动交易';
+        const sentiment = urlParams.get('sentiment') || 'FOMO';
+        
+        // 设置页面标题
+        document.title = `ThunderTrack 交易复盘 - ${pair}`;
+        
+        // 写入Frame meta标签
+        document.write(`<meta property="fc:frame" content="vNext" />`);
+        document.write(`<meta property="fc:frame:image" content="https://thundertrack-miniapp.vercel.app/frame-image.svg" />`);
+        document.write(`<meta property="fc:frame:button:1" content="查看详情" />`);
+        document.write(`<meta property="fc:frame:button:1:action" content="link" />`);
+        document.write(`<meta property="fc:frame:button:1:target" content="https://thundertrack-miniapp.vercel.app/?diary=${encodeURIComponent(pair)}&pnl=${pnl}&strategy=${encodeURIComponent(strategy)}&sentiment=${encodeURIComponent(sentiment)}" />`);
+        
+        // 写入Open Graph标签
+        document.write(`<meta property="og:title" content="ThunderTrack 交易复盘 - ${pair}" />`);
+        document.write(`<meta property="og:description" content="交易对: ${pair} | 盈亏: ${pnl >= 0 ? '+' : ''}$${pnl} | 策略: ${strategy}" />`);
+        document.write(`<meta property="og:image" content="https://thundertrack-miniapp.vercel.app/frame-image.svg" />`);
+        document.write(`<meta property="og:url" content="https://thundertrack-miniapp.vercel.app/frame.html?pair=${encodeURIComponent(pair)}&pnl=${pnl}&strategy=${encodeURIComponent(strategy)}&sentiment=${encodeURIComponent(sentiment)}" />`);
+    </script>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; border-radius: 15px; text-align: center;">
+        <h1 style="color: #00ff88; margin-bottom: 30px;">🔥 ThunderTrack 交易复盘</h1>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 10px; margin-bottom: 20px;">
+            <script>
+                const params = new URLSearchParams(window.location.search);
+                const pair = params.get('pair') || 'BTC/USDT';
+                const pnl = parseFloat(params.get('pnl') || '-67.3');
+                const strategy = params.get('strategy') || '摆动交易';
+                const sentiment = params.get('sentiment') || 'FOMO';
+                
+                document.write(`<h2 style="color: #00ff88;">📊 ${pair}</h2>`);
+                document.write(`<p style="font-size: 24px; color: ${pnl >= 0 ? '#00ff88' : '#ff4757'}; margin: 15px 0;">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</p>`);
+                document.write(`<p>🎯 策略: ${strategy}</p>`);
+                document.write(`<p>😊 情绪: ${sentiment}</p>`);
+            </script>
+        </div>
+        
+        <p style="opacity: 0.7;">#ThunderTrack #TTrade</p>
+        
+        <div style="margin-top: 30px;">
+            <a href="https://thundertrack-miniapp.vercel.app/" style="display: inline-block; background: linear-gradient(45deg, #00ff88, #00d4aa); color: #000; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">
+                🚀 打开 ThunderTrack
+            </a>
+        </div>
+    </div>
+</body>
+</html>

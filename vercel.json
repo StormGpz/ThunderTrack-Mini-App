@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.js": {
+      "runtime": "edge"
+    }
+  },
   "buildCommand": "flutter build web --release",
   "outputDirectory": "build/web",
   "framework": null
