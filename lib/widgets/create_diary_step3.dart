@@ -233,18 +233,18 @@ class _CreateDiaryStep3State extends State<CreateDiaryStep3> {
     return buffer.toString().trim();
   }
 
-  /// 生成Frame URL (使用主页+URL参数)
+  /// 生成Frame URL (使用专用API端点)
   String _generateFrameUrl() {
-    // 使用主页+URL参数，让Flutter应用自己处理Frame逻辑
+    // 使用专用的Frame API端点，服务器端渲染Frame meta标签
     final queryParams = <String, String>{
-      'frame': 'true', // 标识这是Frame请求
+      'frame': 'true',
       'pair': _mainTradingPair,
       'pnl': widget.totalPnL.toString(),
       'strategy': _strategyDisplayName,
       'sentiment': _sentimentInfo['name'],
     };
     
-    final uri = Uri.parse('https://thundertrack-miniapp.vercel.app/').replace(queryParameters: queryParams);
+    final uri = Uri.parse('https://thundertrack-miniapp.vercel.app/api/').replace(queryParameters: queryParams);
     return uri.toString();
   }
 
