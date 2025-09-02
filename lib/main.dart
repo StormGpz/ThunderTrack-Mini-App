@@ -7,6 +7,7 @@ import 'pages/diary_page.dart';
 import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/hyperliquid_test_page.dart';
 import 'widgets/frame_diary_detail_page.dart';
 import 'utils/api_client.dart';
 import 'services/hyperliquid_service.dart';

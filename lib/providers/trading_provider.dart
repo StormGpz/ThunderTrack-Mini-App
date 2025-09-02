@@ -109,9 +109,19 @@ class TradingProvider extends ChangeNotifier {
   }
 
   /// 取消订单
-  Future<bool> cancelOrder(String orderId) async {
+  Future<bool> cancelOrder(String orderId, {String? coin}) async {
     try {
-      final success = await _hyperliquidService.cancelOrder(orderId);
+      // 从活跃交易中找到对应的币种信息
+      final trade = _activeTrades.firstWhere(
+        (t) => t.id == orderId,
+        orElse: () => throw Exception('订单不存在'),
+      );
+      
+      final success = await _hyperliquidService.cancelOrder(
+        coin: coin ?? trade.symbol,
+        orderId: int.parse(orderId.replaceAll(RegExp(r'[^0-9]'), '') + '1'), // 临时处理orderId转换
+      );
+      
       if (success) {
         _activeTrades.removeWhere((trade) => trade.id == orderId);
         notifyListeners();

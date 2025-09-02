@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../pages/hyperliquid_test_page.dart';
 import '../theme/eva_theme.dart';
 
 /// 设置页面 - EVA主题，简化版
@@ -56,6 +57,7 @@ class SettingsPage extends StatelessWidget {
                 _buildSettingsCard([
                   _buildTradingNotificationSetting(context, settings),
                   _buildDefaultCurrencySetting(context, settings),
+                  _buildApiTestSetting(context, settings),
                 ]),
 
                 const SizedBox(height: 32),
@@ -375,6 +377,39 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建API测试设置
+  Widget _buildApiTestSetting(BuildContext context, SettingsProvider settings) {
+    return ListTile(
+      leading: Icon(
+        Icons.api_outlined,
+        color: EvaTheme.neonGreen,
+      ),
+      title: Text(
+        settings.isChineseLocale ? 'Hyperliquid API测试' : 'Hyperliquid API Test',
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: EvaTheme.lightText,
+        ),
+      ),
+      subtitle: Text(
+        settings.isChineseLocale ? '测试API连接和功能' : 'Test API connection and functionality',
+        style: TextStyle(color: EvaTheme.textGray),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: EvaTheme.textGray,
+      ),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const HyperliquidTestPage(),
+          ),
+        );
+      },
     );
   }
 }
