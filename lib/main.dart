@@ -201,14 +201,8 @@ class _MainPageState extends State<MainPage> {
 
   /// 触发Farcaster连接
   void _connectFarcaster(UserProvider userProvider) {
-    // 检查是否在 Mini App 环境中
-    if (userProvider.isMiniAppEnvironment && userProvider.isMiniAppSdkAvailable) {
-      // 在 Mini App 环境中，直接尝试获取用户信息
-      _performFarcasterLogin(userProvider);
-    } else {
-      // 不在 Mini App 环境中，显示模拟登录对话框
-      _showSimulationDialog(userProvider);
-    }
+    // 总是显示登录选项对话框，包括钱包连接
+    _showLoginOptionsDialog(userProvider);
   }
 
   /// 执行真实的 Farcaster 登录
@@ -235,19 +229,56 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  /// 显示模拟登录对话框
-  void _showSimulationDialog(UserProvider userProvider) {
+  /// 显示登录选项对话框
+  void _showLoginOptionsDialog(UserProvider userProvider) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('连接账户'),
+        title: const Text('选择登录方式'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.account_balance_wallet, size: 48, color: Colors.blue),
+            const Icon(Icons.account_circle, size: 48, color: Colors.blue),
             const SizedBox(height: 16),
-            const Text('选择登录方式'),
-            const SizedBox(height: 16),
+
+            // Farcaster登录选项（优先显示）
+            if (userProvider.isMiniAppEnvironment && userProvider.isMiniAppSdkAvailable) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple[400]!, Colors.purple[600]!],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    _performFarcasterLogin(userProvider);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.cast, color: Colors.white),
+                  label: const Text(
+                    'Farcaster 快速登录',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '使用Farcaster账户快速登录（无钱包功能）',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 8),
+            ],
 
             // Web3钱包登录选项
             if (userProvider.isWeb3Available) ...[
@@ -268,7 +299,7 @@ class _MainPageState extends State<MainPage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(success
-                            ? 'Web3钱包登录成功！'
+                            ? 'Web3钱包登录成功！可以使用Hyperliquid功能'
                             : '钱包登录失败：${userProvider.error ?? "用户取消"}'),
                           backgroundColor: success ? Colors.green : Colors.red,
                         ),
@@ -289,27 +320,30 @@ class _MainPageState extends State<MainPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                '连接MetaMask等钱包，自动关联Farcaster账户',
+                '连接MetaMask等钱包，支持Hyperliquid交易功能',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 8),
+              if (userProvider.isMiniAppEnvironment) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
+              ],
             ],
 
-            const Text('未检测到 Farcaster Mini App 环境'),
-            const SizedBox(height: 8),
-            Text(
-              '当前环境：${userProvider.environmentInfo['platform']} - ${userProvider.environmentInfo['userAgent']?.toString().split(' ').first ?? 'Unknown'}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '使用模拟登录进行测试',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
+            // 模拟登录选项（仅在非Farcaster环境显示）
+            if (!userProvider.isMiniAppEnvironment) ...[
+              Text(
+                '当前环境：${userProvider.environmentInfo['platform']} - ${userProvider.environmentInfo['userAgent']?.toString().split(' ').first ?? 'Unknown'}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '使用模拟登录进行测试',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -317,27 +351,28 @@ class _MainPageState extends State<MainPage> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('取消'),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              try {
-                // 使用模拟登录
-                await userProvider.simulateLogin('demo_farcaster_user');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('模拟登录成功！')),
-                  );
+          // 模拟登录按钮（仅在非Farcaster环境显示）
+          if (!userProvider.isMiniAppEnvironment)
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                try {
+                  await userProvider.simulateLogin('demo_farcaster_user');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('模拟登录成功！')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('登录失败：$e')),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('登录失败：$e')),
-                  );
-                }
-              }
-            },
-            child: const Text('模拟登录'),
-          ),
+              },
+              child: const Text('模拟登录'),
+            ),
         ],
       ),
     );
