@@ -73,24 +73,63 @@ class UserProvider extends ChangeNotifier {
   Future<void> initialize() async {
     _setLoading(true);
     try {
-      // 初始化钱包管理器
-      // Wallet manager initialization removed
-      
       // 记录环境信息用于调试
       _miniAppService.logEnvironmentInfo();
-      
+
+      // 🔑 优先检查已连接的钱包
+      addDebugLog('🔍 检查已连接的钱包...');
+      await _walletService.checkExistingConnection();
+
+      if (_walletService.isConnected) {
+        addDebugLog('✅ 发现已连接钱包: ${_walletService.currentAccount}');
+        // 尝试通过钱包地址查找关联的Farcaster用户
+        final farcasterUser = await _neynarService.getUserByWalletAddress(_walletService.currentAccount!);
+        if (farcasterUser != null) {
+          addDebugLog('🎉 找到关联的Farcaster用户: ${farcasterUser.username}');
+          final user = farcasterUser.copyWith(walletAddress: _walletService.currentAccount);
+          await _saveUserToLocal(user);
+          _currentUser = user;
+          _isAuthenticated = true;
+          _setLoading(false);
+          notifyListeners();
+          return;
+        } else {
+          addDebugLog('⚠️ 钱包未关联Farcaster账户，创建钱包用户');
+          // 创建钱包用户
+          final walletUser = User(
+            fid: 'wallet_${_walletService.currentAccount!.substring(2, 8)}',
+            username: 'wallet_${_walletService.currentAccount!.substring(2, 8)}',
+            displayName: '钱包用户 ${_walletService.currentAccount!.substring(0, 6)}...${_walletService.currentAccount!.substring(38)}',
+            avatarUrl: null,
+            bio: '通过钱包连接的用户，暂未关联Farcaster账户',
+            walletAddress: _walletService.currentAccount!,
+            followers: [],
+            following: [],
+            isVerified: false,
+            createdAt: DateTime.now(),
+            lastActiveAt: DateTime.now(),
+          );
+          await _saveUserToLocal(walletUser);
+          _currentUser = walletUser;
+          _isAuthenticated = true;
+          _setLoading(false);
+          notifyListeners();
+          return;
+        }
+      }
+
       // 在Farcaster Mini App环境中，优先尝试无感登录
       if (_miniAppService.isMiniAppEnvironment) {
         debugPrint('🚀 Farcaster Mini App环境，启动无感登录流程...');
-        
+
         // 先恢复本地状态作为备用
         await _restoreLocalUser();
-        
+
         // 立即尝试从Farcaster获取用户信息（无感登录）
         try {
           // 给SDK一点时间加载
           await Future.delayed(const Duration(milliseconds: 300));
-          
+
           if (_miniAppService.isSdkAvailable) {
             debugPrint('📦 SDK已就绪，立即尝试无感登录...');
             final farcasterUser = await _miniAppService.getFarcasterUser()
@@ -840,6 +879,25 @@ class UserProvider extends ChangeNotifier {
   /// 检查钱包地址状态 (功能已移除)
   Future<void> checkWalletStatus() async {
     addDebugLog('📱 钱包状态检查功能已移除');
+  }
+
+  /// 手动检查钱包连接状态
+  Future<void> checkWalletConnection() async {
+    addDebugLog('🔄 手动检查钱包连接状态...');
+
+    try {
+      await _walletService.checkExistingConnection();
+
+      if (_walletService.isConnected && !_isAuthenticated) {
+        addDebugLog('✅ 发现已连接钱包，但用户未登录，尝试自动登录...');
+        final success = await signInWithEthereum();
+        addDebugLog(success ? '🎉 自动登录成功' : '❌ 自动登录失败');
+      }
+
+      notifyListeners();
+    } catch (e) {
+      addDebugLog('❌ 检查钱包连接失败: $e');
+    }
   }
 
   /// 断开钱包连接

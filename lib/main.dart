@@ -485,6 +485,14 @@ class _MainPageState extends State<MainPage> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('关闭'),
           ),
+          // 检查钱包连接按钮
+          if (userProvider.isWeb3Available)
+            ElevatedButton(
+              onPressed: () async {
+                await userProvider.checkWalletConnection();
+              },
+              child: const Text('检查钱包'),
+            ),
           if (!userProvider.isAuthenticated && userProvider.isMiniAppEnvironment)
             ElevatedButton(
               onPressed: () {

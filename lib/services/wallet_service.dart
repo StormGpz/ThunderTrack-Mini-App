@@ -30,6 +30,42 @@ class WalletService {
     return ethereum != null && ethereum['isMetaMask'] == true;
   }
 
+  /// 检查是否已有连接的账户 (初始化时检测)
+  Future<void> checkExistingConnection() async {
+    if (!isWeb3Available) return;
+
+    try {
+      debugPrint('🔍 检查已连接的账户...');
+      final ethereum = js.context['ethereum'];
+
+      // 获取当前已连接的账户
+      final accounts = await js_util.promiseToFuture(
+        ethereum.callMethod('request', [
+          js.JsObject.jsify({
+            'method': 'eth_accounts', // 注意：这里用 eth_accounts 而不是 eth_requestAccounts
+          })
+        ])
+      );
+
+      if (accounts != null && accounts.length > 0) {
+        _currentAccount = accounts[0];
+        _isConnected = true;
+
+        debugPrint('✅ 发现已连接账户: $_currentAccount');
+
+        // 获取当前链ID
+        await _getCurrentChainId();
+
+        // 设置事件监听器
+        _setupEventListeners();
+      } else {
+        debugPrint('ℹ️ 未发现已连接的账户');
+      }
+    } catch (e) {
+      debugPrint('❌ 检查连接状态失败: $e');
+    }
+  }
+
   /// 连接钱包
   Future<String?> connectWallet() async {
     if (!isWeb3Available) {
