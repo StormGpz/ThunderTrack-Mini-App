@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../models/user.dart';
 import '../services/neynar_service.dart';
 import '../services/farcaster_miniapp_service.dart';
+import '../services/wallet_service.dart';
 import '../utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +16,7 @@ class UserProvider extends ChangeNotifier {
 
   final NeynarService _neynarService = NeynarService();
   final FarcasterMiniAppService _miniAppService = FarcasterMiniAppService();
+  final WalletService _walletService = WalletService();
   
   User? _currentUser;
   bool _isLoading = false;
@@ -38,9 +40,12 @@ class UserProvider extends ChangeNotifier {
   Map<String, dynamic> get environmentInfo => _miniAppService.getEnvironmentInfo();
 
   // 钱包相关 getters
-  String? get walletAddress => null; // Wallet functionality removed
-  bool get isWalletConnected => false; // Wallet functionality removed
-  String get walletStatusText => '未连接'; // Wallet functionality removed
+  String? get walletAddress => _walletService.currentAccount;
+  bool get isWalletConnected => _walletService.isConnected;
+  String get walletStatusText => _walletService.isConnected
+      ? '已连接: ${_walletService.currentAccount?.substring(0, 6)}...${_walletService.currentAccount?.substring(38)}'
+      : '未连接';
+  bool get isWeb3Available => _walletService.isWeb3Available;
 
   /// 添加调试日志
   void addDebugLog(String message) {
@@ -840,20 +845,208 @@ class UserProvider extends ChangeNotifier {
   /// 断开钱包连接
   Future<void> disconnectWallet() async {
     try {
-      // Wallet disconnect functionality removed
+      await _walletService.disconnectWallet();
       addDebugLog('✅ 钱包已断开连接');
-      
+
       // 更新用户对象，清除钱包地址
       if (_currentUser != null) {
         _currentUser = _currentUser!.copyWith(walletAddress: null);
         await _saveUserToLocal(_currentUser!);
       }
-      
+
       notifyListeners();
     } catch (e) {
       addDebugLog('❌ 断开钱包连接失败: $e');
       _setError('断开钱包连接失败: $e');
     }
+  }
+
+  /// 连接钱包 (Web3)
+  Future<bool> connectWallet() async {
+    if (!_walletService.isWeb3Available) {
+      addDebugLog('❌ Web3不可用，请使用支持的浏览器');
+      _setError('Web3不可用，请使用支持的浏览器');
+      return false;
+    }
+
+    addDebugLog('🔄 开始连接钱包...');
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final walletAddress = await _walletService.connectWallet();
+
+      if (walletAddress != null) {
+        addDebugLog('✅ 钱包连接成功: $walletAddress');
+
+        // 更新当前用户的钱包地址
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(walletAddress: walletAddress);
+          await _saveUserToLocal(_currentUser!);
+        }
+
+        notifyListeners();
+        return true;
+      }
+
+      addDebugLog('❌ 钱包连接失败');
+      return false;
+    } catch (e) {
+      addDebugLog('❌ 连接钱包出错: $e');
+      _setError('连接钱包失败: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Sign-in with Ethereum + Farcaster 集成登录
+  Future<bool> signInWithEthereum() async {
+    if (!_walletService.isWeb3Available) {
+      addDebugLog('❌ Web3不可用');
+      _setError('Web3不可用，请使用支持的浏览器');
+      return false;
+    }
+
+    addDebugLog('🚀 开始 Sign-in with Ethereum + Farcaster 流程...');
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      // 第1步：连接钱包
+      addDebugLog('📋 步骤1: 连接钱包');
+      final walletAddress = await _walletService.connectWallet();
+
+      if (walletAddress == null) {
+        addDebugLog('❌ 钱包连接失败');
+        return false;
+      }
+
+      addDebugLog('✅ 钱包连接成功: $walletAddress');
+
+      // 第2步：通过钱包地址查找Farcaster账户
+      addDebugLog('📋 步骤2: 查找关联的Farcaster账户');
+      final farcasterUser = await _neynarService.getUserByWalletAddress(walletAddress);
+
+      if (farcasterUser != null) {
+        // 找到了关联的Farcaster账户
+        addDebugLog('✅ 找到关联的Farcaster账户: ${farcasterUser.username}');
+
+        // 确保钱包地址包含在用户数据中
+        final user = farcasterUser.copyWith(walletAddress: walletAddress);
+
+        await _saveUserToLocal(user);
+        _currentUser = user;
+        _isAuthenticated = true;
+
+        addDebugLog('🎉 Sign-in with Ethereum 完成: ${user.username}');
+        addDebugLog('💰 关联钱包: $walletAddress');
+
+        notifyListeners();
+        return true;
+      } else {
+        // 未找到关联的Farcaster账户
+        addDebugLog('⚠️ 钱包地址未关联Farcaster账户');
+
+        // 创建一个基本的钱包用户
+        final walletUser = User(
+          fid: 'wallet_${walletAddress.substring(2, 8)}',
+          username: 'wallet_${walletAddress.substring(2, 8)}',
+          displayName: '钱包用户 ${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}',
+          avatarUrl: null,
+          bio: '通过钱包连接的用户，暂未关联Farcaster账户',
+          walletAddress: walletAddress,
+          followers: [],
+          following: [],
+          isVerified: false,
+          createdAt: DateTime.now(),
+          lastActiveAt: DateTime.now(),
+        );
+
+        await _saveUserToLocal(walletUser);
+        _currentUser = walletUser;
+        _isAuthenticated = true;
+
+        addDebugLog('✅ 创建钱包用户登录成功');
+        addDebugLog('💡 提示：您可以在Farcaster中验证此钱包地址来关联账户');
+
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      addDebugLog('❌ Sign-in with Ethereum 失败: $e');
+      _setError('登录失败: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 签名消息 (用于Hyperliquid)
+  Future<String?> signMessage(String message) async {
+    if (!_walletService.isConnected) {
+      addDebugLog('❌ 钱包未连接，无法签名');
+      return null;
+    }
+
+    addDebugLog('🔏 开始签名消息');
+
+    try {
+      final signature = await _walletService.signMessage(message);
+
+      if (signature != null) {
+        addDebugLog('✅ 消息签名成功');
+        return signature;
+      }
+
+      addDebugLog('❌ 签名被取消或失败');
+      return null;
+    } catch (e) {
+      addDebugLog('❌ 签名消息失败: $e');
+      return null;
+    }
+  }
+
+  /// EIP-712结构化数据签名 (用于Hyperliquid交易)
+  Future<String?> signTypedData(Map<String, dynamic> typedData) async {
+    if (!_walletService.isConnected) {
+      addDebugLog('❌ 钱包未连接，无法签名');
+      return null;
+    }
+
+    addDebugLog('🔏 开始EIP-712签名');
+
+    try {
+      final signature = await _walletService.signTypedData(typedData);
+
+      if (signature != null) {
+        addDebugLog('✅ EIP-712签名成功');
+        return signature;
+      }
+
+      addDebugLog('❌ EIP-712签名被取消或失败');
+      return null;
+    } catch (e) {
+      addDebugLog('❌ EIP-712签名失败: $e');
+      return null;
+    }
+  }
+
+  /// 获取钱包余额
+  Future<String?> getWalletBalance() async {
+    if (!_walletService.isConnected) return null;
+
+    try {
+      return await _walletService.getBalance();
+    } catch (e) {
+      addDebugLog('❌ 获取钱包余额失败: $e');
+      return null;
+    }
+  }
+
+  /// 获取链信息
+  Map<String, String> getChainInfo() {
+    return _walletService.getChainInfo();
   }
 
   /// 生成钱包签名数据
@@ -862,7 +1055,32 @@ class UserProvider extends ChangeNotifier {
     required int appFid,
     int? deadline,
   }) {
-    // Wallet signature generation removed - functionality not available
-    return <String, dynamic>{};
+    // 为Hyperliquid生成EIP-712签名数据
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final signatureDeadline = deadline ?? (now ~/ 1000) + 3600; // 1小时后过期
+
+    return {
+      'types': {
+        'EIP712Domain': [
+          {'name': 'name', 'type': 'string'},
+          {'name': 'version', 'type': 'string'},
+          {'name': 'chainId', 'type': 'uint256'},
+        ],
+        'Agent': [
+          {'name': 'source', 'type': 'string'},
+          {'name': 'connectionId', 'type': 'bytes32'},
+        ],
+      },
+      'domain': {
+        'name': 'ThunderTrack',
+        'version': '1.0.0',
+        'chainId': 1, // 以太坊主网
+      },
+      'primaryType': 'Agent',
+      'message': {
+        'source': 'thundertrack',
+        'connectionId': '0x${address.substring(2).padLeft(64, '0')}',
+      },
+    };
   }
 }

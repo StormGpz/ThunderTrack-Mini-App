@@ -7,7 +7,6 @@ import 'pages/diary_page.dart';
 import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
-import 'pages/hyperliquid_test_page.dart';
 import 'widgets/frame_diary_detail_page.dart';
 import 'utils/api_client.dart';
 import 'services/hyperliquid_service.dart';
@@ -241,12 +240,64 @@ class _MainPageState extends State<MainPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('连接 Farcaster'),
+        title: const Text('连接账户'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.info_outline, size: 48, color: Colors.orange),
+            const Icon(Icons.account_balance_wallet, size: 48, color: Colors.blue),
             const SizedBox(height: 16),
+            const Text('选择登录方式'),
+            const SizedBox(height: 16),
+
+            // Web3钱包登录选项
+            if (userProvider.isWeb3Available) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange[400]!, Colors.orange[600]!],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    final success = await userProvider.signInWithEthereum();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success
+                            ? 'Web3钱包登录成功！'
+                            : '钱包登录失败：${userProvider.error ?? "用户取消"}'),
+                          backgroundColor: success ? Colors.green : Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.account_balance_wallet, color: Colors.white),
+                  label: const Text(
+                    'Sign-in with Ethereum',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '连接MetaMask等钱包，自动关联Farcaster账户',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 8),
+            ],
+
             const Text('未检测到 Farcaster Mini App 环境'),
             const SizedBox(height: 8),
             Text(

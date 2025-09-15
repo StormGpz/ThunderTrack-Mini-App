@@ -179,6 +179,42 @@ class NeynarService {
     }
   }
 
+  /// 根据钱包地址获取用户信息 (Sign-in with Ethereum)
+  Future<User?> getUserByWalletAddress(String walletAddress) async {
+    try {
+      debugPrint('🔄 通过钱包地址查找Farcaster用户: $walletAddress');
+
+      final response = await _apiClient.get(
+        '/v2/farcaster/user/bulk-by-address',
+        baseUrl: AppConfig.neynarBaseUrl,
+        queryParameters: {'addresses': walletAddress.toLowerCase()},
+        options: _getAuthOptions(),
+      );
+
+      debugPrint('📨 钱包地址查询响应: ${response.statusCode}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final addressData = response.data as Map<String, dynamic>;
+        final usersList = addressData[walletAddress.toLowerCase()];
+
+        if (usersList != null && usersList is List && usersList.isNotEmpty) {
+          final userData = usersList.first;
+          debugPrint('✅ 找到关联的Farcaster用户: ${userData['username']}');
+          return _parseUser(userData);
+        } else {
+          debugPrint('⚠️ 钱包地址未关联Farcaster账户');
+          return null;
+        }
+      }
+
+      debugPrint('❌ 查询钱包地址失败: 状态码${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ 钱包地址查询异常: $e');
+      return null; // 不抛出异常，返回null表示未找到
+    }
+  }
+
   /// 获取用户关注列表
   Future<List<String>> getFollowing(String fid) async {
     try {
