@@ -61,7 +61,7 @@ class UserProvider extends ChangeNotifier {
     // 如果钱包连接但用户未登录，尝试自动登录
     if (_walletService.isConnected && !_isAuthenticated) {
       addDebugLog('🚀 检测到钱包连接，尝试自动登录...');
-      signInWithEthereum();
+      _autoLoginWithWallet(); // 改为异步方法
     }
 
     // 如果钱包断开连接，清除钱包用户
@@ -78,6 +78,70 @@ class UserProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// 自动钱包登录（异步处理）
+  Future<void> _autoLoginWithWallet() async {
+    try {
+      if (_walletService.currentAccount != null) {
+        addDebugLog('🔄 开始自动钱包登录...');
+        final success = await _signInWithWalletAddress(_walletService.currentAccount!);
+        addDebugLog(success ? '✅ 自动钱包登录成功' : '❌ 自动钱包登录失败');
+      }
+    } catch (e) {
+      addDebugLog('❌ 自动钱包登录异常: $e');
+    }
+  }
+
+  /// 使用钱包地址登录（不触发连接）
+  Future<bool> _signInWithWalletAddress(String walletAddress) async {
+    try {
+      addDebugLog('📋 使用钱包地址登录: $walletAddress');
+
+      // 通过钱包地址查找Farcaster账户
+      final farcasterUser = await _neynarService.getUserByWalletAddress(walletAddress);
+
+      if (farcasterUser != null) {
+        // 找到关联账户
+        addDebugLog('✅ 找到关联的Farcaster账户: ${farcasterUser.username}');
+        final user = farcasterUser.copyWith(walletAddress: walletAddress);
+
+        await _saveUserToLocal(user);
+        _currentUser = user;
+        _isAuthenticated = true;
+
+        addDebugLog('🎉 Farcaster关联用户登录完成: ${user.username}');
+        notifyListeners();
+        return true;
+      } else {
+        // 创建钱包用户
+        addDebugLog('⚠️ 钱包地址未关联Farcaster账户，创建钱包用户');
+        final walletUser = User(
+          fid: 'wallet_${walletAddress.substring(2, 8)}',
+          username: walletAddress.substring(0, 10),
+          displayName: '${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}',
+          avatarUrl: null,
+          bio: '钱包用户 - 可进行交易操作',
+          walletAddress: walletAddress,
+          followers: [],
+          following: [],
+          isVerified: false,
+          createdAt: DateTime.now(),
+          lastActiveAt: DateTime.now(),
+        );
+
+        await _saveUserToLocal(walletUser);
+        _currentUser = walletUser;
+        _isAuthenticated = true;
+
+        addDebugLog('✅ 钱包用户登录完成');
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      addDebugLog('❌ 钱包地址登录失败: $e');
+      return false;
+    }
   }
 
   /// 添加调试日志
