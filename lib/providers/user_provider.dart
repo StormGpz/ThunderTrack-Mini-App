@@ -12,7 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserProvider extends ChangeNotifier {
   static final UserProvider _instance = UserProvider._internal();
   factory UserProvider() => _instance;
-  UserProvider._internal();
+  UserProvider._internal() {
+    // 监听钱包服务状态变化
+    _walletService.addListener(_onWalletStateChanged);
+  }
 
   final NeynarService _neynarService = NeynarService();
   final FarcasterMiniAppService _miniAppService = FarcasterMiniAppService();
@@ -46,6 +49,36 @@ class UserProvider extends ChangeNotifier {
       ? '已连接: ${_walletService.currentAccount?.substring(0, 6)}...${_walletService.currentAccount?.substring(38)}'
       : '未连接';
   bool get isWeb3Available => _walletService.isWeb3Available;
+
+  /// 钱包状态变化处理
+  void _onWalletStateChanged() {
+    addDebugLog('🔄 钱包状态发生变化');
+    addDebugLog('连接状态: ${_walletService.isConnected}');
+    if (_walletService.currentAccount != null) {
+      addDebugLog('钱包地址: ${_walletService.currentAccount}');
+    }
+
+    // 如果钱包连接但用户未登录，尝试自动登录
+    if (_walletService.isConnected && !_isAuthenticated) {
+      addDebugLog('🚀 检测到钱包连接，尝试自动登录...');
+      signInWithEthereum();
+    }
+
+    // 如果钱包断开连接，清除钱包用户
+    if (!_walletService.isConnected && _currentUser?.walletAddress != null) {
+      addDebugLog('🔌 钱包已断开，清除钱包地址');
+      if (_currentUser!.fid.startsWith('wallet_')) {
+        // 如果是纯钱包用户，退出登录
+        logout();
+      } else {
+        // 如果是关联用户，只清除钱包地址
+        _currentUser = _currentUser!.copyWith(walletAddress: null);
+        _saveUserToLocal(_currentUser!);
+      }
+    }
+
+    notifyListeners();
+  }
 
   /// 添加调试日志
   void addDebugLog(String message) {
@@ -1140,5 +1173,11 @@ class UserProvider extends ChangeNotifier {
         'connectionId': '0x${address.substring(2).padLeft(64, '0')}',
       },
     };
+  }
+
+  @override
+  void dispose() {
+    _walletService.removeListener(_onWalletStateChanged);
+    super.dispose();
   }
 }

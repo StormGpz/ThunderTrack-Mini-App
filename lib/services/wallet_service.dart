@@ -3,7 +3,7 @@ import 'dart:js_util' as js_util;
 import 'package:flutter/foundation.dart';
 
 /// Web3钱包连接服务 (仅支持Web平台)
-class WalletService {
+class WalletService extends ChangeNotifier {
   static final WalletService _instance = WalletService._internal();
   factory WalletService() => _instance;
   WalletService._internal();
@@ -58,6 +58,9 @@ class WalletService {
 
         // 设置事件监听器
         _setupEventListeners();
+
+        // 通知监听者状态已更新
+        notifyListeners();
       } else {
         debugPrint('ℹ️ 未发现已连接的账户');
       }
@@ -97,6 +100,9 @@ class WalletService {
 
         // 设置事件监听器
         _setupEventListeners();
+
+        // 通知监听者状态已更新
+        notifyListeners();
 
         return _currentAccount;
       }
@@ -144,10 +150,12 @@ class WalletService {
           if (accounts != null && accounts.length > 0) {
             _currentAccount = accounts[0];
             debugPrint('✅ 新账户: $_currentAccount');
+            notifyListeners(); // 通知状态更新
           } else {
             _currentAccount = null;
             _isConnected = false;
             debugPrint('❌ 账户已断开连接');
+            notifyListeners(); // 通知状态更新
           }
         })
       ]);
@@ -158,6 +166,7 @@ class WalletService {
         js.allowInterop((chainId) {
           _chainId = chainId?.toString();
           debugPrint('🔗 链已切换: $_chainId');
+          notifyListeners(); // 通知状态更新
         })
       ]);
 
@@ -167,6 +176,7 @@ class WalletService {
         js.allowInterop((connectInfo) {
           debugPrint('✅ 钱包已连接: $connectInfo');
           _isConnected = true;
+          notifyListeners(); // 通知状态更新
         })
       ]);
 
@@ -177,6 +187,7 @@ class WalletService {
           _isConnected = false;
           _currentAccount = null;
           _chainId = null;
+          notifyListeners(); // 通知状态更新
         })
       ]);
 
@@ -191,6 +202,7 @@ class WalletService {
     _isConnected = false;
     _chainId = null;
     debugPrint('✅ 钱包已断开连接');
+    notifyListeners(); // 通知状态更新
   }
 
   /// 切换到以太坊主网
