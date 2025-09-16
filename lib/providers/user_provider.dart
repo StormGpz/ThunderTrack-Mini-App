@@ -1042,10 +1042,10 @@ class UserProvider extends ChangeNotifier {
         // 创建一个基本的钱包用户
         final walletUser = User(
           fid: 'wallet_${walletAddress.substring(2, 8)}',
-          username: 'wallet_${walletAddress.substring(2, 8)}',
-          displayName: '钱包用户 ${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}',
-          avatarUrl: null,
-          bio: '通过钱包连接的用户，暂未关联Farcaster账户',
+          username: walletAddress.substring(0, 10), // 使用地址前10位作为用户名
+          displayName: '${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}', // 简化显示名
+          avatarUrl: null, // 使用默认头像
+          bio: '钱包用户 - 可进行交易操作',
           walletAddress: walletAddress,
           followers: [],
           following: [],
