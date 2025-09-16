@@ -418,6 +418,7 @@ class _MainPageState extends State<MainPage> {
                     const SizedBox(height: 8),
                     Text('Mini App: ${userProvider.isMiniAppEnvironment ? "✅" : "❌"}'),
                     Text('SDK可用: ${userProvider.isMiniAppSdkAvailable ? "✅" : "❌"}'),
+                    Text('内置钱包: ${userProvider.hasBuiltinWallet ? "✅" : "❌"}'),
                     Text('已登录: ${userProvider.isAuthenticated ? "✅" : "❌"}'),
                     Text('平台: ${userProvider.environmentInfo['platform']}'),
                     if (userProvider.isAuthenticated && userProvider.currentUser != null)

@@ -51,17 +51,49 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
 
   /// 检查当前交易地址状态
   void _checkCurrentTradingAddress() {
-    final currentAddress = _hyperliquidService.currentTradingAddress;
-    if (currentAddress != null) {
-      _isAddressAuthorized = _hyperliquidService.isAddressAuthorized(currentAddress);
-      setState(() {
+    // 优先使用 UserProvider 提供的钱包地址信息
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    String? currentAddress;
+    bool isAuthorized = false;
+    String addressType = '钱包地址';
+
+    if (userProvider.isAuthenticated && userProvider.currentUser?.walletAddress != null) {
+      currentAddress = userProvider.currentUser!.walletAddress;
+
+      // 判断钱包类型和授权状态
+      if (userProvider.isMiniAppEnvironment && userProvider.hasBuiltinWallet) {
+        addressType = 'Farcaster内置钱包';
+        isAuthorized = true; // Farcaster 内置钱包默认已授权
+      } else if (userProvider.isWalletConnected) {
+        addressType = 'Web3钱包';
+        isAuthorized = userProvider.isWalletConnected;
+      } else {
+        addressType = '钱包地址';
+        isAuthorized = false;
+      }
+    } else {
+      // 备用方案：检查 Hyperliquid 服务的地址设置
+      currentAddress = _hyperliquidService.currentTradingAddress;
+      if (currentAddress != null) {
+        isAuthorized = _hyperliquidService.isAddressAuthorized(currentAddress);
+        addressType = isAuthorized ? '已授权钱包' : '钱包地址';
+      }
+    }
+
+    setState(() {
+      if (currentAddress != null) {
         _currentTradingAddress = AddressOption(
           address: currentAddress,
-          type: _isAddressAuthorized ? '已授权钱包' : '钱包地址',
-          isConnected: _isAddressAuthorized,
+          type: addressType,
+          isConnected: isAuthorized,
         );
-      });
-    }
+        _isAddressAuthorized = isAuthorized;
+      } else {
+        _currentTradingAddress = null;
+        _isAddressAuthorized = false;
+      }
+    });
   }
 
   @override
@@ -185,6 +217,11 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
+        // 监听用户状态变化，及时更新钱包地址状态
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkCurrentTradingAddress();
+        });
+
         if (!userProvider.isAuthenticated) {
           return const Center(
             child: Column(
@@ -203,8 +240,8 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
         return Column(
           children: [
             // 钱包地址状态栏
-            _buildWalletStatusBar(),
-            
+            _buildWalletStatusBar(userProvider),
+
             // 地址选择组件（可展开）
             if (_showAddressSelection) ...[
               Padding(
@@ -215,13 +252,13 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 ),
               ),
             ],
-            
+
             // 搜索栏
             _buildSearchBar(),
-            
+
             // Tab导航
             _buildTabBar(),
-            
+
             // Tab内容
             Expanded(
               child: TabBarView(
@@ -229,7 +266,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 children: [
                   // 关注列表/全部交易对
                   _buildTradingPairsTab(),
-                  
+
                   // 我的交易记录
                   _buildMyTradesTab(),
                 ],
@@ -241,9 +278,8 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
     );
   }
 
-  /// 构建搜索栏
   /// 构建钱包地址状态栏
-  Widget _buildWalletStatusBar() {
+  Widget _buildWalletStatusBar(UserProvider userProvider) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), // 减小垂直内边距
       decoration: BoxDecoration(
@@ -318,7 +354,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 Row(
                   children: [
                     Text(
-                      _currentTradingAddress != null ? '交易钱包' : '未设置钱包',
+                      _currentTradingAddress != null ? _currentTradingAddress!.type : '未设置钱包',
                       style: TextStyle(
                         color: EvaTheme.lightText,
                         fontSize: 14,

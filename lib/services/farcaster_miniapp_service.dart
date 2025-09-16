@@ -563,22 +563,158 @@ class FarcasterMiniAppService {
     }
   }
 
-  /// 获取以太坊钱包提供者
+  /// 获取以太坊钱包提供者 (官方方式)
   dynamic getEthereumProvider() {
     if (!kIsWeb) return null;
-    
+
     try {
+      // 方案1: 通过 SDK 获取钱包提供者 (官方推荐)
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK != null) {
+        // 检查 sdk.wallet.ethProvider (官方文档推荐的方式)
+        final wallet = farcasterSDK['wallet'];
+        if (wallet != null) {
+          final ethProvider = wallet['ethProvider'];
+          if (ethProvider != null) {
+            debugPrint('✅ 找到 Farcaster SDK wallet.ethProvider (官方方式)');
+            return ethProvider;
+          }
+        }
+
+        // 备用：检查是否有其他钱包相关API
+        final ethereum = farcasterSDK['ethereum'];
+        if (ethereum != null) {
+          debugPrint('✅ 找到 Farcaster SDK ethereum API');
+          return ethereum;
+        }
+      }
+
+      // 方案2: 检查是否有 wagmi connector 注入的提供者
+      final ethereum = js.context['ethereum'];
+      if (ethereum != null) {
+        // 检查是否是 Farcaster 注入的 (farcaster miniapp wagmi connector)
+        final isFarcaster = ethereum['isFarcaster'] == true;
+        final isConnected = ethereum['isConnected'] == true;
+        debugPrint('${isFarcaster ? "✅" : "⚠️"} 找到以太坊提供者');
+        debugPrint('   isFarcaster: $isFarcaster');
+        debugPrint('   isConnected: $isConnected');
+        return ethereum;
+      }
+
+      // 方案3: 检查全局以太坊提供者函数
       final getProviderFunction = js.context['getEthereumProvider'];
       if (getProviderFunction != null) {
+        debugPrint('✅ 找到全局 getEthereumProvider 函数');
         return getProviderFunction.apply([]);
-      } else {
-        debugPrint('getEthereumProvider function not found');
       }
+
+      debugPrint('❌ 未找到任何以太坊提供者');
+      debugPrint('🔍 可用的全局对象键: ${_getGlobalKeys()}');
     } catch (e) {
       debugPrint('Error getting Ethereum provider: $e');
     }
-    
+
     return null;
+  }
+
+  /// 获取全局对象的键名用于调试
+  List<String> _getGlobalKeys() {
+    try {
+      final keys = js.context['Object'].callMethod('keys', [js.context]);
+      return List<String>.from(keys).where((key) =>
+        key.toLowerCase().contains('wallet') ||
+        key.toLowerCase().contains('ethereum') ||
+        key.toLowerCase().contains('farcaster')
+      ).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// 检查是否支持内置钱包交易
+  bool get hasBuiltinWallet {
+    if (!kIsWeb) return false;
+
+    try {
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK != null) {
+        final wallet = farcasterSDK['wallet'];
+        final ethereum = farcasterSDK['ethereum'];
+        return wallet != null || ethereum != null;
+      }
+
+      final ethereum = js.context['ethereum'];
+      return ethereum != null && ethereum['isFarcaster'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 通过内置钱包签名消息
+  Future<String?> signMessageWithBuiltinWallet(String message, String address) async {
+    if (!kIsWeb) return null;
+
+    try {
+      final provider = getEthereumProvider();
+      if (provider == null) {
+        debugPrint('❌ 未找到内置钱包提供者');
+        return null;
+      }
+
+      debugPrint('🔏 使用内置钱包签名消息...');
+
+      // 尝试个人签名
+      final signature = await _callAsyncFunction(
+        provider['request'],
+        [js.JsObject.jsify({
+          'method': 'personal_sign',
+          'params': [message, address]
+        })]
+      );
+
+      if (signature != null) {
+        debugPrint('✅ 内置钱包签名成功');
+        return signature.toString();
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('❌ 内置钱包签名失败: $e');
+      return null;
+    }
+  }
+
+  /// 通过内置钱包进行 EIP-712 签名
+  Future<String?> signTypedDataWithBuiltinWallet(Map<String, dynamic> typedData, String address) async {
+    if (!kIsWeb) return null;
+
+    try {
+      final provider = getEthereumProvider();
+      if (provider == null) {
+        debugPrint('❌ 未找到内置钱包提供者');
+        return null;
+      }
+
+      debugPrint('🔏 使用内置钱包进行EIP-712签名...');
+
+      final signature = await _callAsyncFunction(
+        provider['request'],
+        [js.JsObject.jsify({
+          'method': 'eth_signTypedData_v4',
+          'params': [address, js.JsObject.jsify(typedData)]
+        })]
+      );
+
+      if (signature != null) {
+        debugPrint('✅ 内置钱包EIP-712签名成功');
+        return signature.toString();
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('❌ 内置钱包EIP-712签名失败: $e');
+      return null;
+    }
   }
 
   /// 检查 Farcaster SDK 是否可用

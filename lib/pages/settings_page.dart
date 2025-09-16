@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../pages/hyperliquid_test_page.dart';
 import '../pages/wallet_test_page.dart';
+import '../pages/farcaster_wallet_test_page.dart';
 import '../theme/eva_theme.dart';
 
 /// 设置页面 - EVA主题，简化版
@@ -60,6 +61,7 @@ class SettingsPage extends StatelessWidget {
                   _buildDefaultCurrencySetting(context, settings),
                   _buildApiTestSetting(context, settings),
                   _buildWalletTestSetting(context, settings),
+                  _buildFarcasterWalletTestSetting(context, settings),
                 ]),
 
                 const SizedBox(height: 32),
@@ -436,6 +438,33 @@ class SettingsPage extends StatelessWidget {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => const WalletTestPage(),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 构建Farcaster内置钱包测试设置
+  Widget _buildFarcasterWalletTestSetting(BuildContext context, SettingsProvider settings) {
+    return ListTile(
+      leading: Icon(Icons.cast, color: EvaTheme.primaryPurple),
+      title: Text(
+        settings.isChineseLocale ? 'Farcaster内置钱包测试' : 'Farcaster Built-in Wallet Test',
+        style: TextStyle(fontWeight: FontWeight.w500, color: EvaTheme.lightText),
+      ),
+      subtitle: Text(
+        settings.isChineseLocale ? '测试Farcaster内置钱包签名功能' : 'Test Farcaster built-in wallet signing',
+        style: TextStyle(color: EvaTheme.textGray),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: EvaTheme.textGray,
+      ),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const FarcasterWalletTestPage(),
           ),
         );
       },

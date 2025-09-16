@@ -40,6 +40,7 @@ class UserProvider extends ChangeNotifier {
   // Mini App 相关 getters
   bool get isMiniAppEnvironment => _miniAppService.isMiniAppEnvironment;
   bool get isMiniAppSdkAvailable => _miniAppService.isSdkAvailable;
+  bool get hasBuiltinWallet => _miniAppService.hasBuiltinWallet;
   Map<String, dynamic> get environmentInfo => _miniAppService.getEnvironmentInfo();
 
   // 钱包相关 getters
@@ -551,6 +552,10 @@ class UserProvider extends ChangeNotifier {
   /// 处理从 Farcaster Mini App 获取的用户数据
   Future<void> _processFarcasterUser(Map<String, dynamic> farcasterUserData) async {
     try {
+      // 获取 Farcaster 内置钱包地址
+      final custodyAddress = farcasterUserData['custodyAddress']?.toString();
+      addDebugLog('📋 Farcaster内置钱包地址: ${custodyAddress ?? "未获取到"}');
+
       // 将 Farcaster 用户数据转换为我们的 User 模型
       final user = User(
         fid: farcasterUserData['fid']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -558,10 +563,10 @@ class UserProvider extends ChangeNotifier {
         displayName: farcasterUserData['displayName']?.toString() ?? farcasterUserData['username']?.toString() ?? 'Farcaster User',
         avatarUrl: farcasterUserData['pfpUrl']?.toString(),
         bio: farcasterUserData['bio']?.toString() ?? '来自 Farcaster 的用户',
-        walletAddress: null, // 钱包地址可能需要单独获取
+        walletAddress: custodyAddress, // 使用 Farcaster 内置钱包地址
         followers: _parseFollowers(farcasterUserData['followers']),
         following: _parseFollowing(farcasterUserData['following']),
-        isVerified: farcasterUserData['verified'] == true,
+        isVerified: farcasterUserData['verified'] == true || farcasterUserData['powerBadge'] == true,
         createdAt: DateTime.now().subtract(const Duration(days: 30)), // 默认值
         lastActiveAt: DateTime.now(),
       );
@@ -1137,54 +1142,78 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// 签名消息 (用于Hyperliquid)
+  /// 签名消息 (优先使用 Farcaster 内置钱包，备用 Web3 钱包)
   Future<String?> signMessage(String message) async {
-    if (!_walletService.isConnected) {
-      addDebugLog('❌ 钱包未连接，无法签名');
-      return null;
-    }
-
-    addDebugLog('🔏 开始签名消息');
-
-    try {
-      final signature = await _walletService.signMessage(message);
-
-      if (signature != null) {
-        addDebugLog('✅ 消息签名成功');
-        return signature;
+    // 优先使用 Farcaster 内置钱包
+    if (isMiniAppEnvironment && hasBuiltinWallet && _currentUser?.walletAddress != null) {
+      addDebugLog('🔏 使用 Farcaster 内置钱包签名消息');
+      try {
+        final signature = await _miniAppService.signMessageWithBuiltinWallet(
+          message,
+          _currentUser!.walletAddress!
+        );
+        if (signature != null) {
+          addDebugLog('✅ Farcaster 内置钱包签名成功');
+          return signature;
+        }
+      } catch (e) {
+        addDebugLog('❌ Farcaster 内置钱包签名失败: $e');
       }
-
-      addDebugLog('❌ 签名被取消或失败');
-      return null;
-    } catch (e) {
-      addDebugLog('❌ 签名消息失败: $e');
-      return null;
     }
+
+    // 备用方案：使用 Web3 钱包
+    if (_walletService.isConnected) {
+      addDebugLog('🔏 使用 Web3 钱包签名消息');
+      try {
+        final signature = await _walletService.signMessage(message);
+        if (signature != null) {
+          addDebugLog('✅ Web3 钱包签名成功');
+          return signature;
+        }
+      } catch (e) {
+        addDebugLog('❌ Web3 钱包签名失败: $e');
+      }
+    }
+
+    addDebugLog('❌ 无可用钱包进行签名');
+    return null;
   }
 
-  /// EIP-712结构化数据签名 (用于Hyperliquid交易)
+  /// EIP-712结构化数据签名 (优先使用 Farcaster 内置钱包)
   Future<String?> signTypedData(Map<String, dynamic> typedData) async {
-    if (!_walletService.isConnected) {
-      addDebugLog('❌ 钱包未连接，无法签名');
-      return null;
-    }
-
-    addDebugLog('🔏 开始EIP-712签名');
-
-    try {
-      final signature = await _walletService.signTypedData(typedData);
-
-      if (signature != null) {
-        addDebugLog('✅ EIP-712签名成功');
-        return signature;
+    // 优先使用 Farcaster 内置钱包
+    if (isMiniAppEnvironment && hasBuiltinWallet && _currentUser?.walletAddress != null) {
+      addDebugLog('🔏 使用 Farcaster 内置钱包进行 EIP-712 签名');
+      try {
+        final signature = await _miniAppService.signTypedDataWithBuiltinWallet(
+          typedData,
+          _currentUser!.walletAddress!
+        );
+        if (signature != null) {
+          addDebugLog('✅ Farcaster 内置钱包 EIP-712 签名成功');
+          return signature;
+        }
+      } catch (e) {
+        addDebugLog('❌ Farcaster 内置钱包 EIP-712 签名失败: $e');
       }
-
-      addDebugLog('❌ EIP-712签名被取消或失败');
-      return null;
-    } catch (e) {
-      addDebugLog('❌ EIP-712签名失败: $e');
-      return null;
     }
+
+    // 备用方案：使用 Web3 钱包
+    if (_walletService.isConnected) {
+      addDebugLog('🔏 使用 Web3 钱包进行 EIP-712 签名');
+      try {
+        final signature = await _walletService.signTypedData(typedData);
+        if (signature != null) {
+          addDebugLog('✅ Web3 钱包 EIP-712 签名成功');
+          return signature;
+        }
+      } catch (e) {
+        addDebugLog('❌ Web3 钱包 EIP-712 签名失败: $e');
+      }
+    }
+
+    addDebugLog('❌ 无可用钱包进行 EIP-712 签名');
+    return null;
   }
 
   /// 获取钱包余额
