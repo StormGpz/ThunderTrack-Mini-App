@@ -552,9 +552,31 @@ class UserProvider extends ChangeNotifier {
   /// 处理从 Farcaster Mini App 获取的用户数据
   Future<void> _processFarcasterUser(Map<String, dynamic> farcasterUserData) async {
     try {
-      // 获取 Farcaster 内置钱包地址
+      // 详细调试 Farcaster 用户数据
+      addDebugLog('🔍 Farcaster用户原始数据: ${farcasterUserData.toString()}');
+
+      // 获取两种地址并进行对比
       final custodyAddress = farcasterUserData['custodyAddress']?.toString();
-      addDebugLog('📋 Farcaster内置钱包地址: ${custodyAddress ?? "未获取到"}');
+      final connectedAddress = farcasterUserData['connectedAddress']?.toString();
+
+      addDebugLog('📋 custodyAddress (内置钱包): ${custodyAddress ?? "未获取到"}');
+      addDebugLog('📋 connectedAddress (绑定钱包): ${connectedAddress ?? "未获取到"}');
+
+      // 优先使用 custodyAddress，如果没有则使用 connectedAddress
+      String? walletAddress;
+      String walletType = '未知钱包';
+
+      if (custodyAddress != null && custodyAddress.isNotEmpty) {
+        walletAddress = custodyAddress;
+        walletType = 'Farcaster内置钱包';
+        addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
+      } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+        walletAddress = connectedAddress;
+        walletType = '绑定外部钱包';
+        addDebugLog('⚠️ 回退到绑定钱包地址: $connectedAddress');
+      } else {
+        addDebugLog('❌ 未找到任何钱包地址');
+      }
 
       // 将 Farcaster 用户数据转换为我们的 User 模型
       final user = User(
@@ -563,13 +585,16 @@ class UserProvider extends ChangeNotifier {
         displayName: farcasterUserData['displayName']?.toString() ?? farcasterUserData['username']?.toString() ?? 'Farcaster User',
         avatarUrl: farcasterUserData['pfpUrl']?.toString(),
         bio: farcasterUserData['bio']?.toString() ?? '来自 Farcaster 的用户',
-        walletAddress: custodyAddress, // 使用 Farcaster 内置钱包地址
+        walletAddress: walletAddress, // 使用优先级选择的钱包地址
         followers: _parseFollowers(farcasterUserData['followers']),
         following: _parseFollowing(farcasterUserData['following']),
         isVerified: farcasterUserData['verified'] == true || farcasterUserData['powerBadge'] == true,
         createdAt: DateTime.now().subtract(const Duration(days: 30)), // 默认值
         lastActiveAt: DateTime.now(),
       );
+
+      addDebugLog('🎯 最终用户钱包地址: ${user.walletAddress}');
+      addDebugLog('🎯 钱包类型: $walletType');
 
       await _saveUserToLocal(user);
       _currentUser = user;
@@ -762,7 +787,7 @@ class UserProvider extends ChangeNotifier {
         
         addDebugLog('✅ 用户状态更新完成');
         addDebugLog('🎯 当前用户: ${_currentUser?.displayName} - 已认证: $_isAuthenticated');
-        addDebugLog('💰 钱包地址: 未设置 (钱包功能已移除)');
+        addDebugLog('💰 钱包地址: ${_currentUser?.walletAddress ?? "未设置"}');
         
         notifyListeners();
         
@@ -776,19 +801,35 @@ class UserProvider extends ChangeNotifier {
       // 备用方案：SDK Context
       addDebugLog('🔄 Neynar API失败，尝试SDK Context...');
       final contextUser = await _miniAppService.getContextUserInfo();
-      
+
       if (contextUser != null && contextUser.isNotEmpty) {
         addDebugLog('✅ SDK Context获取到用户信息');
-        
+
+        // 获取钱包地址并区分类型
+        final custodyAddress = contextUser['custodyAddress']?.toString();
+        final connectedAddress = contextUser['connectedAddress']?.toString();
+
+        addDebugLog('📋 SDK Context - custodyAddress: ${custodyAddress ?? "未获取到"}');
+        addDebugLog('📋 SDK Context - connectedAddress: ${connectedAddress ?? "未获取到"}');
+
+        String? walletAddress;
+        if (custodyAddress != null && custodyAddress.isNotEmpty) {
+          walletAddress = custodyAddress;
+          addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
+        } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+          walletAddress = connectedAddress;
+          addDebugLog('⚠️ 使用绑定钱包地址: $connectedAddress');
+        }
+
         final user = User(
           fid: fid,
           username: contextUser['username']?.toString() ?? 'user_$fid',
-          displayName: contextUser['displayName']?.toString() ?? 
-                      contextUser['username']?.toString() ?? 
+          displayName: contextUser['displayName']?.toString() ??
+                      contextUser['username']?.toString() ??
                       'Farcaster User $fid',
           avatarUrl: contextUser['pfpUrl']?.toString(),
           bio: contextUser['bio']?.toString() ?? '来自 Farcaster 的用户',
-          walletAddress: contextUser['custodyAddress']?.toString(),
+          walletAddress: walletAddress, // 使用正确的钱包地址逻辑
           followers: [],
           following: [],
           isVerified: contextUser['powerBadge'] == true,
@@ -955,9 +996,62 @@ class UserProvider extends ChangeNotifier {
   /// 处理用户钱包地址
   Future<void> _handleWalletAddress(User user) async {
     try {
-      addDebugLog('🔑 钱包功能已移除，跳过钱包地址处理');
+      addDebugLog('🔑 开始处理用户钱包地址...');
+
+      // 检查用户是否已经有钱包地址
+      if (user.walletAddress != null && user.walletAddress!.isNotEmpty) {
+        addDebugLog('✅ 用户已有钱包地址: ${user.walletAddress}');
+        return;
+      }
+
+      addDebugLog('🔍 用户暂无钱包地址，尝试从SDK Context获取...');
+
+      // 尝试从SDK Context获取钱包地址
+      final contextUser = await _miniAppService.getContextUserInfo();
+      if (contextUser != null) {
+        final custodyAddress = contextUser['custodyAddress']?.toString();
+        final connectedAddress = contextUser['connectedAddress']?.toString();
+
+        addDebugLog('📋 SDK Context - custodyAddress: ${custodyAddress ?? "未获取到"}');
+        addDebugLog('📋 SDK Context - connectedAddress: ${connectedAddress ?? "未获取到"}');
+
+        String? walletAddress;
+        if (custodyAddress != null && custodyAddress.isNotEmpty) {
+          walletAddress = custodyAddress;
+          addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
+        } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+          walletAddress = connectedAddress;
+          addDebugLog('⚠️ 使用绑定钱包地址: $connectedAddress');
+        }
+
+        if (walletAddress != null) {
+          // 更新用户钱包地址
+          final updatedUser = User(
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            bio: user.bio,
+            walletAddress: walletAddress,
+            followers: user.followers,
+            following: user.following,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            lastActiveAt: user.lastActiveAt,
+          );
+
+          _currentUser = updatedUser;
+          await _saveUserToLocal(updatedUser);
+          addDebugLog('🎯 钱包地址已更新: $walletAddress');
+          notifyListeners();
+        } else {
+          addDebugLog('⚠️ 未找到任何可用的钱包地址');
+        }
+      } else {
+        addDebugLog('❌ 无法获取SDK Context信息');
+      }
     } catch (e) {
-      addDebugLog('❌ 钱包地址处理跳过：$e');
+      addDebugLog('❌ 钱包地址处理失败：$e');
     }
   }
 

@@ -299,8 +299,9 @@ class FarcasterMiniAppService {
     debugPrint('🔄 尝试直接字段访问...');
     final result = <String, dynamic>{};
     final commonFields = [
-      'fid', 'username', 'displayName', 'pfpUrl', 'bio', 
-      'powerBadge', 'verified', 'custodyAddress', 'connectedAddress'
+      'fid', 'username', 'displayName', 'pfpUrl', 'bio',
+      'powerBadge', 'verified', 'custodyAddress', 'connectedAddress',
+      'authAddresses', 'verifiedAddresses', 'verifications'
     ];
     
     for (final field in commonFields) {

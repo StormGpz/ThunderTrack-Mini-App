@@ -404,6 +404,61 @@ class NeynarService {
 
   /// 解析用户数据
   User _parseUser(Map<String, dynamic> userData) {
+    // 🔍 提取各种钱包地址
+    String? custodyAddress = userData['custody_address']?.toString();
+    String? builtinWalletAddress; // 内置钱包地址
+    String? verifiedAddress; // 验证过的外部地址
+
+    // 1. 从 auth_addresses 中查找内置钱包地址
+    final authAddresses = userData['auth_addresses'];
+    if (authAddresses is List && authAddresses.isNotEmpty) {
+      for (final authAddr in authAddresses) {
+        if (authAddr is Map) {
+          final address = authAddr['address']?.toString();
+          final app = authAddr['app'];
+          // 如果 app.fid 等于用户 fid，这是内置钱包
+          if (app is Map && app['fid']?.toString() == userData['fid']?.toString()) {
+            builtinWalletAddress = address;
+            debugPrint('🔑 找到内置钱包地址: $address');
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. 从 verified_addresses 中获取外部钱包地址
+    final verifiedAddresses = userData['verified_addresses'];
+    if (verifiedAddresses is Map) {
+      final ethAddresses = verifiedAddresses['eth_addresses'];
+      if (ethAddresses is List && ethAddresses.isNotEmpty) {
+        verifiedAddress = ethAddresses.first?.toString();
+      }
+    }
+
+    // 3. 备用方案：从 verifications 获取地址
+    String? legacyAddress;
+    if (userData['verifications']?.isNotEmpty == true) {
+      legacyAddress = userData['verifications'][0];
+    }
+
+    // 4. 优先级选择钱包地址: builtinWallet > custody > verified > legacy
+    String? finalWalletAddress;
+    if (builtinWalletAddress != null && builtinWalletAddress.isNotEmpty) {
+      finalWalletAddress = builtinWalletAddress;
+      debugPrint('✅ 使用内置钱包地址: $builtinWalletAddress');
+    } else if (custodyAddress != null && custodyAddress.isNotEmpty) {
+      finalWalletAddress = custodyAddress;
+      debugPrint('⚠️ 使用托管钱包地址: $custodyAddress');
+    } else if (verifiedAddress != null && verifiedAddress.isNotEmpty) {
+      finalWalletAddress = verifiedAddress;
+      debugPrint('⚠️ 使用验证地址: $verifiedAddress');
+    } else if (legacyAddress != null && legacyAddress.isNotEmpty) {
+      finalWalletAddress = legacyAddress;
+      debugPrint('⚠️ 使用遗留验证地址: $legacyAddress');
+    }
+
+    debugPrint('🎯 最终选择的钱包地址: ${finalWalletAddress ?? "未设置"}');
+
     return User(
       fid: userData['fid'].toString(),
       username: userData['username'] ?? '',
@@ -414,9 +469,7 @@ class NeynarService {
       following: [], // 需要单独获取
       isVerified: userData['power_badge'] ?? false,
       createdAt: DateTime.now().subtract(const Duration(days: 30)), // API没有created_at，使用默认值
-      walletAddress: userData['verifications']?.isNotEmpty == true 
-          ? userData['verifications'][0] 
-          : null,
+      walletAddress: finalWalletAddress,
     );
   }
 }

@@ -211,8 +211,39 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
 
             // 显示钱包相关信息
             if (userProvider.currentUser?.walletAddress != null)
-              _buildInfoItem('custodyAddress',
+              _buildInfoItem('walletAddress',
                 '${userProvider.currentUser!.walletAddress!.substring(0, 10)}...'),
+
+            // 显示调试日志的最后几条
+            const SizedBox(height: 8),
+            Text(
+              '📋 最近日志',
+              style: TextStyle(
+                color: EvaTheme.lightText,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 100,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: EvaTheme.deepBlack,
+                border: Border.all(color: EvaTheme.primaryPurple),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  userProvider.debugLogs.take(5).join('\n'),
+                  style: TextStyle(
+                    color: EvaTheme.lightGray,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -287,13 +318,26 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
             const SizedBox(height: 12),
             if (userProvider.currentUser?.walletAddress != null) ...[
               Text(
-                '钱包地址:',
+                '当前钱包地址:',
                 style: TextStyle(color: EvaTheme.lightText, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 4),
-              SelectableText(
-                userProvider.currentUser!.walletAddress!,
-                style: TextStyle(color: EvaTheme.lightGray, fontFamily: 'monospace'),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: EvaTheme.deepBlack,
+                  border: Border.all(color: EvaTheme.primaryPurple),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  userProvider.currentUser!.walletAddress!,
+                  style: TextStyle(
+                    color: EvaTheme.lightGray,
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -301,14 +345,85 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
                 style: TextStyle(color: EvaTheme.lightText, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: userProvider.hasBuiltinWallet
+                      ? EvaTheme.neonGreen.withValues(alpha: 0.2)
+                      : EvaTheme.warningYellow.withValues(alpha: 0.2),
+                  border: Border.all(
+                    color: userProvider.hasBuiltinWallet
+                        ? EvaTheme.neonGreen
+                        : EvaTheme.warningYellow,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  userProvider.hasBuiltinWallet ? 'Farcaster 内置钱包' : 'Web3 钱包',
+                  style: TextStyle(
+                    color: userProvider.hasBuiltinWallet
+                        ? EvaTheme.neonGreen
+                        : EvaTheme.warningYellow,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
-                userProvider.hasBuiltinWallet ? 'Farcaster 内置钱包' : 'Web3 钱包',
-                style: TextStyle(color: EvaTheme.lightGray),
+                '签名能力:',
+                style: TextStyle(color: EvaTheme.lightText, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    userProvider.hasBuiltinWallet ? Icons.check_circle : Icons.warning,
+                    color: userProvider.hasBuiltinWallet ? Colors.green : Colors.orange,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    userProvider.hasBuiltinWallet
+                        ? '支持内置钱包签名'
+                        : '需要连接外部钱包',
+                    style: TextStyle(
+                      color: EvaTheme.lightGray,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ] else ...[
-              Text(
-                '未检测到钱包地址',
-                style: TextStyle(color: EvaTheme.textGray),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  border: Border.all(color: Colors.red),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.warning, color: Colors.red, size: 32),
+                    const SizedBox(height: 8),
+                    Text(
+                      '未检测到钱包地址',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '这可能意味着 custodyAddress 获取失败',
+                      style: TextStyle(
+                        color: EvaTheme.textGray,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
