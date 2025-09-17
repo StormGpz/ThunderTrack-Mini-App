@@ -624,6 +624,23 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+
+            // 刷新钱包地址按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _refreshWalletAddress,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.neonGreen.withValues(alpha: 0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '刷新钱包地址',
+                  style: TextStyle(color: EvaTheme.deepBlack),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1002,6 +1019,59 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
     } catch (e) {
       userProvider.addDebugLog('❌ 深度钱包地址调试失败: $e');
       _showError('深度调试失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 刷新钱包地址 - 使用最新的eth_accounts方法
+  Future<void> _refreshWalletAddress() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔄 开始刷新钱包地址...');
+
+      if (userProvider.currentUser == null) {
+        userProvider.addDebugLog('❌ 没有当前用户，无法刷新钱包地址');
+        _showError('请先登录');
+        return;
+      }
+
+      // 通过eth_accounts获取最新的钱包地址
+      final miniAppService = FarcasterMiniAppService();
+      final newWalletAddress = await miniAppService.getBuiltinWalletAddress();
+
+      if (newWalletAddress != null && newWalletAddress.isNotEmpty) {
+        userProvider.addDebugLog('✅ 获取到新的钱包地址: $newWalletAddress');
+
+        // 检查是否与当前地址不同
+        if (userProvider.currentUser!.walletAddress != newWalletAddress) {
+          userProvider.addDebugLog('🔄 钱包地址有变化，更新用户信息...');
+          userProvider.addDebugLog('   旧地址: ${userProvider.currentUser!.walletAddress ?? "无"}');
+          userProvider.addDebugLog('   新地址: $newWalletAddress');
+
+          // 更新用户的钱包地址
+          await userProvider.updateUserWalletAddress(newWalletAddress);
+          userProvider.addDebugLog('✅ 钱包地址已更新');
+          _showSuccess('钱包地址已刷新: ${newWalletAddress.substring(0, 10)}...');
+        } else {
+          userProvider.addDebugLog('ℹ️ 钱包地址没有变化');
+          _showSuccess('钱包地址已是最新');
+        }
+      } else {
+        userProvider.addDebugLog('❌ 无法获取钱包地址');
+        _showError('无法获取钱包地址，请检查连接');
+      }
+
+    } catch (e) {
+      userProvider.addDebugLog('❌ 刷新钱包地址失败: $e');
+      _showError('刷新失败: $e');
     } finally {
       setState(() {
         _isLoading = false;

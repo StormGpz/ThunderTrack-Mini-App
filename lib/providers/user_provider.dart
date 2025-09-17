@@ -1102,6 +1102,49 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  /// 更新用户钱包地址
+  Future<void> updateUserWalletAddress(String newWalletAddress) async {
+    try {
+      if (_currentUser == null) {
+        addDebugLog('❌ 没有当前用户，无法更新钱包地址');
+        return;
+      }
+
+      addDebugLog('🔄 更新用户钱包地址...');
+      addDebugLog('   原地址: ${_currentUser!.walletAddress ?? "无"}');
+      addDebugLog('   新地址: $newWalletAddress');
+
+      // 创建新的用户对象
+      final updatedUser = User(
+        fid: _currentUser!.fid,
+        username: _currentUser!.username,
+        displayName: _currentUser!.displayName,
+        avatarUrl: _currentUser!.avatarUrl,
+        bio: _currentUser!.bio,
+        walletAddress: newWalletAddress,
+        followers: _currentUser!.followers,
+        following: _currentUser!.following,
+        isVerified: _currentUser!.isVerified,
+        createdAt: _currentUser!.createdAt,
+        lastActiveAt: _currentUser!.lastActiveAt,
+      );
+
+      // 更新当前用户
+      _currentUser = updatedUser;
+
+      // 保存到本地存储
+      await _saveUserToLocal(updatedUser);
+
+      // 通知监听器
+      notifyListeners();
+
+      addDebugLog('✅ 用户钱包地址更新完成');
+    } catch (e) {
+      addDebugLog('❌ 更新用户钱包地址失败: $e');
+      rethrow;
+    }
+  }
+
   /// 手动连接钱包地址
   Future<bool> connectWalletAddress({
     required String address,
