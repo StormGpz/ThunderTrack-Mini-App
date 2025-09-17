@@ -673,10 +673,11 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return null;
 
     try {
-      debugPrint('🔍 开始调试内置钱包地址...');
+      debugPrint('🔍 开始全面调试所有可能的钱包地址来源...');
 
       final result = <String, dynamic>{};
       final farcasterSDK = js.context['farcasterSDK'];
+      final allAddresses = <String>[];
 
       if (farcasterSDK != null) {
         // 1. 检查 SDK wallet API
@@ -684,26 +685,27 @@ class FarcasterMiniAppService {
         if (wallet != null) {
           debugPrint('🔍 检查 SDK wallet...');
 
-          // 尝试获取钱包地址
-          try {
-            final address = wallet['address'];
-            if (address != null) {
-              result['sdk_wallet_address'] = address.toString();
-              debugPrint('🔑 SDK wallet.address: $address');
-            }
-          } catch (e) {
-            debugPrint('❌ 无法获取 SDK wallet.address: $e');
-          }
+          // 获取所有wallet相关属性
+          final walletKeys = _getJsObjectKeys(wallet);
+          debugPrint('   wallet可用属性: ${walletKeys.join(', ')}');
 
-          // 检查是否有 accounts 或其他地址相关属性
-          try {
-            final accounts = wallet['accounts'];
-            if (accounts != null) {
-              result['sdk_wallet_accounts'] = accounts.toString();
-              debugPrint('📋 SDK wallet.accounts: $accounts');
+          for (final key in walletKeys) {
+            try {
+              final value = wallet[key];
+              if (value != null) {
+                final valueStr = value.toString();
+                result['sdk_wallet_$key'] = valueStr;
+                debugPrint('   wallet.$key: $valueStr');
+
+                // 如果看起来像以太坊地址，添加到地址列表
+                if (_isEthereumAddress(valueStr)) {
+                  allAddresses.add(valueStr);
+                  debugPrint('🔑 发现地址: $valueStr (来源: wallet.$key)');
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ 无法获取 wallet.$key: $e');
             }
-          } catch (e) {
-            debugPrint('❌ 无法获取 SDK wallet.accounts: $e');
           }
         }
 
@@ -712,50 +714,155 @@ class FarcasterMiniAppService {
         if (ethereum != null) {
           debugPrint('🔍 检查 SDK ethereum...');
 
-          try {
-            final selectedAddress = ethereum['selectedAddress'];
-            if (selectedAddress != null) {
-              result['sdk_ethereum_selectedAddress'] = selectedAddress.toString();
-              debugPrint('🔑 SDK ethereum.selectedAddress: $selectedAddress');
-            }
-          } catch (e) {
-            debugPrint('❌ 无法获取 SDK ethereum.selectedAddress: $e');
-          }
+          final ethereumKeys = _getJsObjectKeys(ethereum);
+          debugPrint('   ethereum可用属性: ${ethereumKeys.join(', ')}');
 
-          try {
-            final accounts = ethereum['accounts'];
-            if (accounts != null) {
-              result['sdk_ethereum_accounts'] = accounts.toString();
-              debugPrint('📋 SDK ethereum.accounts: $accounts');
+          for (final key in ethereumKeys) {
+            try {
+              final value = ethereum[key];
+              if (value != null) {
+                final valueStr = value.toString();
+                result['sdk_ethereum_$key'] = valueStr;
+                debugPrint('   ethereum.$key: $valueStr');
+
+                // 如果看起来像以太坊地址，添加到地址列表
+                if (_isEthereumAddress(valueStr)) {
+                  allAddresses.add(valueStr);
+                  debugPrint('🔑 发现地址: $valueStr (来源: ethereum.$key)');
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ 无法获取 ethereum.$key: $e');
             }
-          } catch (e) {
-            debugPrint('❌ 无法获取 SDK ethereum.accounts: $e');
           }
         }
 
-        // 3. 尝试通过 provider 获取账户
+        // 3. 全面检查 context 和 user 信息
+        final context = farcasterSDK['context'];
+        if (context != null) {
+          debugPrint('🔍 检查 SDK context...');
+
+          final contextKeys = _getJsObjectKeys(context);
+          debugPrint('   context可用属性: ${contextKeys.join(', ')}');
+
+          final user = context['user'];
+          if (user != null) {
+            debugPrint('🔍 深度检查 context.user...');
+
+            // 获取user对象的所有属性
+            final userKeys = _getJsObjectKeys(user);
+            debugPrint('   user可用属性: ${userKeys.join(', ')}');
+
+            for (final key in userKeys) {
+              try {
+                final value = user[key];
+                if (value != null) {
+                  final valueStr = value.toString();
+                  result['context_user_$key'] = valueStr;
+                  debugPrint('   user.$key: $valueStr');
+
+                  // 检查是否是地址或包含地址的字段
+                  if (_isEthereumAddress(valueStr)) {
+                    allAddresses.add(valueStr);
+                    debugPrint('🔑 发现地址: $valueStr (来源: user.$key)');
+                  } else if (key.toLowerCase().contains('address') ||
+                            key.toLowerCase().contains('wallet') ||
+                            key.toLowerCase().contains('custody')) {
+                    debugPrint('🔍 地址相关字段 user.$key: $valueStr');
+
+                    // 如果是数组或对象，尝试解析
+                    if (valueStr.startsWith('[') || valueStr.startsWith('{')) {
+                      try {
+                        final parsed = jsonDecode(valueStr);
+                        debugPrint('   解析后: $parsed');
+                        _extractAddressesFromData(parsed, allAddresses, 'user.$key');
+                      } catch (e) {
+                        debugPrint('   无法解析JSON: $e');
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                debugPrint('❌ 无法获取 user.$key: $e');
+              }
+            }
+          }
+
+          // 检查context的其他属性
+          for (final key in contextKeys) {
+            if (key != 'user') {
+              try {
+                final value = context[key];
+                if (value != null) {
+                  final valueStr = value.toString();
+                  result['context_$key'] = valueStr;
+                  debugPrint('   context.$key: $valueStr');
+
+                  if (_isEthereumAddress(valueStr)) {
+                    allAddresses.add(valueStr);
+                    debugPrint('🔑 发现地址: $valueStr (来源: context.$key)');
+                  }
+                }
+              } catch (e) {
+                debugPrint('❌ 无法获取 context.$key: $e');
+              }
+            }
+          }
+        }
+
+        // 4. 检查SDK的其他属性
+        final sdkKeys = _getJsObjectKeys(farcasterSDK);
+        debugPrint('🔍 检查 SDK 其他属性: ${sdkKeys.join(', ')}');
+
+        for (final key in sdkKeys) {
+          if (!['wallet', 'ethereum', 'context'].contains(key)) {
+            try {
+              final value = farcasterSDK[key];
+              if (value != null) {
+                final valueStr = value.toString();
+                result['sdk_$key'] = valueStr;
+                debugPrint('   sdk.$key: $valueStr');
+
+                if (_isEthereumAddress(valueStr)) {
+                  allAddresses.add(valueStr);
+                  debugPrint('🔑 发现地址: $valueStr (来源: sdk.$key)');
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ 无法获取 sdk.$key: $e');
+            }
+          }
+        }
+
+        // 5. 尝试provider方法获取账户
         final provider = getEthereumProvider();
         if (provider != null) {
           debugPrint('🔍 通过 provider 获取账户...');
 
           try {
-            // 直接调用 eth_accounts (不需要用户授权)
             final request = provider['request'];
             if (request != null) {
-              final accountsRequest = js.JsObject.jsify({
+              // 尝试获取当前账户
+              final accountsPromise = _callAsyncFunction(request, [js.JsObject.jsify({
                 'method': 'eth_accounts',
                 'params': [],
-              });
+              })]);
 
-              final accounts = request.apply([accountsRequest]);
-              if (accounts != null) {
-                result['provider_accounts'] = accounts.toString();
-                debugPrint('📋 Provider accounts: $accounts');
+              if (accountsPromise != null) {
+                final accounts = await accountsPromise;
+                if (accounts != null) {
+                  result['provider_accounts'] = accounts.toString();
+                  debugPrint('📋 Provider accounts: $accounts');
 
-                // 如果返回的是 Promise，需要特殊处理
-                if (accounts['then'] != null) {
-                  debugPrint('⚠️ Provider 返回 Promise，需要异步处理');
-                  result['provider_accounts_status'] = 'promise_returned';
+                  // 提取账户地址
+                  if (accounts is List) {
+                    for (final account in accounts) {
+                      if (_isEthereumAddress(account.toString())) {
+                        allAddresses.add(account.toString());
+                        debugPrint('🔑 发现地址: ${account.toString()} (来源: provider.accounts)');
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -765,41 +872,112 @@ class FarcasterMiniAppService {
           }
         }
 
-        // 4. 检查 context 中的钱包信息
-        final context = farcasterSDK['context'];
-        if (context != null) {
-          final user = context['user'];
-          if (user != null) {
-            debugPrint('🔍 检查 context.user 钱包信息...');
-
-            // 尝试获取所有可能的地址字段
-            final addressFields = [
-              'address', 'walletAddress', 'custodyAddress',
-              'connectedAddress', 'primaryAddress', 'ethAddress'
-            ];
-
-            for (final field in addressFields) {
-              try {
-                final value = user[field];
-                if (value != null) {
-                  result['context_user_$field'] = value.toString();
-                  debugPrint('🔑 context.user.$field: $value');
-                }
-              } catch (e) {
-                debugPrint('❌ 无法获取 context.user.$field: $e');
-              }
-            }
-          }
-        }
+        // 6. 检查全局window对象中的地址
+        debugPrint('🔍 检查全局对象中的地址...');
+        final globalAddresses = _searchGlobalAddresses();
+        globalAddresses.forEach((source, address) {
+          result['global_$source'] = address;
+          allAddresses.add(address);
+          debugPrint('🔑 发现地址: $address (来源: global.$source)');
+        });
       }
 
-      debugPrint('🎯 内置钱包地址调试结果: $result');
+      // 去重并分析地址
+      final uniqueAddresses = allAddresses.toSet().toList();
+      result['all_unique_addresses'] = uniqueAddresses;
+      result['address_count'] = uniqueAddresses.length;
+
+      debugPrint('🎯 所有发现的地址 (${uniqueAddresses.length}个):');
+      for (int i = 0; i < uniqueAddresses.length; i++) {
+        final addr = uniqueAddresses[i];
+        debugPrint('   ${i + 1}. $addr ${addr.startsWith('0x7122') ? '⭐ (匹配目标!)' : ''}');
+      }
+
+      debugPrint('🎯 完整的调试结果: $result');
       return result.isNotEmpty ? result : null;
 
     } catch (e) {
       debugPrint('❌ 调试内置钱包地址失败: $e');
       return null;
     }
+  }
+
+  /// 检查字符串是否是以太坊地址
+  bool _isEthereumAddress(String value) {
+    // 以太坊地址：0x开头，42字符长度，包含十六进制字符
+    return value.length == 42 &&
+           value.startsWith('0x') &&
+           RegExp(r'^0x[a-fA-F0-9]{40}$').hasMatch(value);
+  }
+
+  /// 从数据结构中递归提取地址
+  void _extractAddressesFromData(dynamic data, List<String> addresses, String source) {
+    if (data == null) return;
+
+    if (data is String && _isEthereumAddress(data)) {
+      addresses.add(data);
+      debugPrint('🔑 从$source提取地址: $data');
+    } else if (data is List) {
+      for (final item in data) {
+        _extractAddressesFromData(item, addresses, source);
+      }
+    } else if (data is Map) {
+      data.forEach((key, value) {
+        _extractAddressesFromData(value, addresses, '$source.$key');
+      });
+    }
+  }
+
+  /// 搜索全局对象中的地址
+  Map<String, String> _searchGlobalAddresses() {
+    final result = <String, String>{};
+
+    try {
+      // 检查window对象的一些常见属性
+      final searchProperties = [
+        'ethereum', 'web3', 'farcasterAddress', 'userAddress',
+        'walletAddress', 'connectedAddress', 'currentAddress'
+      ];
+
+      for (final prop in searchProperties) {
+        try {
+          final value = js.context[prop];
+          if (value != null) {
+            final valueStr = value.toString();
+            if (_isEthereumAddress(valueStr)) {
+              result[prop] = valueStr;
+            }
+          }
+        } catch (e) {
+          // 忽略错误，继续检查其他属性
+        }
+      }
+
+      // 检查localStorage中的地址
+      try {
+        final localStorage = js.context['localStorage'];
+        if (localStorage != null) {
+          final storageKeys = ['userAddress', 'walletAddress', 'farcasterAddress', 'connectedAddress'];
+          for (final key in storageKeys) {
+            try {
+              final value = localStorage.callMethod('getItem', [key]);
+              if (value != null && _isEthereumAddress(value.toString())) {
+                result['localStorage_$key'] = value.toString();
+              }
+            } catch (e) {
+              // 忽略错误
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('检查localStorage失败: $e');
+      }
+
+    } catch (e) {
+      debugPrint('搜索全局地址失败: $e');
+    }
+
+    return result;
   }
 
   /// 获取全局对象的键名用于调试

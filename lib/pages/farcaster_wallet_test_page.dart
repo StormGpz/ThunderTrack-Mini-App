@@ -896,85 +896,111 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
     });
 
     try {
-      userProvider.addDebugLog('🔍 开始深度钱包地址调试...');
+      userProvider.addDebugLog('🔍 开始全面深度钱包地址调试...');
 
-      // 1. 检查 SDK 中所有可能的钱包相关属性
-      final farcasterSDK = js.context['farcasterSDK'];
-      if (farcasterSDK != null) {
-        userProvider.addDebugLog('📦 检查 Farcaster SDK 钱包属性...');
-
-        // 检查 wallet 对象
-        final wallet = farcasterSDK['wallet'];
-        if (wallet != null) {
-          userProvider.addDebugLog('🔍 SDK wallet 对象存在');
-          _logAllProperties(wallet, 'wallet', userProvider);
-        }
-
-        // 检查 ethereum 对象
-        final ethereum = farcasterSDK['ethereum'];
-        if (ethereum != null) {
-          userProvider.addDebugLog('🔍 SDK ethereum 对象存在');
-          _logAllProperties(ethereum, 'ethereum', userProvider);
-        }
-
-        // 检查 context 对象
-        final context = farcasterSDK['context'];
-        if (context != null) {
-          userProvider.addDebugLog('🔍 SDK context 对象存在');
-          final user = context['user'];
-          if (user != null) {
-            userProvider.addDebugLog('🔍 SDK context.user 对象存在');
-            _logAllProperties(user, 'context.user', userProvider);
-          }
-        }
-      }
-
-      // 2. 检查全局 ethereum 对象
-      final globalEthereum = js.context['ethereum'];
-      if (globalEthereum != null) {
-        userProvider.addDebugLog('🌐 检查全局 ethereum 对象...');
-        _logAllProperties(globalEthereum, 'global.ethereum', userProvider);
-      }
-
-      // 3. 调用专门的内置钱包地址调试方法
-      userProvider.addDebugLog('🔍 调用专门的内置钱包地址调试...');
-
-      // 获取 miniapp service 实例
+      // 调用增强版的调试方法
       final miniAppService = FarcasterMiniAppService();
       final walletDebugResult = await miniAppService.debugBuiltinWalletAddress();
 
       if (walletDebugResult != null) {
-        userProvider.addDebugLog('✅ 内置钱包调试成功:');
-        walletDebugResult.forEach((key, value) {
-          userProvider.addDebugLog('   $key: $value');
-          // 特别标记可能的内置钱包地址
-          if (value.toString().startsWith('0x7122')) {
-            userProvider.addDebugLog('🎯 *** 找到可能的内置钱包地址: $key = $value ***');
+        userProvider.addDebugLog('✅ 钱包调试完成！');
+
+        // 首先显示总结信息
+        final addressCount = walletDebugResult['address_count'] ?? 0;
+        final allAddresses = walletDebugResult['all_unique_addresses'] as List<dynamic>? ?? [];
+
+        userProvider.addDebugLog('📊 总共发现 $addressCount 个唯一地址');
+
+        // 显示所有发现的地址
+        if (allAddresses.isNotEmpty) {
+          userProvider.addDebugLog('🎯 所有发现的地址:');
+          for (int i = 0; i < allAddresses.length; i++) {
+            final addr = allAddresses[i].toString();
+            final isTarget = addr.startsWith('0x7122');
+            userProvider.addDebugLog(
+              '   ${i + 1}. $addr ${isTarget ? '⭐ (匹配目标地址!)' : ''}'
+            );
+          }
+        }
+
+        userProvider.addDebugLog('');
+        userProvider.addDebugLog('📋 详细调试信息:');
+
+        // 按类别显示详细信息
+        final categories = {
+          'SDK Wallet': 'sdk_wallet_',
+          'SDK Ethereum': 'sdk_ethereum_',
+          'Context User': 'context_user_',
+          'Context其他': 'context_',
+          'SDK其他': 'sdk_',
+          'Provider': 'provider_',
+          '全局对象': 'global_',
+        };
+
+        categories.forEach((categoryName, prefix) {
+          final categoryItems = walletDebugResult.entries
+              .where((entry) => entry.key.startsWith(prefix))
+              .toList();
+
+          if (categoryItems.isNotEmpty) {
+            userProvider.addDebugLog('');
+            userProvider.addDebugLog('📂 $categoryName:');
+
+            for (final item in categoryItems) {
+              final key = item.key.substring(prefix.length);
+              final value = item.value.toString();
+
+              // 检查是否是地址
+              final isAddress = value.length == 42 &&
+                              value.startsWith('0x') &&
+                              RegExp(r'^0x[a-fA-F0-9]{40}$').hasMatch(value);
+
+              if (isAddress) {
+                final isTarget = value.startsWith('0x7122');
+                userProvider.addDebugLog(
+                  '   🔑 $key: $value ${isTarget ? '⭐' : ''}'
+                );
+              } else if (key.toLowerCase().contains('address') ||
+                        key.toLowerCase().contains('wallet') ||
+                        key.toLowerCase().contains('account')) {
+                userProvider.addDebugLog('   🔍 $key: $value');
+              } else if (value.length < 100) {
+                userProvider.addDebugLog('   📝 $key: $value');
+              } else {
+                userProvider.addDebugLog('   📝 $key: ${value.substring(0, 50)}...');
+              }
+            }
           }
         });
+
+        // 特别检查目标地址
+        final targetAddresses = allAddresses
+            .where((addr) => addr.toString().startsWith('0x7122'))
+            .toList();
+
+        if (targetAddresses.isNotEmpty) {
+          userProvider.addDebugLog('');
+          userProvider.addDebugLog('🎉 找到目标地址 (0x7122开头):');
+          for (final addr in targetAddresses) {
+            userProvider.addDebugLog('⭐ $addr');
+          }
+        } else {
+          userProvider.addDebugLog('');
+          userProvider.addDebugLog('❓ 未找到以0x7122开头的地址');
+          userProvider.addDebugLog('💡 建议检查其他可能的地址来源或字段');
+        }
+
       } else {
-        userProvider.addDebugLog('❌ 内置钱包调试返回空结果');
+        userProvider.addDebugLog('❌ 钱包调试失败或未找到钱包信息');
+        userProvider.addDebugLog('💡 可能原因:');
+        userProvider.addDebugLog('   1. 未在Farcaster Mini App环境中运行');
+        userProvider.addDebugLog('   2. SDK未正确加载');
+        userProvider.addDebugLog('   3. 用户未登录');
       }
 
-      // 4. 重新初始化用户状态
-      userProvider.addDebugLog('👤 重新获取用户信息...');
-      try {
-        await userProvider.initialize();
-        userProvider.addDebugLog('✅ 用户状态重新初始化完成');
-      } catch (e) {
-        userProvider.addDebugLog('❌ 用户状态初始化失败: $e');
-      }
-
-      // 5. 检查当前用户的钱包地址来源
-      if (userProvider.currentUser?.walletAddress != null) {
-        userProvider.addDebugLog('💰 当前用户钱包地址: ${userProvider.currentUser!.walletAddress}');
-        userProvider.addDebugLog('🆔 当前用户FID: ${userProvider.currentUser!.fid}');
-        userProvider.addDebugLog('👤 当前用户名: ${userProvider.currentUser!.username}');
-      }
-
-      _showSuccess('深度调试完成，请查看日志');
+      _showSuccess('钱包地址调试完成，请查看日志');
     } catch (e) {
-      userProvider.addDebugLog('❌ 深度调试失败: $e');
+      userProvider.addDebugLog('❌ 深度钱包地址调试失败: $e');
       _showError('深度调试失败: $e');
     } finally {
       setState(() {
