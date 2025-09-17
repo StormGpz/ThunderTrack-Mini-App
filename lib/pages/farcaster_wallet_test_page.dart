@@ -769,8 +769,8 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
 
       await _requestWalletConnection(provider);
 
-      // 重新获取用户数据
-      await userProvider.initialize();
+      // 不要重新初始化用户数据，避免覆盖正确的钱包地址
+      userProvider.addDebugLog('✅ 钱包权限请求完成，保持当前钱包地址');
 
       _showSuccess('钱包权限请求完成');
     } catch (e) {

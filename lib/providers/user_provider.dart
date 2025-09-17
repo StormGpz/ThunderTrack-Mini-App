@@ -1328,9 +1328,20 @@ class UserProvider extends ChangeNotifier {
 
   /// 签名消息 (优先使用 Farcaster 内置钱包，备用 Web3 钱包)
   Future<String?> signMessage(String message) async {
+    addDebugLog('🔏 开始签名消息...');
+    addDebugLog('   消息: ${message.length > 50 ? message.substring(0, 50) + "..." : message}');
+
+    // 检查内置钱包签名条件
+    addDebugLog('📋 检查内置钱包签名条件:');
+    addDebugLog('   isMiniAppEnvironment: $isMiniAppEnvironment');
+    addDebugLog('   hasBuiltinWallet: $hasBuiltinWallet');
+    addDebugLog('   当前用户: ${_currentUser != null ? "存在" : "不存在"}');
+    addDebugLog('   钱包地址: ${_currentUser?.walletAddress ?? "无"}');
+
     // 优先使用 Farcaster 内置钱包
     if (isMiniAppEnvironment && hasBuiltinWallet && _currentUser?.walletAddress != null) {
-      addDebugLog('🔏 使用 Farcaster 内置钱包签名消息');
+      addDebugLog('✅ 条件满足，使用 Farcaster 内置钱包签名消息');
+      addDebugLog('   使用地址: ${_currentUser!.walletAddress}');
       try {
         final signature = await _miniAppService.signMessageWithBuiltinWallet(
           message,
@@ -1339,24 +1350,35 @@ class UserProvider extends ChangeNotifier {
         if (signature != null) {
           addDebugLog('✅ Farcaster 内置钱包签名成功');
           return signature;
+        } else {
+          addDebugLog('⚠️ Farcaster 内置钱包签名返回null');
         }
       } catch (e) {
         addDebugLog('❌ Farcaster 内置钱包签名失败: $e');
       }
+    } else {
+      addDebugLog('❌ 内置钱包签名条件不满足');
     }
 
     // 备用方案：使用 Web3 钱包
+    addDebugLog('📋 检查 Web3 钱包签名条件:');
+    addDebugLog('   _walletService.isConnected: ${_walletService.isConnected}');
+
     if (_walletService.isConnected) {
-      addDebugLog('🔏 使用 Web3 钱包签名消息');
+      addDebugLog('✅ Web3 钱包已连接，尝试签名');
       try {
         final signature = await _walletService.signMessage(message);
         if (signature != null) {
           addDebugLog('✅ Web3 钱包签名成功');
           return signature;
+        } else {
+          addDebugLog('⚠️ Web3 钱包签名返回null');
         }
       } catch (e) {
         addDebugLog('❌ Web3 钱包签名失败: $e');
       }
+    } else {
+      addDebugLog('❌ Web3 钱包未连接');
     }
 
     addDebugLog('❌ 无可用钱包进行签名');
