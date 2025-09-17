@@ -229,9 +229,20 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
                 const Spacer(),
                 TextButton(
                   onPressed: () async {
-                    // 手动刷新用户数据
                     final userProvider = Provider.of<UserProvider>(context, listen: false);
-                    await userProvider.autoLogin();
+
+                    // 清除旧的调试日志
+                    userProvider.clearDebugLogs();
+                    userProvider.addDebugLog('🔄 手动刷新用户数据开始...');
+
+                    try {
+                      // 重新初始化用户状态，这会触发自动登录
+                      await userProvider.initialize();
+                      userProvider.addDebugLog('✅ 用户数据刷新完成');
+                    } catch (e) {
+                      userProvider.addDebugLog('❌ 刷新失败: $e');
+                    }
+
                     setState(() {});
                   },
                   child: Text(
