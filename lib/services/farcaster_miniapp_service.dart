@@ -668,6 +668,140 @@ class FarcasterMiniAppService {
     return null;
   }
 
+  /// 调试内置钱包地址 - 专门用于查找内置钱包地址
+  Future<Map<String, dynamic>?> debugBuiltinWalletAddress() async {
+    if (!kIsWeb) return null;
+
+    try {
+      debugPrint('🔍 开始调试内置钱包地址...');
+
+      final result = <String, dynamic>{};
+      final farcasterSDK = js.context['farcasterSDK'];
+
+      if (farcasterSDK != null) {
+        // 1. 检查 SDK wallet API
+        final wallet = farcasterSDK['wallet'];
+        if (wallet != null) {
+          debugPrint('🔍 检查 SDK wallet...');
+
+          // 尝试获取钱包地址
+          try {
+            final address = wallet['address'];
+            if (address != null) {
+              result['sdk_wallet_address'] = address.toString();
+              debugPrint('🔑 SDK wallet.address: $address');
+            }
+          } catch (e) {
+            debugPrint('❌ 无法获取 SDK wallet.address: $e');
+          }
+
+          // 检查是否有 accounts 或其他地址相关属性
+          try {
+            final accounts = wallet['accounts'];
+            if (accounts != null) {
+              result['sdk_wallet_accounts'] = accounts.toString();
+              debugPrint('📋 SDK wallet.accounts: $accounts');
+            }
+          } catch (e) {
+            debugPrint('❌ 无法获取 SDK wallet.accounts: $e');
+          }
+        }
+
+        // 2. 检查 SDK ethereum API
+        final ethereum = farcasterSDK['ethereum'];
+        if (ethereum != null) {
+          debugPrint('🔍 检查 SDK ethereum...');
+
+          try {
+            final selectedAddress = ethereum['selectedAddress'];
+            if (selectedAddress != null) {
+              result['sdk_ethereum_selectedAddress'] = selectedAddress.toString();
+              debugPrint('🔑 SDK ethereum.selectedAddress: $selectedAddress');
+            }
+          } catch (e) {
+            debugPrint('❌ 无法获取 SDK ethereum.selectedAddress: $e');
+          }
+
+          try {
+            final accounts = ethereum['accounts'];
+            if (accounts != null) {
+              result['sdk_ethereum_accounts'] = accounts.toString();
+              debugPrint('📋 SDK ethereum.accounts: $accounts');
+            }
+          } catch (e) {
+            debugPrint('❌ 无法获取 SDK ethereum.accounts: $e');
+          }
+        }
+
+        // 3. 尝试通过 provider 获取账户
+        final provider = getEthereumProvider();
+        if (provider != null) {
+          debugPrint('🔍 通过 provider 获取账户...');
+
+          try {
+            // 直接调用 eth_accounts (不需要用户授权)
+            final request = provider['request'];
+            if (request != null) {
+              final accountsRequest = js.JsObject.jsify({
+                'method': 'eth_accounts',
+                'params': [],
+              });
+
+              final accounts = request.apply([accountsRequest]);
+              if (accounts != null) {
+                result['provider_accounts'] = accounts.toString();
+                debugPrint('📋 Provider accounts: $accounts');
+
+                // 如果返回的是 Promise，需要特殊处理
+                if (accounts['then'] != null) {
+                  debugPrint('⚠️ Provider 返回 Promise，需要异步处理');
+                  result['provider_accounts_status'] = 'promise_returned';
+                }
+              }
+            }
+          } catch (e) {
+            debugPrint('❌ 通过 provider 获取账户失败: $e');
+            result['provider_error'] = e.toString();
+          }
+        }
+
+        // 4. 检查 context 中的钱包信息
+        final context = farcasterSDK['context'];
+        if (context != null) {
+          final user = context['user'];
+          if (user != null) {
+            debugPrint('🔍 检查 context.user 钱包信息...');
+
+            // 尝试获取所有可能的地址字段
+            final addressFields = [
+              'address', 'walletAddress', 'custodyAddress',
+              'connectedAddress', 'primaryAddress', 'ethAddress'
+            ];
+
+            for (final field in addressFields) {
+              try {
+                final value = user[field];
+                if (value != null) {
+                  result['context_user_$field'] = value.toString();
+                  debugPrint('🔑 context.user.$field: $value');
+                }
+              } catch (e) {
+                debugPrint('❌ 无法获取 context.user.$field: $e');
+              }
+            }
+          }
+        }
+      }
+
+      debugPrint('🎯 内置钱包地址调试结果: $result');
+      return result.isNotEmpty ? result : null;
+
+    } catch (e) {
+      debugPrint('❌ 调试内置钱包地址失败: $e');
+      return null;
+    }
+  }
+
   /// 获取全局对象的键名用于调试
   List<String> _getGlobalKeys() {
     try {

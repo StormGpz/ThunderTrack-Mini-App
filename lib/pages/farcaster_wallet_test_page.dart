@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../theme/eva_theme.dart';
+import '../services/farcaster_miniapp_service.dart';
+import 'dart:js' as js;
+import 'dart:async';
 
 /// Farcaster 内置钱包测试页面
 class FarcasterWalletTestPage extends StatefulWidget {
@@ -148,6 +151,10 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
 
                 // 消息签名测试
                 _buildSignMessageCard(),
+                const SizedBox(height: 20),
+
+                // 钱包连接测试
+                _buildWalletConnectionCard(),
                 const SizedBox(height: 20),
 
                 // EIP-712 签名测试
@@ -522,6 +529,316 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
     );
   }
 
+  Widget _buildWalletConnectionCard() {
+    return Card(
+      color: EvaTheme.mechGray,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🔗 钱包连接测试',
+              style: TextStyle(
+                color: EvaTheme.lightText,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '尝试通过不同方式连接和获取钱包地址',
+              style: TextStyle(color: EvaTheme.textGray, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+
+            // SDK 钱包连接按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _testSDKWalletConnection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.primaryPurple,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        '测试 SDK 钱包连接',
+                        style: TextStyle(color: EvaTheme.lightText),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 以太坊提供者测试按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _testEthereumProvider,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.neonGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '测试以太坊提供者',
+                  style: TextStyle(color: EvaTheme.deepBlack),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 请求钱包权限按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _requestWalletPermissions,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.warningYellow,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '请求钱包权限',
+                  style: TextStyle(color: EvaTheme.deepBlack),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 深度钱包地址调试按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _deepWalletAddressDebug,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.primaryPurple.withValues(alpha: 0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '深度调试钱包地址',
+                  style: TextStyle(color: EvaTheme.lightText),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 测试 SDK 钱包连接
+  Future<void> _testSDKWalletConnection() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔗 开始测试 SDK 钱包连接...');
+
+      // 检查 SDK 是否可用
+      if (!userProvider.isMiniAppSdkAvailable) {
+        userProvider.addDebugLog('❌ Farcaster SDK 不可用');
+        _showError('Farcaster SDK 不可用');
+        return;
+      }
+
+      // 获取以太坊提供者
+      final provider = userProvider.getEthereumProvider();
+      if (provider == null) {
+        userProvider.addDebugLog('❌ 未找到以太坊提供者');
+        _showError('未找到以太坊提供者');
+        return;
+      }
+
+      userProvider.addDebugLog('✅ 找到以太坊提供者');
+
+      // 尝试获取账户
+      try {
+        final accounts = await _callProviderMethod(provider, 'eth_accounts');
+        userProvider.addDebugLog('📋 当前账户: $accounts');
+
+        if (accounts != null && accounts is List && accounts.isNotEmpty) {
+          final address = accounts.first.toString();
+          userProvider.addDebugLog('🔑 获取到钱包地址: $address');
+          _showSuccess('获取到钱包地址: ${address.substring(0, 10)}...');
+        } else {
+          userProvider.addDebugLog('⚠️ 没有已连接的账户，尝试请求连接...');
+          await _requestWalletConnection(provider);
+        }
+      } catch (e) {
+        userProvider.addDebugLog('❌ 获取账户失败: $e');
+        _showError('获取账户失败: $e');
+      }
+    } catch (e) {
+      userProvider.addDebugLog('❌ SDK 钱包连接测试失败: $e');
+      _showError('测试失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 测试以太坊提供者
+  Future<void> _testEthereumProvider() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔍 开始测试以太坊提供者...');
+
+      final provider = userProvider.getEthereumProvider();
+      if (provider == null) {
+        userProvider.addDebugLog('❌ 未找到以太坊提供者');
+        _showError('未找到以太坊提供者');
+        return;
+      }
+
+      // 测试各种方法
+      final methods = [
+        'eth_accounts',
+        'eth_requestAccounts',
+        'eth_coinbase',
+        'net_version',
+        'eth_chainId',
+      ];
+
+      for (final method in methods) {
+        try {
+          final result = await _callProviderMethod(provider, method);
+          userProvider.addDebugLog('✅ $method: $result');
+        } catch (e) {
+          userProvider.addDebugLog('❌ $method 失败: $e');
+        }
+      }
+
+      _showSuccess('以太坊提供者测试完成，查看日志');
+    } catch (e) {
+      userProvider.addDebugLog('❌ 以太坊提供者测试失败: $e');
+      _showError('测试失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 请求钱包权限
+  Future<void> _requestWalletPermissions() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔐 开始请求钱包权限...');
+
+      final provider = userProvider.getEthereumProvider();
+      if (provider == null) {
+        userProvider.addDebugLog('❌ 未找到以太坊提供者');
+        _showError('未找到以太坊提供者');
+        return;
+      }
+
+      await _requestWalletConnection(provider);
+
+      // 重新获取用户数据
+      await userProvider.initialize();
+
+      _showSuccess('钱包权限请求完成');
+    } catch (e) {
+      userProvider.addDebugLog('❌ 请求钱包权限失败: $e');
+      _showError('请求权限失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 请求钱包连接
+  Future<void> _requestWalletConnection(dynamic provider) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    try {
+      userProvider.addDebugLog('🔗 请求钱包连接...');
+
+      final accounts = await _callProviderMethod(provider, 'eth_requestAccounts');
+      userProvider.addDebugLog('✅ 钱包连接成功: $accounts');
+
+      if (accounts != null && accounts is List && accounts.isNotEmpty) {
+        final address = accounts.first.toString();
+        userProvider.addDebugLog('🔑 新连接的钱包地址: $address');
+      }
+    } catch (e) {
+      userProvider.addDebugLog('❌ 钱包连接请求失败: $e');
+      rethrow;
+    }
+  }
+
+  /// 调用提供者方法
+  Future<dynamic> _callProviderMethod(dynamic provider, String method, [List? params]) async {
+    try {
+      if (provider == null) return null;
+
+      // 使用 dart:js 调用以太坊提供者方法
+      final request = provider['request'];
+      if (request == null) {
+        throw Exception('Provider 没有 request 方法');
+      }
+
+      final requestData = js.JsObject.jsify({
+        'method': method,
+        'params': params ?? [],
+      });
+
+      final result = request.apply([requestData]);
+
+      // 检查是否是 Promise
+      if (result != null && result['then'] != null) {
+        // 这是一个Promise，需要等待完成
+        final completer = Completer<dynamic>();
+
+        final onSuccess = js.allowInterop((dynamic value) {
+          if (!completer.isCompleted) {
+            completer.complete(value);
+          }
+        });
+
+        final onError = js.allowInterop((dynamic error) {
+          if (!completer.isCompleted) {
+            completer.completeError(Exception('Promise rejected: $error'));
+          }
+        });
+
+        result.callMethod('then', [onSuccess]).callMethod('catch', [onError]);
+
+        // 设置超时
+        Timer(const Duration(seconds: 5), () {
+          if (!completer.isCompleted) {
+            completer.completeError(TimeoutException('Request timeout'));
+          }
+        });
+
+        return await completer.future;
+      }
+
+      return result;
+    } catch (e) {
+      throw Exception('调用 $method 失败: $e');
+    }
+  }
+
   Widget _buildSignTypedDataCard() {
     return Card(
       color: EvaTheme.mechGray,
@@ -568,6 +885,148 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
         ),
       ),
     );
+  }
+
+  /// 深度调试钱包地址 - 专门查找内置钱包地址
+  Future<void> _deepWalletAddressDebug() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔍 开始深度钱包地址调试...');
+
+      // 1. 检查 SDK 中所有可能的钱包相关属性
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK != null) {
+        userProvider.addDebugLog('📦 检查 Farcaster SDK 钱包属性...');
+
+        // 检查 wallet 对象
+        final wallet = farcasterSDK['wallet'];
+        if (wallet != null) {
+          userProvider.addDebugLog('🔍 SDK wallet 对象存在');
+          _logAllProperties(wallet, 'wallet', userProvider);
+        }
+
+        // 检查 ethereum 对象
+        final ethereum = farcasterSDK['ethereum'];
+        if (ethereum != null) {
+          userProvider.addDebugLog('🔍 SDK ethereum 对象存在');
+          _logAllProperties(ethereum, 'ethereum', userProvider);
+        }
+
+        // 检查 context 对象
+        final context = farcasterSDK['context'];
+        if (context != null) {
+          userProvider.addDebugLog('🔍 SDK context 对象存在');
+          final user = context['user'];
+          if (user != null) {
+            userProvider.addDebugLog('🔍 SDK context.user 对象存在');
+            _logAllProperties(user, 'context.user', userProvider);
+          }
+        }
+      }
+
+      // 2. 检查全局 ethereum 对象
+      final globalEthereum = js.context['ethereum'];
+      if (globalEthereum != null) {
+        userProvider.addDebugLog('🌐 检查全局 ethereum 对象...');
+        _logAllProperties(globalEthereum, 'global.ethereum', userProvider);
+      }
+
+      // 3. 调用专门的内置钱包地址调试方法
+      userProvider.addDebugLog('🔍 调用专门的内置钱包地址调试...');
+
+      // 获取 miniapp service 实例
+      final miniAppService = FarcasterMiniAppService();
+      final walletDebugResult = await miniAppService.debugBuiltinWalletAddress();
+
+      if (walletDebugResult != null) {
+        userProvider.addDebugLog('✅ 内置钱包调试成功:');
+        walletDebugResult.forEach((key, value) {
+          userProvider.addDebugLog('   $key: $value');
+          // 特别标记可能的内置钱包地址
+          if (value.toString().startsWith('0x7122')) {
+            userProvider.addDebugLog('🎯 *** 找到可能的内置钱包地址: $key = $value ***');
+          }
+        });
+      } else {
+        userProvider.addDebugLog('❌ 内置钱包调试返回空结果');
+      }
+
+      // 4. 重新初始化用户状态
+      userProvider.addDebugLog('👤 重新获取用户信息...');
+      try {
+        await userProvider.initialize();
+        userProvider.addDebugLog('✅ 用户状态重新初始化完成');
+      } catch (e) {
+        userProvider.addDebugLog('❌ 用户状态初始化失败: $e');
+      }
+
+      // 5. 检查当前用户的钱包地址来源
+      if (userProvider.currentUser?.walletAddress != null) {
+        userProvider.addDebugLog('💰 当前用户钱包地址: ${userProvider.currentUser!.walletAddress}');
+        userProvider.addDebugLog('🆔 当前用户FID: ${userProvider.currentUser!.fid}');
+        userProvider.addDebugLog('👤 当前用户名: ${userProvider.currentUser!.username}');
+      }
+
+      _showSuccess('深度调试完成，请查看日志');
+    } catch (e) {
+      userProvider.addDebugLog('❌ 深度调试失败: $e');
+      _showError('深度调试失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 记录 JS 对象的所有属性
+  void _logAllProperties(dynamic jsObject, String objectName, UserProvider userProvider) {
+    try {
+      // 使用 Object.keys 获取所有属性名
+      final keys = js.context['Object'].callMethod('keys', [jsObject]);
+      if (keys != null) {
+        final keyList = List<String>.from(keys);
+        userProvider.addDebugLog('🔑 $objectName 的属性: ${keyList.join(', ')}');
+
+        // 遍历每个属性并记录其值
+        for (final key in keyList) {
+          try {
+            final value = jsObject[key];
+            if (value != null) {
+              final valueStr = value.toString();
+              final displayValue = valueStr.length > 100 ? '${valueStr.substring(0, 100)}...' : valueStr;
+              userProvider.addDebugLog('   $objectName.$key = $displayValue');
+
+              // 如果是地址相关的属性，特别标记
+              if (key.toLowerCase().contains('address') || key.toLowerCase().contains('account')) {
+                userProvider.addDebugLog('🔑 *** 发现地址属性: $objectName.$key = $displayValue ***');
+              }
+            }
+          } catch (e) {
+            userProvider.addDebugLog('   $objectName.$key = [访问失败: $e]');
+          }
+        }
+      }
+
+      // 检查一些常见的嵌套属性
+      final commonNestedProps = ['address', 'selectedAddress', 'accounts', 'custodyAddress'];
+      for (final prop in commonNestedProps) {
+        try {
+          final value = jsObject[prop];
+          if (value != null) {
+            userProvider.addDebugLog('🎯 $objectName.$prop = ${value.toString()}');
+          }
+        } catch (e) {
+          // 忽略访问错误
+        }
+      }
+    } catch (e) {
+      userProvider.addDebugLog('❌ 无法获取 $objectName 的属性: $e');
+    }
   }
 
   Widget _buildSignatureResultCard() {
