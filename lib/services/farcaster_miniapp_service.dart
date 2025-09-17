@@ -668,6 +668,51 @@ class FarcasterMiniAppService {
     return null;
   }
 
+  /// 获取内置钱包账户地址 (通过 eth_accounts 方法)
+  Future<String?> getBuiltinWalletAddress() async {
+    if (!kIsWeb) return null;
+
+    try {
+      debugPrint('🔍 尝试通过 eth_accounts 获取内置钱包地址...');
+
+      final provider = getEthereumProvider();
+      if (provider == null) {
+        debugPrint('❌ 未找到以太坊提供者');
+        return null;
+      }
+
+      debugPrint('✅ 找到以太坊提供者');
+
+      final request = provider['request'];
+      if (request == null) {
+        debugPrint('❌ provider.request 方法不存在');
+        return null;
+      }
+
+      // 调用 eth_accounts 获取账户
+      final accountsPromise = _callAsyncFunction(request, [js.JsObject.jsify({
+        'method': 'eth_accounts',
+        'params': [],
+      })]);
+
+      if (accountsPromise != null) {
+        final accounts = await accountsPromise;
+        if (accounts != null && accounts is List && accounts.isNotEmpty) {
+          final address = accounts.first.toString();
+          debugPrint('✅ 通过 eth_accounts 获取到地址: $address');
+          return address;
+        } else {
+          debugPrint('⚠️ eth_accounts 返回空数组或null');
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('❌ 通过 eth_accounts 获取地址失败: $e');
+      return null;
+    }
+  }
+
   /// 调试内置钱包地址 - 专门用于查找内置钱包地址
   Future<Map<String, dynamic>?> debugBuiltinWalletAddress() async {
     if (!kIsWeb) return null;

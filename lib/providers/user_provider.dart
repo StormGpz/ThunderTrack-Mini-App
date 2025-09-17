@@ -562,20 +562,35 @@ class UserProvider extends ChangeNotifier {
       addDebugLog('📋 custodyAddress (内置钱包): ${custodyAddress ?? "未获取到"}');
       addDebugLog('📋 connectedAddress (绑定钱包): ${connectedAddress ?? "未获取到"}');
 
-      // 优先使用 custodyAddress，如果没有则使用 connectedAddress
+      // 优先使用 eth_accounts 获取的地址，然后是 custodyAddress，最后是 connectedAddress
       String? walletAddress;
       String walletType = '未知钱包';
 
-      if (custodyAddress != null && custodyAddress.isNotEmpty) {
-        walletAddress = custodyAddress;
-        walletType = 'Farcaster内置钱包';
-        addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
-      } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
-        walletAddress = connectedAddress;
-        walletType = '绑定外部钱包';
-        addDebugLog('⚠️ 回退到绑定钱包地址: $connectedAddress');
-      } else {
-        addDebugLog('❌ 未找到任何钱包地址');
+      // 方案1：尝试通过 eth_accounts 获取内置钱包地址
+      try {
+        addDebugLog('📋 尝试通过 eth_accounts 获取内置钱包地址...');
+        walletAddress = await _miniAppService.getBuiltinWalletAddress();
+        if (walletAddress != null && walletAddress.isNotEmpty) {
+          walletType = 'Farcaster内置钱包(eth_accounts)';
+          addDebugLog('✅ 使用 eth_accounts 获取的内置钱包地址: $walletAddress');
+        }
+      } catch (e) {
+        addDebugLog('❌ eth_accounts 获取地址失败: $e');
+      }
+
+      // 方案2：如果 eth_accounts 失败，使用 custodyAddress
+      if (walletAddress == null || walletAddress.isEmpty) {
+        if (custodyAddress != null && custodyAddress.isNotEmpty) {
+          walletAddress = custodyAddress;
+          walletType = 'Farcaster内置钱包(custody)';
+          addDebugLog('✅ 使用内置钱包地址(custodyAddress): $custodyAddress');
+        } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+          walletAddress = connectedAddress;
+          walletType = '绑定外部钱包';
+          addDebugLog('⚠️ 回退到绑定钱包地址: $connectedAddress');
+        } else {
+          addDebugLog('❌ 未找到任何钱包地址');
+        }
       }
 
       // 将 Farcaster 用户数据转换为我们的 User 模型
@@ -813,12 +828,27 @@ class UserProvider extends ChangeNotifier {
         addDebugLog('📋 SDK Context - connectedAddress: ${connectedAddress ?? "未获取到"}');
 
         String? walletAddress;
-        if (custodyAddress != null && custodyAddress.isNotEmpty) {
-          walletAddress = custodyAddress;
-          addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
-        } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
-          walletAddress = connectedAddress;
-          addDebugLog('⚠️ 使用绑定钱包地址: $connectedAddress');
+
+        // 优先使用 eth_accounts 获取内置钱包地址
+        try {
+          addDebugLog('📋 尝试通过 eth_accounts 获取内置钱包地址...');
+          walletAddress = await _miniAppService.getBuiltinWalletAddress();
+          if (walletAddress != null && walletAddress.isNotEmpty) {
+            addDebugLog('✅ 使用 eth_accounts 获取的内置钱包地址: $walletAddress');
+          }
+        } catch (e) {
+          addDebugLog('❌ eth_accounts 获取地址失败: $e');
+        }
+
+        // 备用方案：使用 custodyAddress 或 connectedAddress
+        if (walletAddress == null || walletAddress.isEmpty) {
+          if (custodyAddress != null && custodyAddress.isNotEmpty) {
+            walletAddress = custodyAddress;
+            addDebugLog('✅ 使用内置钱包地址(custodyAddress): $custodyAddress');
+          } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+            walletAddress = connectedAddress;
+            addDebugLog('⚠️ 使用绑定钱包地址: $connectedAddress');
+          }
         }
 
         final user = User(
@@ -1004,51 +1034,68 @@ class UserProvider extends ChangeNotifier {
         return;
       }
 
-      addDebugLog('🔍 用户暂无钱包地址，尝试从SDK Context获取...');
+      addDebugLog('🔍 用户暂无钱包地址，尝试获取内置钱包地址...');
 
-      // 尝试从SDK Context获取钱包地址
-      final contextUser = await _miniAppService.getContextUserInfo();
-      if (contextUser != null) {
-        final custodyAddress = contextUser['custodyAddress']?.toString();
-        final connectedAddress = contextUser['connectedAddress']?.toString();
+      String? walletAddress;
 
-        addDebugLog('📋 SDK Context - custodyAddress: ${custodyAddress ?? "未获取到"}');
-        addDebugLog('📋 SDK Context - connectedAddress: ${connectedAddress ?? "未获取到"}');
-
-        String? walletAddress;
-        if (custodyAddress != null && custodyAddress.isNotEmpty) {
-          walletAddress = custodyAddress;
-          addDebugLog('✅ 使用内置钱包地址: $custodyAddress');
-        } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
-          walletAddress = connectedAddress;
-          addDebugLog('⚠️ 使用绑定钱包地址: $connectedAddress');
-        }
-
-        if (walletAddress != null) {
-          // 更新用户钱包地址
-          final updatedUser = User(
-            fid: user.fid,
-            username: user.username,
-            displayName: user.displayName,
-            avatarUrl: user.avatarUrl,
-            bio: user.bio,
-            walletAddress: walletAddress,
-            followers: user.followers,
-            following: user.following,
-            isVerified: user.isVerified,
-            createdAt: user.createdAt,
-            lastActiveAt: user.lastActiveAt,
-          );
-
-          _currentUser = updatedUser;
-          await _saveUserToLocal(updatedUser);
-          addDebugLog('🎯 钱包地址已更新: $walletAddress');
-          notifyListeners();
+      // 优先方案：通过 eth_accounts 获取内置钱包地址
+      try {
+        addDebugLog('📋 方案1: 尝试通过 eth_accounts 获取地址...');
+        walletAddress = await _miniAppService.getBuiltinWalletAddress();
+        if (walletAddress != null && walletAddress.isNotEmpty) {
+          addDebugLog('✅ 通过 eth_accounts 获取到内置钱包地址: $walletAddress');
         } else {
-          addDebugLog('⚠️ 未找到任何可用的钱包地址');
+          addDebugLog('⚠️ eth_accounts 未返回地址');
         }
+      } catch (e) {
+        addDebugLog('❌ eth_accounts 方法失败: $e');
+      }
+
+      // 备用方案：从SDK Context获取钱包地址
+      if (walletAddress == null || walletAddress.isEmpty) {
+        addDebugLog('📋 方案2: 从SDK Context获取钱包地址...');
+        final contextUser = await _miniAppService.getContextUserInfo();
+        if (contextUser != null) {
+          final custodyAddress = contextUser['custodyAddress']?.toString();
+          final connectedAddress = contextUser['connectedAddress']?.toString();
+
+          addDebugLog('📋 SDK Context - custodyAddress: ${custodyAddress ?? "未获取到"}');
+          addDebugLog('📋 SDK Context - connectedAddress: ${connectedAddress ?? "未获取到"}');
+
+          if (custodyAddress != null && custodyAddress.isNotEmpty) {
+            walletAddress = custodyAddress;
+            addDebugLog('✅ 使用内置钱包地址 (custodyAddress): $custodyAddress');
+          } else if (connectedAddress != null && connectedAddress.isNotEmpty) {
+            walletAddress = connectedAddress;
+            addDebugLog('⚠️ 使用绑定钱包地址 (connectedAddress): $connectedAddress');
+          }
+        } else {
+          addDebugLog('❌ 无法获取SDK Context用户信息');
+        }
+      }
+
+      if (walletAddress != null) {
+        // 更新用户钱包地址
+        final updatedUser = User(
+          fid: user.fid,
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+          bio: user.bio,
+          walletAddress: walletAddress,
+          followers: user.followers,
+          following: user.following,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt,
+          lastActiveAt: user.lastActiveAt,
+        );
+
+        _currentUser = updatedUser;
+        await _saveUserToLocal(updatedUser);
+        addDebugLog('🎯 钱包地址已更新: $walletAddress');
+        notifyListeners();
       } else {
-        addDebugLog('❌ 无法获取SDK Context信息');
+        addDebugLog('⚠️ 未找到任何可用的钱包地址');
       }
     } catch (e) {
       addDebugLog('❌ 钱包地址处理失败：$e');
