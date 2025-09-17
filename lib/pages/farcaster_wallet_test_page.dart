@@ -216,13 +216,30 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
 
             // 显示调试日志的最后几条
             const SizedBox(height: 8),
-            Text(
-              '📋 最近日志',
-              style: TextStyle(
-                color: EvaTheme.lightText,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Text(
+                  '📋 最近日志',
+                  style: TextStyle(
+                    color: EvaTheme.lightText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () async {
+                    // 手动刷新用户数据
+                    final userProvider = Provider.of<UserProvider>(context, listen: false);
+                    await userProvider.autoLogin();
+                    setState(() {});
+                  },
+                  child: Text(
+                    '刷新',
+                    style: TextStyle(color: EvaTheme.neonGreen, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Container(

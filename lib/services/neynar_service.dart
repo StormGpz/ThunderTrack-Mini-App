@@ -404,34 +404,78 @@ class NeynarService {
 
   /// 解析用户数据
   User _parseUser(Map<String, dynamic> userData) {
+    // 🔍 输出完整的原始数据用于调试
+    debugPrint('🔍 完整用户数据结构:');
+    debugPrint('   FID: ${userData['fid']}');
+    debugPrint('   用户名: ${userData['username']}');
+    debugPrint('   custody_address: ${userData['custody_address']}');
+    debugPrint('   auth_addresses: ${userData['auth_addresses']}');
+    debugPrint('   verified_addresses: ${userData['verified_addresses']}');
+    debugPrint('   verifications: ${userData['verifications']}');
+
+    // 详细输出 auth_addresses 结构
+    final authAddresses = userData['auth_addresses'];
+    if (authAddresses is List && authAddresses.isNotEmpty) {
+      debugPrint('🔍 auth_addresses 详细结构:');
+      for (int i = 0; i < authAddresses.length; i++) {
+        final authAddr = authAddresses[i];
+        debugPrint('   [$i] address: ${authAddr['address']}');
+        debugPrint('   [$i] app: ${authAddr['app']}');
+        if (authAddr['app'] is Map) {
+          debugPrint('   [$i] app.fid: ${authAddr['app']['fid']}');
+          debugPrint('   [$i] app vs user fid: ${authAddr['app']['fid']} == ${userData['fid']} ?');
+        }
+      }
+    }
+
+    // 详细输出 verified_addresses 结构
+    final verifiedAddresses = userData['verified_addresses'];
+    if (verifiedAddresses is Map) {
+      debugPrint('🔍 verified_addresses 详细结构:');
+      debugPrint('   eth_addresses: ${verifiedAddresses['eth_addresses']}');
+      debugPrint('   sol_addresses: ${verifiedAddresses['sol_addresses']}');
+      debugPrint('   primary: ${verifiedAddresses['primary']}');
+    }
+
     // 🔍 提取各种钱包地址
     String? custodyAddress = userData['custody_address']?.toString();
     String? builtinWalletAddress; // 内置钱包地址
     String? verifiedAddress; // 验证过的外部地址
 
     // 1. 从 auth_addresses 中查找内置钱包地址
-    final authAddresses = userData['auth_addresses'];
     if (authAddresses is List && authAddresses.isNotEmpty) {
       for (final authAddr in authAddresses) {
         if (authAddr is Map) {
           final address = authAddr['address']?.toString();
           final app = authAddr['app'];
-          // 如果 app.fid 等于用户 fid，这是内置钱包
-          if (app is Map && app['fid']?.toString() == userData['fid']?.toString()) {
-            builtinWalletAddress = address;
-            debugPrint('🔑 找到内置钱包地址: $address');
-            break;
+          debugPrint('🔍 检查 auth_address: $address');
+
+          // 检查是否是内置钱包的条件
+          if (app is Map) {
+            final appFid = app['fid']?.toString();
+            final userFid = userData['fid']?.toString();
+            debugPrint('   app.fid: $appFid, user.fid: $userFid');
+
+            if (appFid == userFid) {
+              builtinWalletAddress = address;
+              debugPrint('🔑 匹配！这是内置钱包地址: $address');
+              break;
+            } else {
+              debugPrint('   不匹配，跳过');
+            }
+          } else {
+            debugPrint('   app 不是 Map 类型: ${app.runtimeType}');
           }
         }
       }
     }
 
     // 2. 从 verified_addresses 中获取外部钱包地址
-    final verifiedAddresses = userData['verified_addresses'];
     if (verifiedAddresses is Map) {
       final ethAddresses = verifiedAddresses['eth_addresses'];
       if (ethAddresses is List && ethAddresses.isNotEmpty) {
         verifiedAddress = ethAddresses.first?.toString();
+        debugPrint('🔍 从 verified_addresses 获取: $verifiedAddress');
       }
     }
 
@@ -439,25 +483,33 @@ class NeynarService {
     String? legacyAddress;
     if (userData['verifications']?.isNotEmpty == true) {
       legacyAddress = userData['verifications'][0];
+      debugPrint('🔍 从 verifications 获取: $legacyAddress');
     }
 
     // 4. 优先级选择钱包地址: builtinWallet > custody > verified > legacy
     String? finalWalletAddress;
+    String addressSource = '未知';
+
     if (builtinWalletAddress != null && builtinWalletAddress.isNotEmpty) {
       finalWalletAddress = builtinWalletAddress;
+      addressSource = '内置钱包(auth_addresses)';
       debugPrint('✅ 使用内置钱包地址: $builtinWalletAddress');
     } else if (custodyAddress != null && custodyAddress.isNotEmpty) {
       finalWalletAddress = custodyAddress;
+      addressSource = '托管钱包(custody_address)';
       debugPrint('⚠️ 使用托管钱包地址: $custodyAddress');
     } else if (verifiedAddress != null && verifiedAddress.isNotEmpty) {
       finalWalletAddress = verifiedAddress;
+      addressSource = '验证地址(verified_addresses)';
       debugPrint('⚠️ 使用验证地址: $verifiedAddress');
     } else if (legacyAddress != null && legacyAddress.isNotEmpty) {
       finalWalletAddress = legacyAddress;
+      addressSource = '遗留验证地址(verifications)';
       debugPrint('⚠️ 使用遗留验证地址: $legacyAddress');
     }
 
     debugPrint('🎯 最终选择的钱包地址: ${finalWalletAddress ?? "未设置"}');
+    debugPrint('🎯 地址来源: $addressSource');
 
     return User(
       fid: userData['fid'].toString(),

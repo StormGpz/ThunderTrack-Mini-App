@@ -205,41 +205,91 @@ class FarcasterMiniAppService {
   Future<Map<String, dynamic>?> getContextUserInfo() async {
     try {
       debugPrint('🔍 开始获取SDK Context用户信息...');
-      
+
       final farcasterSDK = js.context['farcasterSDK'];
       if (farcasterSDK == null) {
         debugPrint('❌ Farcaster SDK不存在');
         return null;
       }
-      
+
       debugPrint('✅ Farcaster SDK存在');
-      
+
+      // 额外检查SDK钱包相关的API
+      debugPrint('🔍 检查SDK钱包相关API...');
+      final wallet = farcasterSDK['wallet'];
+      if (wallet != null) {
+        debugPrint('✅ 找到 SDK wallet API');
+
+        // 尝试获取钱包地址
+        final address = wallet['address'];
+        final ethProvider = wallet['ethProvider'];
+        final accounts = wallet['accounts'];
+
+        debugPrint('   wallet.address: $address');
+        debugPrint('   wallet.ethProvider: ${ethProvider != null}');
+        debugPrint('   wallet.accounts: $accounts');
+      } else {
+        debugPrint('❌ SDK中没有wallet API');
+      }
+
+      // 检查是否有ethereum相关的API
+      final ethereum = farcasterSDK['ethereum'];
+      if (ethereum != null) {
+        debugPrint('✅ 找到 SDK ethereum API');
+
+        final selectedAddress = ethereum['selectedAddress'];
+        final accounts = ethereum['accounts'];
+
+        debugPrint('   ethereum.selectedAddress: $selectedAddress');
+        debugPrint('   ethereum.accounts: $accounts');
+      } else {
+        debugPrint('❌ SDK中没有ethereum API');
+      }
+
       // 检查 context
       final context = farcasterSDK['context'];
       if (context == null) {
         debugPrint('❌ SDK.context 不存在');
         return null;
       }
-      
+
       debugPrint('✅ SDK.context 存在');
-      
+
       // 检查 user
       final user = context['user'];
       if (user == null) {
         debugPrint('❌ SDK.context.user 为 null');
         return null;
       }
-      
+
       debugPrint('✅ SDK.context.user 存在');
       debugPrint('🔍 User对象类型: ${user.runtimeType}');
       debugPrint('🔍 User对象字符串: ${user.toString()}');
-      
+
       // 使用优化的转换方法
       final userMap = _extractUserDataFromContext(user);
       debugPrint('📋 Context用户信息提取结果: ${userMap.keys.join(', ')}');
       debugPrint('🔍 Context详细信息: $userMap');
+
+      // 如果从SDK wallet中获取到地址，添加到结果中
+      if (wallet != null) {
+        final walletAddress = wallet['address'];
+        if (walletAddress != null) {
+          userMap['sdkWalletAddress'] = walletAddress.toString();
+          debugPrint('🔑 从SDK wallet添加地址: $walletAddress');
+        }
+      }
+
+      if (ethereum != null) {
+        final ethAddress = ethereum['selectedAddress'];
+        if (ethAddress != null) {
+          userMap['sdkEthereumAddress'] = ethAddress.toString();
+          debugPrint('🔑 从SDK ethereum添加地址: $ethAddress');
+        }
+      }
+
       return userMap;
-      
+
     } catch (e) {
       debugPrint('⚠️ 获取context用户信息失败: $e');
       return null;
