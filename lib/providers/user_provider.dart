@@ -1331,16 +1331,37 @@ class UserProvider extends ChangeNotifier {
     addDebugLog('🔏 开始签名消息...');
     addDebugLog('   消息: ${message.length > 50 ? message.substring(0, 50) + "..." : message}');
 
-    // 检查内置钱包签名条件
+    // 检查基本条件
+    addDebugLog('📋 检查签名基本条件:');
+    addDebugLog('   当前用户: ${_currentUser != null ? "存在" : "不存在"}');
+    addDebugLog('   用户钱包地址: ${_currentUser?.walletAddress ?? "无"}');
+
+    // 如果没有用户或钱包地址，直接返回
+    if (_currentUser?.walletAddress == null) {
+      addDebugLog('❌ 没有用户或钱包地址，无法签名');
+      return null;
+    }
+
+    // 检查内置钱包签名条件（更宽松的检查）
     addDebugLog('📋 检查内置钱包签名条件:');
     addDebugLog('   isMiniAppEnvironment: $isMiniAppEnvironment');
-    addDebugLog('   hasBuiltinWallet: $hasBuiltinWallet');
-    addDebugLog('   当前用户: ${_currentUser != null ? "存在" : "不存在"}');
-    addDebugLog('   钱包地址: ${_currentUser?.walletAddress ?? "无"}');
 
-    // 优先使用 Farcaster 内置钱包
-    if (isMiniAppEnvironment && hasBuiltinWallet && _currentUser?.walletAddress != null) {
-      addDebugLog('✅ 条件满足，使用 Farcaster 内置钱包签名消息');
+    // 实时检查内置钱包状态，不依赖缓存
+    bool currentHasBuiltinWallet = false;
+    try {
+      final provider = _miniAppService.getEthereumProvider();
+      currentHasBuiltinWallet = provider != null;
+      addDebugLog('   实时检查以太坊提供者: ${provider != null ? "存在" : "不存在"}');
+    } catch (e) {
+      addDebugLog('   实时检查以太坊提供者失败: $e');
+    }
+
+    addDebugLog('   缓存的hasBuiltinWallet: $hasBuiltinWallet');
+    addDebugLog('   实时检查hasBuiltinWallet: $currentHasBuiltinWallet');
+
+    // 如果在 MiniApp 环境中且有钱包地址，尝试内置钱包签名
+    if (isMiniAppEnvironment && (hasBuiltinWallet || currentHasBuiltinWallet)) {
+      addDebugLog('✅ 条件满足，尝试使用 Farcaster 内置钱包签名');
       addDebugLog('   使用地址: ${_currentUser!.walletAddress}');
       try {
         final signature = await _miniAppService.signMessageWithBuiltinWallet(
@@ -1355,9 +1376,37 @@ class UserProvider extends ChangeNotifier {
         }
       } catch (e) {
         addDebugLog('❌ Farcaster 内置钱包签名失败: $e');
+        // 继续尝试其他方案，不立即返回null
       }
     } else {
       addDebugLog('❌ 内置钱包签名条件不满足');
+      if (!isMiniAppEnvironment) addDebugLog('   原因: 不在MiniApp环境');
+      if (!hasBuiltinWallet && !currentHasBuiltinWallet) addDebugLog('   原因: 没有内置钱包');
+    }
+
+    // 尝试通过以太坊提供者直接签名（即使不在严格的MiniApp环境检测下）
+    if (_currentUser?.walletAddress != null) {
+      addDebugLog('📋 尝试直接使用以太坊提供者签名');
+      try {
+        final provider = _miniAppService.getEthereumProvider();
+        if (provider != null) {
+          addDebugLog('✅ 找到以太坊提供者，尝试直接签名');
+          final signature = await _miniAppService.signMessageWithBuiltinWallet(
+            message,
+            _currentUser!.walletAddress!
+          );
+          if (signature != null) {
+            addDebugLog('✅ 以太坊提供者直接签名成功');
+            return signature;
+          } else {
+            addDebugLog('⚠️ 以太坊提供者直接签名返回null');
+          }
+        } else {
+          addDebugLog('❌ 未找到以太坊提供者');
+        }
+      } catch (e) {
+        addDebugLog('❌ 以太坊提供者直接签名失败: $e');
+      }
     }
 
     // 备用方案：使用 Web3 钱包
@@ -1381,15 +1430,42 @@ class UserProvider extends ChangeNotifier {
       addDebugLog('❌ Web3 钱包未连接');
     }
 
-    addDebugLog('❌ 无可用钱包进行签名');
+    addDebugLog('❌ 所有签名方案都失败，无可用钱包进行签名');
+    addDebugLog('💡 建议：检查钱包连接状态或刷新页面重试');
     return null;
   }
 
   /// EIP-712结构化数据签名 (优先使用 Farcaster 内置钱包)
   Future<String?> signTypedData(Map<String, dynamic> typedData) async {
+    addDebugLog('🔐 开始EIP-712签名...');
+    addDebugLog('   数据: ${typedData.toString().substring(0, 100)}...');
+
+    // 检查基本条件
+    if (_currentUser?.walletAddress == null) {
+      addDebugLog('❌ 没有用户或钱包地址，无法EIP-712签名');
+      return null;
+    }
+
+    addDebugLog('📋 检查EIP-712签名条件:');
+    addDebugLog('   用户钱包地址: ${_currentUser!.walletAddress}');
+    addDebugLog('   isMiniAppEnvironment: $isMiniAppEnvironment');
+
+    // 实时检查内置钱包状态
+    bool currentHasBuiltinWallet = false;
+    try {
+      final provider = _miniAppService.getEthereumProvider();
+      currentHasBuiltinWallet = provider != null;
+      addDebugLog('   实时检查以太坊提供者: ${provider != null ? "存在" : "不存在"}');
+    } catch (e) {
+      addDebugLog('   实时检查以太坊提供者失败: $e');
+    }
+
+    addDebugLog('   缓存的hasBuiltinWallet: $hasBuiltinWallet');
+    addDebugLog('   实时检查hasBuiltinWallet: $currentHasBuiltinWallet');
+
     // 优先使用 Farcaster 内置钱包
-    if (isMiniAppEnvironment && hasBuiltinWallet && _currentUser?.walletAddress != null) {
-      addDebugLog('🔏 使用 Farcaster 内置钱包进行 EIP-712 签名');
+    if (isMiniAppEnvironment && (hasBuiltinWallet || currentHasBuiltinWallet)) {
+      addDebugLog('✅ 条件满足，尝试使用 Farcaster 内置钱包进行 EIP-712 签名');
       try {
         final signature = await _miniAppService.signTypedDataWithBuiltinWallet(
           typedData,
@@ -1398,10 +1474,39 @@ class UserProvider extends ChangeNotifier {
         if (signature != null) {
           addDebugLog('✅ Farcaster 内置钱包 EIP-712 签名成功');
           return signature;
+        } else {
+          addDebugLog('⚠️ Farcaster 内置钱包 EIP-712 签名返回null');
         }
       } catch (e) {
         addDebugLog('❌ Farcaster 内置钱包 EIP-712 签名失败: $e');
+        // 继续尝试其他方案
       }
+    } else {
+      addDebugLog('❌ 内置钱包EIP-712签名条件不满足');
+      if (!isMiniAppEnvironment) addDebugLog('   原因: 不在MiniApp环境');
+      if (!hasBuiltinWallet && !currentHasBuiltinWallet) addDebugLog('   原因: 没有内置钱包');
+    }
+
+    // 尝试通过以太坊提供者直接签名
+    try {
+      final provider = _miniAppService.getEthereumProvider();
+      if (provider != null) {
+        addDebugLog('✅ 找到以太坊提供者，尝试直接EIP-712签名');
+        final signature = await _miniAppService.signTypedDataWithBuiltinWallet(
+          typedData,
+          _currentUser!.walletAddress!
+        );
+        if (signature != null) {
+          addDebugLog('✅ 以太坊提供者直接EIP-712签名成功');
+          return signature;
+        } else {
+          addDebugLog('⚠️ 以太坊提供者直接EIP-712签名返回null');
+        }
+      } else {
+        addDebugLog('❌ 未找到以太坊提供者');
+      }
+    } catch (e) {
+      addDebugLog('❌ 以太坊提供者直接EIP-712签名失败: $e');
     }
 
     // 备用方案：使用 Web3 钱包
@@ -1416,9 +1521,12 @@ class UserProvider extends ChangeNotifier {
       } catch (e) {
         addDebugLog('❌ Web3 钱包 EIP-712 签名失败: $e');
       }
+    } else {
+      addDebugLog('❌ Web3 钱包未连接');
     }
 
-    addDebugLog('❌ 无可用钱包进行 EIP-712 签名');
+    addDebugLog('❌ 所有EIP-712签名方案都失败，无可用钱包进行 EIP-712 签名');
+    addDebugLog('💡 建议：检查钱包连接状态或刷新页面重试');
     return null;
   }
 

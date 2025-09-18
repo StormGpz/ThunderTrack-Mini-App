@@ -1044,16 +1044,68 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return false;
 
     try {
-      final farcasterSDK = js.context['farcasterSDK'];
-      if (farcasterSDK != null) {
-        final wallet = farcasterSDK['wallet'];
-        final ethereum = farcasterSDK['ethereum'];
-        return wallet != null || ethereum != null;
+      debugPrint('🔍 开始检查内置钱包支持...');
+
+      // 方案1: 检查以太坊提供者
+      final provider = getEthereumProvider();
+      if (provider != null) {
+        debugPrint('✅ hasBuiltinWallet: true (有以太坊提供者)');
+        return true;
       }
 
+      // 方案2: 检查Farcaster SDK
+      final farcasterSDK = js.context['farcasterSDK'];
+      if (farcasterSDK != null) {
+        debugPrint('✅ 找到 Farcaster SDK');
+
+        // 检查SDK中的钱包相关API
+        final wallet = farcasterSDK['wallet'];
+        final ethereum = farcasterSDK['ethereum'];
+        final hasWalletApi = wallet != null || ethereum != null;
+
+        debugPrint('   SDK wallet API: ${wallet != null}');
+        debugPrint('   SDK ethereum API: ${ethereum != null}');
+        debugPrint('✅ hasBuiltinWallet: $hasWalletApi (SDK钱包API)');
+
+        if (hasWalletApi) return true;
+      }
+
+      // 方案3: 检查全局以太坊对象
       final ethereum = js.context['ethereum'];
-      return ethereum != null && ethereum['isFarcaster'] == true;
+      if (ethereum != null) {
+        // 检查是否是 Farcaster 注入的
+        final isFarcaster = ethereum['isFarcaster'] == true;
+        debugPrint('   全局ethereum对象存在');
+        debugPrint('   isFarcaster标记: $isFarcaster');
+
+        if (isFarcaster) {
+          debugPrint('✅ hasBuiltinWallet: true (全局Farcaster以太坊对象)');
+          return true;
+        }
+
+        // 即使没有isFarcaster标记，如果在MiniApp环境中也认为可用
+        if (isMiniAppEnvironment) {
+          debugPrint('✅ hasBuiltinWallet: true (MiniApp环境中的以太坊对象)');
+          return true;
+        }
+      }
+
+      // 方案4: 检查是否在iframe中且有以太坊API（更宽松的检测）
+      final isIframe = js.context['window'] != js.context['parent'];
+      if (isIframe && ethereum != null) {
+        debugPrint('✅ hasBuiltinWallet: true (iframe环境中的以太坊对象)');
+        return true;
+      }
+
+      debugPrint('❌ hasBuiltinWallet: false (未找到任何钱包支持)');
+      return false;
     } catch (e) {
+      debugPrint('❌ hasBuiltinWallet检查失败: $e');
+      // 发生错误时，如果在MiniApp环境中，假设支持内置钱包
+      if (isMiniAppEnvironment) {
+        debugPrint('⚠️ 检查失败但在MiniApp环境中，假设支持内置钱包');
+        return true;
+      }
       return false;
     }
   }

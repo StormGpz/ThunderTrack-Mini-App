@@ -641,6 +641,23 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+
+            // 调试签名条件按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _debugSignConditions,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.warningYellow.withValues(alpha: 0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '调试签名条件',
+                  style: TextStyle(color: EvaTheme.deepBlack),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1072,6 +1089,117 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
     } catch (e) {
       userProvider.addDebugLog('❌ 刷新钱包地址失败: $e');
       _showError('刷新失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 调试签名条件
+  Future<void> _debugSignConditions() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final miniAppService = FarcasterMiniAppService();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('🔍 开始调试签名条件...');
+      userProvider.addDebugLog('');
+
+      // 1. 检查用户状态
+      userProvider.addDebugLog('📋 用户状态:');
+      final currentUser = userProvider.currentUser;
+      userProvider.addDebugLog('   当前用户: ${currentUser != null ? "存在" : "不存在"}');
+      if (currentUser != null) {
+        userProvider.addDebugLog('   FID: ${currentUser.fid}');
+        userProvider.addDebugLog('   用户名: ${currentUser.username}');
+        userProvider.addDebugLog('   钱包地址: ${currentUser.walletAddress ?? "无"}');
+      }
+      userProvider.addDebugLog('');
+
+      // 2. 检查环境
+      userProvider.addDebugLog('📋 环境检测:');
+      userProvider.addDebugLog('   isMiniAppEnvironment: ${userProvider.isMiniAppEnvironment}');
+      userProvider.addDebugLog('   isMiniAppSdkAvailable: ${userProvider.isMiniAppSdkAvailable}');
+      userProvider.addDebugLog('   hasBuiltinWallet: ${userProvider.hasBuiltinWallet}');
+      userProvider.addDebugLog('');
+
+      // 3. 检查以太坊提供者
+      userProvider.addDebugLog('📋 以太坊提供者:');
+      final provider = miniAppService.getEthereumProvider();
+      userProvider.addDebugLog('   Provider存在: ${provider != null}');
+      if (provider != null) {
+        userProvider.addDebugLog('   Provider类型: ${provider.runtimeType}');
+
+        // 检查request方法
+        final hasRequest = provider['request'] != null;
+        userProvider.addDebugLog('   有request方法: $hasRequest');
+
+        // 尝试获取账户
+        if (hasRequest) {
+          try {
+            final accounts = await miniAppService.getBuiltinWalletAddress();
+            userProvider.addDebugLog('   eth_accounts返回: ${accounts ?? "null"}');
+          } catch (e) {
+            userProvider.addDebugLog('   eth_accounts错误: $e');
+          }
+        }
+      }
+      userProvider.addDebugLog('');
+
+      // 4. 检查签名条件组合
+      userProvider.addDebugLog('📋 签名条件判断:');
+      final canSign = userProvider.isMiniAppEnvironment &&
+                      userProvider.hasBuiltinWallet &&
+                      currentUser?.walletAddress != null;
+      userProvider.addDebugLog('   isMiniApp && hasWallet && hasAddress: $canSign');
+
+      if (!canSign) {
+        userProvider.addDebugLog('   ❌ 不满足签名条件');
+        if (!userProvider.isMiniAppEnvironment) {
+          userProvider.addDebugLog('      - 不在MiniApp环境');
+        }
+        if (!userProvider.hasBuiltinWallet) {
+          userProvider.addDebugLog('      - 没有内置钱包');
+        }
+        if (currentUser?.walletAddress == null) {
+          userProvider.addDebugLog('      - 没有钱包地址');
+        }
+      } else {
+        userProvider.addDebugLog('   ✅ 满足所有签名条件');
+      }
+
+      // 5. 尝试直接调用签名（测试）
+      if (provider != null && currentUser?.walletAddress != null) {
+        userProvider.addDebugLog('');
+        userProvider.addDebugLog('📋 尝试直接签名测试:');
+        try {
+          final testMessage = 'Test signature from ThunderTrack';
+          userProvider.addDebugLog('   测试消息: $testMessage');
+          userProvider.addDebugLog('   使用地址: ${currentUser!.walletAddress}');
+
+          final signature = await miniAppService.signMessageWithBuiltinWallet(
+            testMessage,
+            currentUser!.walletAddress!
+          );
+
+          if (signature != null) {
+            userProvider.addDebugLog('   ✅ 签名成功: ${signature.substring(0, 20)}...');
+          } else {
+            userProvider.addDebugLog('   ❌ 签名返回null');
+          }
+        } catch (e) {
+          userProvider.addDebugLog('   ❌ 签名错误: $e');
+        }
+      }
+
+      _showSuccess('调试完成，请查看日志');
+    } catch (e) {
+      userProvider.addDebugLog('❌ 调试失败: $e');
+      _showError('调试失败: $e');
     } finally {
       setState(() {
         _isLoading = false;
