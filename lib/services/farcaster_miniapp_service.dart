@@ -557,17 +557,26 @@ class FarcasterMiniAppService {
   /// 调用异步JavaScript函数
   Future<dynamic> _callAsyncFunction(dynamic jsFunction, List<dynamic> args) async {
     try {
+      debugPrint('🔄 调用JS函数...');
+      debugPrint('   函数: ${jsFunction != null ? "存在" : "null"}');
+      debugPrint('   参数数量: ${args.length}');
+
       final result = jsFunction.apply(args);
-      
+
+      debugPrint('   初始返回值类型: ${result?.runtimeType}');
+      debugPrint('   初始返回值: ${result?.toString()}');
+
       // 如果返回的是Promise，等待其完成
       if (result != null && result['then'] != null) {
+        debugPrint('   检测到Promise，等待异步结果...');
         // 这是一个Promise，我们需要等待它
         return await _promiseToFuture(result);
       }
-      
+
+      debugPrint('   返回同步结果: $result');
       return result;
     } catch (e) {
-      debugPrint('Error calling async JS function: $e');
+      debugPrint('❌ Error calling async JS function: $e');
       rethrow;
     }
   }
@@ -1115,31 +1124,84 @@ class FarcasterMiniAppService {
     if (!kIsWeb) return null;
 
     try {
+      debugPrint('🔏 开始内置钱包签名...');
+      debugPrint('   消息: $message');
+      debugPrint('   地址: $address');
+
       final provider = getEthereumProvider();
       if (provider == null) {
         debugPrint('❌ 未找到内置钱包提供者');
         return null;
       }
 
-      debugPrint('🔏 使用内置钱包签名消息...');
+      debugPrint('✅ 找到以太坊提供者');
+
+      // 检查provider的request方法
+      final request = provider['request'];
+      if (request == null) {
+        debugPrint('❌ provider.request方法不存在');
+        return null;
+      }
+
+      debugPrint('✅ provider.request方法存在');
+
+      // 构建签名请求参数
+      final params = js.JsObject.jsify({
+        'method': 'personal_sign',
+        'params': [message, address]
+      });
+
+      debugPrint('📤 发送签名请求...');
+      debugPrint('   方法: personal_sign');
+      debugPrint('   参数: [$message, $address]');
 
       // 尝试个人签名
-      final signature = await _callAsyncFunction(
-        provider['request'],
-        [js.JsObject.jsify({
-          'method': 'personal_sign',
-          'params': [message, address]
-        })]
-      );
+      final signature = await _callAsyncFunction(request, [params]);
+
+      debugPrint('📥 签名请求返回: ${signature != null ? "有结果" : "null"}');
 
       if (signature != null) {
+        final signatureStr = signature.toString();
         debugPrint('✅ 内置钱包签名成功');
-        return signature.toString();
+        debugPrint('   签名长度: ${signatureStr.length}');
+        debugPrint('   签名前20字符: ${signatureStr.substring(0, signatureStr.length > 20 ? 20 : signatureStr.length)}...');
+        return signatureStr;
+      } else {
+        debugPrint('⚠️ 签名返回null');
+
+        // 尝试其他签名方法
+        debugPrint('🔄 尝试eth_sign方法...');
+        try {
+          final ethSignParams = js.JsObject.jsify({
+            'method': 'eth_sign',
+            'params': [address, message]
+          });
+
+          final ethSignature = await _callAsyncFunction(request, [ethSignParams]);
+          if (ethSignature != null) {
+            debugPrint('✅ eth_sign签名成功');
+            return ethSignature.toString();
+          } else {
+            debugPrint('❌ eth_sign也返回null');
+          }
+        } catch (e2) {
+          debugPrint('❌ eth_sign失败: $e2');
+        }
       }
 
       return null;
     } catch (e) {
       debugPrint('❌ 内置钱包签名失败: $e');
+      debugPrint('   错误类型: ${e.runtimeType}');
+      debugPrint('   错误详情: ${e.toString()}');
+
+      // 检查是否是用户拒绝
+      if (e.toString().contains('rejected') ||
+          e.toString().contains('denied') ||
+          e.toString().contains('cancel')) {
+        debugPrint('⚠️ 用户拒绝了签名请求');
+      }
+
       return null;
     }
   }
