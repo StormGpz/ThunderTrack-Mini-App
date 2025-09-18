@@ -1136,6 +1136,35 @@ class FarcasterMiniAppService {
 
       debugPrint('✅ 找到以太坊提供者');
 
+      // 先检查当前连接的账户
+      debugPrint('🔍 检查当前连接的账户...');
+      try {
+        final accountsRequest = js.JsObject.jsify({
+          'method': 'eth_accounts',
+          'params': [],
+        });
+
+        final accounts = await _callAsyncFunction(provider['request'], [accountsRequest]);
+        if (accounts != null && accounts is List && accounts.isNotEmpty) {
+          final currentAccount = accounts[0].toString().toLowerCase();
+          final requestAddress = address.toLowerCase();
+
+          debugPrint('   当前账户: $currentAccount');
+          debugPrint('   请求地址: $requestAddress');
+
+          if (currentAccount != requestAddress) {
+            debugPrint('⚠️ 警告：请求签名的地址与当前账户不匹配！');
+            debugPrint('   这可能导致签名对话框无法确认');
+
+            // 尝试使用当前账户地址
+            debugPrint('🔄 尝试使用当前账户地址进行签名...');
+            address = accounts[0].toString();
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ 获取当前账户失败: $e');
+      }
+
       // 检查provider的request方法
       final request = provider['request'];
       if (request == null) {
@@ -1145,50 +1174,109 @@ class FarcasterMiniAppService {
 
       debugPrint('✅ provider.request方法存在');
 
-      // 构建签名请求参数
-      final params = js.JsObject.jsify({
-        'method': 'personal_sign',
-        'params': [message, address]
-      });
+      // 尝试不同的签名方法
+      debugPrint('📤 尝试方法1: personal_sign (推荐)...');
+      try {
+        // 方法1: personal_sign - 最常用
+        final params = js.JsObject.jsify({
+          'method': 'personal_sign',
+          'params': [message, address]  // 注意参数顺序：消息在前，地址在后
+        });
 
-      debugPrint('📤 发送签名请求...');
-      debugPrint('   方法: personal_sign');
-      debugPrint('   参数: [$message, $address]');
+        debugPrint('   参数顺序: [消息, 地址]');
+        final signature = await _callAsyncFunction(request, [params]);
 
-      // 尝试个人签名
-      final signature = await _callAsyncFunction(request, [params]);
-
-      debugPrint('📥 签名请求返回: ${signature != null ? "有结果" : "null"}');
-
-      if (signature != null) {
-        final signatureStr = signature.toString();
-        debugPrint('✅ 内置钱包签名成功');
-        debugPrint('   签名长度: ${signatureStr.length}');
-        debugPrint('   签名前20字符: ${signatureStr.substring(0, signatureStr.length > 20 ? 20 : signatureStr.length)}...');
-        return signatureStr;
-      } else {
-        debugPrint('⚠️ 签名返回null');
-
-        // 尝试其他签名方法
-        debugPrint('🔄 尝试eth_sign方法...');
-        try {
-          final ethSignParams = js.JsObject.jsify({
-            'method': 'eth_sign',
-            'params': [address, message]
-          });
-
-          final ethSignature = await _callAsyncFunction(request, [ethSignParams]);
-          if (ethSignature != null) {
-            debugPrint('✅ eth_sign签名成功');
-            return ethSignature.toString();
-          } else {
-            debugPrint('❌ eth_sign也返回null');
-          }
-        } catch (e2) {
-          debugPrint('❌ eth_sign失败: $e2');
+        if (signature != null) {
+          final signatureStr = signature.toString();
+          debugPrint('✅ personal_sign成功');
+          debugPrint('   签名: ${signatureStr.substring(0, 20)}...');
+          return signatureStr;
         }
+        debugPrint('⚠️ personal_sign返回null');
+      } catch (e) {
+        debugPrint('❌ personal_sign失败: $e');
       }
 
+      // 尝试其他参数顺序
+      debugPrint('📤 尝试方法2: personal_sign (地址在前)...');
+      try {
+        final params = js.JsObject.jsify({
+          'method': 'personal_sign',
+          'params': [address, message]  // 尝试相反的参数顺序
+        });
+
+        debugPrint('   参数顺序: [地址, 消息]');
+        final signature = await _callAsyncFunction(request, [params]);
+
+        if (signature != null) {
+          final signatureStr = signature.toString();
+          debugPrint('✅ personal_sign(地址在前)成功');
+          debugPrint('   签名: ${signatureStr.substring(0, 20)}...');
+          return signatureStr;
+        }
+        debugPrint('⚠️ personal_sign(地址在前)返回null');
+      } catch (e) {
+        debugPrint('❌ personal_sign(地址在前)失败: $e');
+      }
+
+      // 尝试eth_sign
+      debugPrint('📤 尝试方法3: eth_sign...');
+      try {
+        final ethSignParams = js.JsObject.jsify({
+          'method': 'eth_sign',
+          'params': [address, message]
+        });
+
+        final ethSignature = await _callAsyncFunction(request, [ethSignParams]);
+        if (ethSignature != null) {
+          debugPrint('✅ eth_sign签名成功');
+          return ethSignature.toString();
+        }
+        debugPrint('⚠️ eth_sign返回null');
+      } catch (e) {
+        debugPrint('❌ eth_sign失败: $e');
+      }
+
+      // 尝试eth_signTypedData_v4（结构化数据签名）
+      debugPrint('📤 尝试方法4: 转换为结构化数据签名...');
+      try {
+        // 构造一个简单的EIP-712消息
+        final typedData = {
+          'domain': {
+            'name': 'ThunderTrack',
+            'version': '1',
+          },
+          'message': {
+            'content': message,
+          },
+          'primaryType': 'Message',
+          'types': {
+            'EIP712Domain': [
+              {'name': 'name', 'type': 'string'},
+              {'name': 'version', 'type': 'string'},
+            ],
+            'Message': [
+              {'name': 'content', 'type': 'string'},
+            ],
+          },
+        };
+
+        final typedDataParams = js.JsObject.jsify({
+          'method': 'eth_signTypedData_v4',
+          'params': [address, js.JsObject.jsify(typedData)]
+        });
+
+        final typedSignature = await _callAsyncFunction(request, [typedDataParams]);
+        if (typedSignature != null) {
+          debugPrint('✅ eth_signTypedData_v4签名成功');
+          return typedSignature.toString();
+        }
+        debugPrint('⚠️ eth_signTypedData_v4返回null');
+      } catch (e) {
+        debugPrint('❌ eth_signTypedData_v4失败: $e');
+      }
+
+      debugPrint('❌ 所有签名方法都失败了');
       return null;
     } catch (e) {
       debugPrint('❌ 内置钱包签名失败: $e');
@@ -1198,7 +1286,8 @@ class FarcasterMiniAppService {
       // 检查是否是用户拒绝
       if (e.toString().contains('rejected') ||
           e.toString().contains('denied') ||
-          e.toString().contains('cancel')) {
+          e.toString().contains('cancel') ||
+          e.toString().contains('4001')) {  // MetaMask用户拒绝错误码
         debugPrint('⚠️ 用户拒绝了签名请求');
       }
 
