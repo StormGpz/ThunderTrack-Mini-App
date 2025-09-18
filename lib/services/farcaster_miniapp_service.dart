@@ -677,6 +677,11 @@ class FarcasterMiniAppService {
     return null;
   }
 
+  /// 调用Provider方法（公开方法）
+  Future<dynamic> callProviderMethod(dynamic request, dynamic params) async {
+    return _callAsyncFunction(request, [params]);
+  }
+
   /// 获取内置钱包账户地址 (通过 eth_accounts 方法)
   Future<String?> getBuiltinWalletAddress() async {
     if (!kIsWeb) return null;

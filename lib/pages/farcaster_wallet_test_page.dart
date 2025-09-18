@@ -658,6 +658,23 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+
+            // 测试交易按钮
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _testTransaction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EvaTheme.errorRed.withValues(alpha: 0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  '测试交易功能',
+                  style: TextStyle(color: EvaTheme.lightText),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1089,6 +1106,122 @@ class _FarcasterWalletTestPageState extends State<FarcasterWalletTestPage> {
     } catch (e) {
       userProvider.addDebugLog('❌ 刷新钱包地址失败: $e');
       _showError('刷新失败: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 测试发送交易（只是测试，不会真的发送）
+  Future<void> _testTransaction() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final miniAppService = FarcasterMiniAppService();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      userProvider.addDebugLog('💰 开始测试交易功能...');
+
+      // 获取当前用户地址
+      final currentUser = userProvider.currentUser;
+      if (currentUser?.walletAddress == null) {
+        userProvider.addDebugLog('❌ 没有钱包地址');
+        _showError('请先获取钱包地址');
+        return;
+      }
+
+      final fromAddress = currentUser!.walletAddress!;
+      userProvider.addDebugLog('📤 发送地址: $fromAddress');
+
+      // 获取provider
+      final provider = miniAppService.getEthereumProvider();
+      if (provider == null) {
+        userProvider.addDebugLog('❌ 未找到以太坊提供者');
+        _showError('未找到以太坊提供者');
+        return;
+      }
+
+      userProvider.addDebugLog('✅ 找到以太坊提供者');
+
+      // 构建一个最小金额的测试交易
+      final txParams = {
+        'from': fromAddress,
+        'to': fromAddress,  // 发送给自己
+        'value': '0x0',  // 0 ETH，只是测试
+        'data': '0x',  // 空数据
+      };
+
+      userProvider.addDebugLog('📝 交易参数:');
+      userProvider.addDebugLog('   from: ${txParams['from']}');
+      userProvider.addDebugLog('   to: ${txParams['to']}');
+      userProvider.addDebugLog('   value: 0 ETH');
+
+      // 先尝试估算Gas（不会真的发送）
+      userProvider.addDebugLog('⛽ 尝试估算Gas...');
+      try {
+        final estimateRequest = js.JsObject.jsify({
+          'method': 'eth_estimateGas',
+          'params': [js.JsObject.jsify(txParams)]
+        });
+
+        final gasEstimate = await miniAppService.callProviderMethod(
+          provider['request'],
+          estimateRequest
+        );
+
+        if (gasEstimate != null) {
+          userProvider.addDebugLog('✅ Gas估算成功: $gasEstimate');
+          userProvider.addDebugLog('🎉 钱包功能正常！可以发送交易');
+          _showSuccess('钱包功能正常，可以发送交易！');
+        } else {
+          userProvider.addDebugLog('⚠️ Gas估算返回null');
+        }
+      } catch (e) {
+        userProvider.addDebugLog('❌ Gas估算失败: $e');
+
+        // 即使估算失败，也尝试发送交易（用户可以取消）
+        userProvider.addDebugLog('📤 尝试发送测试交易（可以取消）...');
+        try {
+          final sendRequest = js.JsObject.jsify({
+            'method': 'eth_sendTransaction',
+            'params': [js.JsObject.jsify(txParams)]
+          });
+
+          userProvider.addDebugLog('⏳ 等待用户确认...');
+          userProvider.addDebugLog('💡 如果弹出确认框，说明钱包功能正常');
+          userProvider.addDebugLog('💡 可以点击取消，不会消耗Gas');
+
+          final txHash = await miniAppService.callProviderMethod(
+            provider['request'],
+            sendRequest
+          );
+
+          if (txHash != null) {
+            userProvider.addDebugLog('✅ 交易已发送: $txHash');
+            _showSuccess('交易测试成功！');
+          } else {
+            userProvider.addDebugLog('⚠️ 交易被取消或失败');
+          }
+        } catch (e2) {
+          if (e2.toString().contains('reject') ||
+              e2.toString().contains('cancel') ||
+              e2.toString().contains('4001')) {
+            userProvider.addDebugLog('👍 用户取消了交易（这是正常的）');
+            userProvider.addDebugLog('✅ 钱包功能正常！');
+            _showSuccess('钱包功能正常！');
+          } else {
+            userProvider.addDebugLog('❌ 发送交易失败: $e2');
+            _showError('交易测试失败');
+          }
+        }
+      }
+
+    } catch (e) {
+      userProvider.addDebugLog('❌ 交易测试失败: $e');
+      _showError('测试失败: $e');
     } finally {
       setState(() {
         _isLoading = false;
