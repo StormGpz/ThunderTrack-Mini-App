@@ -7,7 +7,6 @@ import '../models/address_auth.dart';
 import '../widgets/trade_form.dart';
 import '../widgets/address_selection_widget.dart';
 import '../widgets/eva_mech_decoration.dart';
-import '../services/hyperliquid_service.dart';
 import '../theme/eva_theme.dart';
 
 /// 交易页面 - 类似中心化交易所的行情页面
@@ -21,8 +20,7 @@ class TradingPage extends StatefulWidget {
 class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  final HyperliquidService _hyperliquidService = HyperliquidService();
-  
+
   List<TradingPair> _allTradingPairs = [];
   List<TradingPair> _filteredTradingPairs = [];
   final List<Trade> _userTrades = [];
@@ -45,7 +43,7 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
 
   /// 初始化服务
   Future<void> _initializeServices() async {
-    await _hyperliquidService.initialize();
+    // TODO: 实现服务初始化
     _checkCurrentTradingAddress();
   }
 
@@ -73,12 +71,9 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
         isAuthorized = false;
       }
     } else {
-      // 备用方案：检查 Hyperliquid 服务的地址设置
-      currentAddress = _hyperliquidService.currentTradingAddress;
-      if (currentAddress != null) {
-        isAuthorized = _hyperliquidService.isAddressAuthorized(currentAddress);
-        addressType = isAuthorized ? '已授权钱包' : '钱包地址';
-      }
+      // 备用方案：检查本地设置
+      // TODO: 从本地存储或其他服务获取地址
+      currentAddress = null;
     }
 
     setState(() {
@@ -976,11 +971,10 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
   void _onAddressSelected(AddressOption address) {
     setState(() {
       _currentTradingAddress = address;
-      _isAddressAuthorized = _hyperliquidService.isAddressAuthorized(address.address);
+      _isAddressAuthorized = false; // TODO: 从本地存储或服务检查授权状态
     });
-    
-    // 设置为当前交易地址
-    _hyperliquidService.setTradingAddress(address.address);
+
+    // TODO: 设置为当前交易地址到本地存储
   }
 
   /// 断开钱包连接
@@ -1012,10 +1006,9 @@ class _TradingPageState extends State<TradingPage> with TickerProviderStateMixin
                 _isAddressAuthorized = false;
                 _showAddressSelection = false;
               });
-              
-              // 清除Hyperliquid服务中的地址设置
-              _hyperliquidService.clearTradingAddress();
-              
+
+              // TODO: 清除本地存储中的地址设置
+
               Navigator.of(context).pop();
               
               ScaffoldMessenger.of(context).showSnackBar(

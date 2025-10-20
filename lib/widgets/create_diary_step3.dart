@@ -4,14 +4,14 @@ import 'package:provider/provider.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
 import '../theme/eva_theme.dart';
-import '../models/hyperliquid_models.dart';
+import '../models/trade.dart';
 import '../providers/user_provider.dart';
 import '../services/cast_diary_service.dart';
 import '../services/neynar_service.dart';
 
 /// 写日记第三步：Frame预览和发布
 class CreateDiaryStep3 extends StatefulWidget {
-  final List<HyperliquidOrder> selectedTrades;
+  final List<Trade> selectedTrades;
   final double totalPnL;
   final String strategy;
   final String sentiment;

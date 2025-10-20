@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/eva_theme.dart';
-import '../models/hyperliquid_models.dart';
+import '../models/trade.dart';
 import 'create_diary_step2.dart';
 
 /// 写日记第一步：选择交易
@@ -12,8 +12,8 @@ class CreateDiaryStep1 extends StatefulWidget {
 }
 
 class _CreateDiaryStep1State extends State<CreateDiaryStep1> {
-  List<HyperliquidOrder> _recentTrades = [];
-  List<HyperliquidOrder> _selectedTrades = [];
+  List<Trade> _recentTrades = [];
+  List<Trade> _selectedTrades = [];
   bool _isLoading = true;
   String _timeRange = '24h';
   
@@ -45,198 +45,174 @@ class _CreateDiaryStep1State extends State<CreateDiaryStep1> {
   }
 
   /// 模拟交易数据
-  List<HyperliquidOrder> _getMockTrades() {
+  List<Trade> _getMockTrades() {
     final now = DateTime.now();
     return [
       // 最近的盈利交易
-      HyperliquidOrder(
-        orderId: '1',
+      Trade(
+        id: '1',
         symbol: 'ETH/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 0.8,
         price: 2450.50,
-        filledSize: 0.8,
-        averagePrice: 2450.50,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 30)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 1, minutes: 30)),
+        userFid: 'user123',
         pnl: 195.80,
       ),
-      
+
       // BTC短线交易
-      HyperliquidOrder(
-        orderId: '2',
+      Trade(
+        id: '2',
         symbol: 'BTC/USDT',
-        type: OrderType.limit,
-        side: OrderSide.sell,
+        orderType: 'limit',
+        side: 'sell',
         size: 0.05,
         price: 43250.00,
-        filledSize: 0.05,
-        averagePrice: 43280.00,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 3, minutes: 15)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 3, minutes: 15)),
+        userFid: 'user123',
         pnl: -67.30,
       ),
-      
+
       // SOL突破交易
-      HyperliquidOrder(
-        orderId: '3',
+      Trade(
+        id: '3',
         symbol: 'SOL/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 15.0,
         price: 98.75,
-        filledSize: 15.0,
-        averagePrice: 98.90,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 6, minutes: 45)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 6, minutes: 45)),
+        userFid: 'user123',
         pnl: 234.50,
       ),
-      
+
       // ARB Layer2概念
-      HyperliquidOrder(
-        orderId: '4',
+      Trade(
+        id: '4',
         symbol: 'ARB/USDT',
-        type: OrderType.limit,
-        side: OrderSide.buy,
+        orderType: 'limit',
+        side: 'buy',
         size: 50.0,
         price: 1.85,
-        filledSize: 50.0,
-        averagePrice: 1.84,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 8, minutes: 20)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 8, minutes: 20)),
+        userFid: 'user123',
         pnl: 12.50,
       ),
-      
+
       // MATIC网格交易亏损
-      HyperliquidOrder(
-        orderId: '5',
+      Trade(
+        id: '5',
         symbol: 'MATIC/USDT',
-        type: OrderType.market,
-        side: OrderSide.sell,
+        orderType: 'market',
+        side: 'sell',
         size: 200.0,
         price: 0.72,
-        filledSize: 200.0,
-        averagePrice: 0.715,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 12, minutes: 10)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 12, minutes: 10)),
+        userFid: 'user123',
         pnl: -23.80,
       ),
-      
+
       // AVAX DeFi概念
-      HyperliquidOrder(
-        orderId: '6',
+      Trade(
+        id: '6',
         symbol: 'AVAX/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 8.0,
         price: 35.20,
-        filledSize: 8.0,
-        averagePrice: 35.15,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 18, minutes: 30)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 18, minutes: 30)),
+        userFid: 'user123',
         pnl: 48.60,
       ),
-      
+
       // DOT波卡生态
-      HyperliquidOrder(
-        orderId: '7',
+      Trade(
+        id: '7',
         symbol: 'DOT/USDT',
-        type: OrderType.limit,
-        side: OrderSide.sell,
+        orderType: 'limit',
+        side: 'sell',
         size: 25.0,
         price: 6.80,
-        filledSize: 25.0,
-        averagePrice: 6.78,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(hours: 22, minutes: 45)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(hours: 22, minutes: 45)),
+        userFid: 'user123',
         pnl: -18.90,
       ),
-      
+
       // LINK预言机龙头大单
-      HyperliquidOrder(
-        orderId: '8',
+      Trade(
+        id: '8',
         symbol: 'LINK/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 12.0,
         price: 14.25,
-        filledSize: 12.0,
-        averagePrice: 14.30,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(days: 1, hours: 2)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(days: 1, hours: 2)),
+        userFid: 'user123',
         pnl: 86.40,
       ),
-      
+
       // ADA cardano生态小仓位
-      HyperliquidOrder(
-        orderId: '9',
+      Trade(
+        id: '9',
         symbol: 'ADA/USDT',
-        type: OrderType.limit,
-        side: OrderSide.buy,
+        orderType: 'limit',
+        side: 'buy',
         size: 100.0,
         price: 0.48,
-        filledSize: 100.0,
-        averagePrice: 0.485,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(days: 1, hours: 8)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(days: 1, hours: 8)),
+        userFid: 'user123',
         pnl: 7.20,
       ),
-      
+
       // UNI DEX龙头反弹
-      HyperliquidOrder(
-        orderId: '10',
+      Trade(
+        id: '10',
         symbol: 'UNI/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 6.0,
         price: 8.90,
-        filledSize: 6.0,
-        averagePrice: 8.95,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(days: 2, hours: 5)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(days: 2, hours: 5)),
+        userFid: 'user123',
         pnl: 125.70,
       ),
-      
+
       // ATOM cosmos生态
-      HyperliquidOrder(
-        orderId: '11',
+      Trade(
+        id: '11',
         symbol: 'ATOM/USDT',
-        type: OrderType.limit,
-        side: OrderSide.sell,
+        orderType: 'limit',
+        side: 'sell',
         size: 18.0,
         price: 10.15,
-        filledSize: 18.0,
-        averagePrice: 10.12,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(days: 2, hours: 14)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(days: 2, hours: 14)),
+        userFid: 'user123',
         pnl: -31.50,
       ),
-      
+
       // FTM fantom生态抄底
-      HyperliquidOrder(
-        orderId: '12',
+      Trade(
+        id: '12',
         symbol: 'FTM/USDT',
-        type: OrderType.market,
-        side: OrderSide.buy,
+        orderType: 'market',
+        side: 'buy',
         size: 150.0,
         price: 0.32,
-        filledSize: 150.0,
-        averagePrice: 0.318,
-        status: OrderStatus.filled,
-        createdAt: now.subtract(const Duration(days: 3, hours: 6)),
-        address: '0x123...',
+        status: 'filled',
+        timestamp: now.subtract(const Duration(days: 3, hours: 6)),
+        userFid: 'user123',
         pnl: 45.90,
       ),
     ];
@@ -491,7 +467,7 @@ class _CreateDiaryStep1State extends State<CreateDiaryStep1> {
   }
 
   /// 构建交易项
-  Widget _buildTradeItem(HyperliquidOrder trade) {
+  Widget _buildTradeItem(Trade trade) {
     final isSelected = _selectedTrades.contains(trade);
     final isProfitable = (trade.pnl ?? 0) >= 0;
     
@@ -553,10 +529,10 @@ class _CreateDiaryStep1State extends State<CreateDiaryStep1> {
             ),
             const Spacer(),
             Text(
-              trade.side == OrderSide.buy ? '买入' : '卖出',
+              trade.side == 'buy' ? '买入' : '卖出',
               style: TextStyle(
-                color: trade.side == OrderSide.buy 
-                  ? EvaTheme.neonGreen 
+                color: trade.side == 'buy'
+                  ? EvaTheme.neonGreen
                   : Colors.orange,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -586,7 +562,7 @@ class _CreateDiaryStep1State extends State<CreateDiaryStep1> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _formatTimeAgo(trade.createdAt),
+                  _formatTimeAgo(trade.timestamp),
                   style: TextStyle(color: EvaTheme.textGray, fontSize: 11),
                 ),
                 Text(

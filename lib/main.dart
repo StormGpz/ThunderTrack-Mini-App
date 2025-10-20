@@ -9,7 +9,6 @@ import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
 import 'widgets/frame_diary_detail_page.dart';
 import 'utils/api_client.dart';
-import 'services/hyperliquid_service.dart';
 import 'widgets/eva_floating_bottom_bar.dart';
 import 'widgets/eva_mech_decoration.dart';
 import 'theme/eva_theme.dart';
@@ -17,13 +16,10 @@ import 'theme/eva_theme.dart';
 void main() async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 初始化 API 客户端
   ApiClient().initialize();
-  
-  // 初始化 Hyperliquid 服务
-  await HyperliquidService().initialize();
-  
+
   runApp(const ThunderTrackApp());
 }
 

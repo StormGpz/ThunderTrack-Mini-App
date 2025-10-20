@@ -682,49 +682,81 @@ class FarcasterMiniAppService {
     return _callAsyncFunction(request, [params]);
   }
 
-  /// 获取内置钱包账户地址 (通过 eth_accounts 方法)
+  /// 获取内置钱包账户地址 (通过 eth_accounts 方法，带重试)
   Future<String?> getBuiltinWalletAddress() async {
     if (!kIsWeb) return null;
 
-    try {
-      debugPrint('🔍 尝试通过 eth_accounts 获取内置钱包地址...');
+    // 重试3次，因为Provider可能需要时间初始化
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        debugPrint('🔍 尝试通过 eth_accounts 获取内置钱包地址... (尝试 $attempt/3)');
 
-      final provider = getEthereumProvider();
-      if (provider == null) {
-        debugPrint('❌ 未找到以太坊提供者');
-        return null;
-      }
+        final provider = getEthereumProvider();
+        if (provider == null) {
+          debugPrint('❌ 未找到以太坊提供者');
+          if (attempt < 3) {
+            debugPrint('⏳ 等待500ms后重试...');
+            await Future.delayed(const Duration(milliseconds: 500));
+            continue;
+          }
+          return null;
+        }
 
-      debugPrint('✅ 找到以太坊提供者');
+        debugPrint('✅ 找到以太坊提供者');
 
-      final request = provider['request'];
-      if (request == null) {
-        debugPrint('❌ provider.request 方法不存在');
-        return null;
-      }
+        final request = provider['request'];
+        if (request == null) {
+          debugPrint('❌ provider.request 方法不存在');
+          if (attempt < 3) {
+            debugPrint('⏳ 等待500ms后重试...');
+            await Future.delayed(const Duration(milliseconds: 500));
+            continue;
+          }
+          return null;
+        }
 
-      // 调用 eth_accounts 获取账户
-      final accountsPromise = _callAsyncFunction(request, [js.JsObject.jsify({
-        'method': 'eth_accounts',
-        'params': [],
-      })]);
+        // 调用 eth_accounts 获取账户
+        final accountsPromise = _callAsyncFunction(request, [js.JsObject.jsify({
+          'method': 'eth_accounts',
+          'params': [],
+        })]);
 
-      if (accountsPromise != null) {
-        final accounts = await accountsPromise;
-        if (accounts != null && accounts is List && accounts.isNotEmpty) {
-          final address = accounts.first.toString();
-          debugPrint('✅ 通过 eth_accounts 获取到地址: $address');
-          return address;
-        } else {
-          debugPrint('⚠️ eth_accounts 返回空数组或null');
+        if (accountsPromise != null) {
+          final accounts = await accountsPromise;
+          if (accounts != null && accounts is List && accounts.isNotEmpty) {
+            final address = accounts.first.toString();
+            debugPrint('✅ 通过 eth_accounts 获取到地址: $address');
+
+            // 验证地址格式
+            if (address.startsWith('0x') && address.length == 42) {
+              debugPrint('✅ 地址格式正确');
+              return address;
+            } else {
+              debugPrint('⚠️ 地址格式异常: $address');
+              // 继续尝试
+            }
+          } else {
+            debugPrint('⚠️ eth_accounts 返回空数组或null');
+          }
+        }
+
+        // 如果这次失败了，等待后重试
+        if (attempt < 3) {
+          debugPrint('⏳ 等待500ms后重试...');
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+
+      } catch (e) {
+        debugPrint('❌ 通过 eth_accounts 获取地址失败 (尝试 $attempt/3): $e');
+        if (attempt < 3) {
+          debugPrint('⏳ 等待500ms后重试...');
+          await Future.delayed(const Duration(milliseconds: 500));
         }
       }
-
-      return null;
-    } catch (e) {
-      debugPrint('❌ 通过 eth_accounts 获取地址失败: $e');
-      return null;
     }
+
+    debugPrint('❌ 所有尝试都失败了，无法获取内置钱包地址');
+    return null;
   }
 
   /// 调试内置钱包地址 - 专门用于查找内置钱包地址

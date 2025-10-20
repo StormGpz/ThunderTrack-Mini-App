@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/trade.dart';
 import '../models/market_data.dart';
-import '../services/hyperliquid_service.dart';
 
 /// 交易状态管理Provider
 class TradingProvider extends ChangeNotifier {
@@ -9,8 +8,6 @@ class TradingProvider extends ChangeNotifier {
   factory TradingProvider() => _instance;
   TradingProvider._internal();
 
-  final HyperliquidService _hyperliquidService = HyperliquidService();
-  
   List<MarketData> _marketData = [];
   List<Trade> _userTrades = [];
   List<Trade> _activeTrades = [];
@@ -38,8 +35,9 @@ class TradingProvider extends ChangeNotifier {
   Future<void> loadMarketData() async {
     _setLoading(true);
     try {
-      final data = await _hyperliquidService.getMarketData();
-      _marketData = data;
+      // TODO: 实现市场数据加载
+      // 暂时使用空数据
+      _marketData = [];
       _setError(null);
       notifyListeners();
     } catch (e) {
@@ -53,13 +51,11 @@ class TradingProvider extends ChangeNotifier {
   Future<void> loadUserTrades(String userAddress) async {
     _setLoading(true);
     try {
-      // 这里需要根据实际API实现
-      final userState = await _hyperliquidService.getUserState(userAddress);
-      
-      // 解析用户交易记录和持仓
-      _parseUserTrades(userState);
-      _parseUserPositions(userState);
-      
+      // TODO: 实现用户交易加载
+      // 暂时使用空数据
+      _parseUserTrades({});
+      _parseUserPositions({});
+
       _setError(null);
       notifyListeners();
     } catch (e) {
@@ -78,17 +74,12 @@ class TradingProvider extends ChangeNotifier {
     double? price,
   }) async {
     try {
-      final orderId = await _hyperliquidService.placeOrder(
-        symbol: symbol,
-        size: size,
-        side: side,
-        orderType: orderType,
-        price: price,
-      );
+      // TODO: 实现下单功能
+      debugPrint('📋 模拟下单: $symbol $size $side');
 
       // 创建交易记录
       final trade = Trade(
-        id: orderId,
+        id: 'order_${DateTime.now().millisecondsSinceEpoch}',
         symbol: symbol,
         price: price ?? _getMarketPrice(symbol),
         size: size,
@@ -111,22 +102,12 @@ class TradingProvider extends ChangeNotifier {
   /// 取消订单
   Future<bool> cancelOrder(String orderId, {String? coin}) async {
     try {
-      // 从活跃交易中找到对应的币种信息
-      final trade = _activeTrades.firstWhere(
-        (t) => t.id == orderId,
-        orElse: () => throw Exception('订单不存在'),
-      );
-      
-      final success = await _hyperliquidService.cancelOrder(
-        coin: coin ?? trade.symbol,
-        orderId: int.parse(orderId.replaceAll(RegExp(r'[^0-9]'), '') + '1'), // 临时处理orderId转换
-      );
-      
-      if (success) {
-        _activeTrades.removeWhere((trade) => trade.id == orderId);
-        notifyListeners();
-      }
-      return success;
+      // TODO: 实现取消订单功能
+      debugPrint('📋 模拟取消订单: $orderId');
+
+      _activeTrades.removeWhere((trade) => trade.id == orderId);
+      notifyListeners();
+      return true;
     } catch (e) {
       _setError('取消订单失败: $e');
       return false;

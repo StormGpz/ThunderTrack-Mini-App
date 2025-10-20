@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/eva_theme.dart';
-import '../models/hyperliquid_models.dart';
+import '../models/trade.dart';
 import 'create_diary_step3.dart';
 
 /// 写日记第二步：分析填写
 class CreateDiaryStep2 extends StatefulWidget {
-  final List<HyperliquidOrder> selectedTrades;
+  final List<Trade> selectedTrades;
   final double totalPnL;
 
   const CreateDiaryStep2({

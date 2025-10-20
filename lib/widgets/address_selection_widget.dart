@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/address_auth.dart';
-import '../services/hyperliquid_service.dart';
 import '../services/farcaster_miniapp_service.dart';
 import '../providers/user_provider.dart';
 import '../theme/eva_theme.dart';
@@ -25,9 +24,7 @@ class AddressSelectionWidget extends StatefulWidget {
 
 class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
   // Address detection service removed - functionality not available
-  final HyperliquidService _hyperliquidService = HyperliquidService();
   final FarcasterMiniAppService _miniAppService = FarcasterMiniAppService();
-  
   List<AddressOption> _availableAddresses = [];
   AddressOption? _selectedAddress;
   bool _isLoading = false;
@@ -136,36 +133,25 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
     });
 
     try {
-      // 生成授权消息
-      final message = _hyperliquidService.generateAuthMessage(option.address);
-      
-      // TODO: 实际项目中需要调用钱包签名
-      // 这里使用模拟签名
-      final signature = 'mock_signature_${DateTime.now().millisecondsSinceEpoch}';
-      
-      // 验证授权
-      final success = await _hyperliquidService.authorizeAddress(option.address, signature);
-      
-      if (success) {
-        setState(() {
-          _isAuthorizing = false;
-        });
-        
-        // 通知授权成功
-        if (widget.onAddressAuthorized != null) {
-          widget.onAddressAuthorized!(option.address);
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ 地址授权成功'),
-            backgroundColor: EvaTheme.neonGreen,
-            
-          ),
-        );
-      } else {
-        throw Exception('授权验证失败');
+      // TODO: 实现钱包签名授权
+      // 暂时使用模拟签名
+      debugPrint('📋 模拟地址授权: ${option.address}');
+
+      setState(() {
+        _isAuthorizing = false;
+      });
+
+      // 通知授权成功
+      if (widget.onAddressAuthorized != null) {
+        widget.onAddressAuthorized!(option.address);
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('✅ 地址授权成功'),
+          backgroundColor: EvaTheme.neonGreen,
+        ),
+      );
     } catch (e) {
       setState(() {
         _isAuthorizing = false;
@@ -336,58 +322,6 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
 
           // 地址列表
           ...(_availableAddresses.map((address) => _buildAddressOption(address))),
-
-          // 授权按钮
-          if (_selectedAddress != null && !_hyperliquidService.isAddressAuthorized(_selectedAddress!.address)) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isAuthorizing ? null : () => _authorizeAddress(_selectedAddress!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: EvaTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isAuthorizing
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('授权中...'),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.security, size: 16),
-                        const SizedBox(width: 8),
-                        const Text('点击授权签名'),
-                      ],
-                    ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '此签名仅用于验证地址所有权，不会产生任何费用',
-              style: TextStyle(
-                color: EvaTheme.lightGray,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ],
       ),
     );
@@ -395,8 +329,6 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
 
   Widget _buildAddressOption(AddressOption option) {
     final isSelected = _selectedAddress?.address == option.address;
-    final isAuthorized = _hyperliquidService.isAddressAuthorized(option.address);
-    final authStatus = _hyperliquidService.getAddressAuthStatus(option.address);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -469,25 +401,6 @@ class _AddressSelectionWidgetState extends State<AddressSelectionWidget> {
                 ],
               ),
             ),
-            if (widget.showAuthStatus) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isAuthorized 
-                    ? EvaTheme.neonGreen.withValues(alpha: 0.2)
-                    : EvaTheme.warningYellow.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  authStatus.displayName,
-                  style: TextStyle(
-                    color: isAuthorized ? EvaTheme.neonGreen : EvaTheme.warningYellow,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
         onTap: () {
