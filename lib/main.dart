@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/user_provider.dart';
 import 'pages/diary_page.dart';
-import 'pages/trading_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
 import 'widgets/frame_diary_detail_page.dart';
@@ -58,17 +57,15 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 1; // 默认显示日记页面
+  int _selectedIndex = 0; // 默认显示日记页面
   late final PageController _pageController;
 
   final List<EvaTabItem> _tabItems = const [
-    EvaTabItem(icon: Icons.trending_up, label: '交易'),
     EvaTabItem(icon: Icons.book, label: '日记'),
     EvaTabItem(icon: Icons.settings, label: '设置'),
   ];
 
   final List<Widget> _pages = [
-    const TradingPage(),
     const DiaryPage(),
     const SettingsPage(),
   ];
