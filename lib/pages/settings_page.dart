@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
-import '../pages/wallet_test_page.dart';
 import '../theme/eva_theme.dart';
 
 /// 设置页面 - EVA主题，简化版
@@ -57,7 +56,6 @@ class SettingsPage extends StatelessWidget {
                 _buildSettingsCard([
                   _buildTradingNotificationSetting(context, settings),
                   _buildDefaultCurrencySetting(context, settings),
-                  _buildWalletTestSetting(context, settings),
                 ]),
 
                 const SizedBox(height: 32),
@@ -380,30 +378,4 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  /// 构建钱包测试设置
-  Widget _buildWalletTestSetting(BuildContext context, SettingsProvider settings) {
-    return ListTile(
-      leading: Icon(Icons.account_balance_wallet_outlined, color: EvaTheme.neonGreen),
-      title: Text(
-        settings.isChineseLocale ? '钱包连接测试' : 'Wallet Connection Test',
-        style: TextStyle(fontWeight: FontWeight.w500, color: EvaTheme.lightText),
-      ),
-      subtitle: Text(
-        settings.isChineseLocale ? '测试Web3钱包连接和签名功能' : 'Test Web3 wallet connection and signing',
-        style: TextStyle(color: EvaTheme.textGray),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: EvaTheme.textGray,
-      ),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const WalletTestPage(),
-          ),
-        );
-      },
-    );
-  }
 }

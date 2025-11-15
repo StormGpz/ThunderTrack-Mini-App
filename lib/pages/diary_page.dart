@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/trading_diary.dart';
 import '../widgets/diary_list.dart';
-import '../widgets/create_diary_step1.dart';
+import '../widgets/create_diary_page.dart';
 import '../services/cast_diary_service.dart';
 import '../theme/eva_theme.dart';
 
@@ -150,7 +150,7 @@ class _DiaryPageState extends State<DiaryPage> with TickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CreateDiaryStep1(),
+        builder: (context) => const CreateDiaryPage(),
       ),
     ).then((_) {
       // 从写日记页面返回后刷新数据
